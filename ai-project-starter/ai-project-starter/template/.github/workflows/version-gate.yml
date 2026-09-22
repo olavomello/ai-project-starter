@@ -1,0 +1,20 @@
+name: version-gate
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Version gate
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            bash .claude/skills/semver-release/scripts/check-version.sh --release
+          else
+            bash .claude/skills/semver-release/scripts/check-version.sh
+          fi

@@ -1,0 +1,8 @@
+{
+  "skill_name": "semver-release",
+  "evals": [
+    {"id": 1, "prompt": "Corrigi dois bugs no parser e adicionei entradas no changelog. Faz o release.", "expected_output": "status → patch bump 0.1.0→0.1.1, CHANGELOG promovido, gate passa, commit chore(release) e tag v0.1.1", "files": []},
+    {"id": 2, "prompt": "We added the export feature and removed the legacy /v1 endpoint. Cut a release candidate.", "expected_output": "pre-1.0 breaking → minor with --pre rc (0.2.0-rc.1), migration note under Removed, gate passes", "files": []},
+    {"id": 3, "prompt": "Vamos lançar a 1.0.0 agora.", "expected_output": "Stops and asks for explicit Administrator approval before using --admin-approved", "files": []}
+  ]
+}

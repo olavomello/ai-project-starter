@@ -1,0 +1,9 @@
+# Agent working state (task handoffs are local, not history)
+.agents/state/*
+!.agents/state/.gitkeep
+.agents/media/log.txt
+
+# Secrets
+.env
+.env.*
+!.env.example
