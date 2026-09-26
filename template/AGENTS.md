@@ -117,12 +117,13 @@ Skills that come from the account or an installed plugin, not vendored here. Use
 
 ## 7. Agent team
 
-Agents may create other agents to run work in parallel. Main asks the Administrator once, at plan time, for `auto_agents: true | false`; the answer is recorded in `AGENT_TEAM.md`. While `false`, an agent that spots a worthwhile spawn names it once and continues without it.
+Agents may create other agents to run work in parallel. At plan time Main asks the Administrator two questions once, and records the answers in `AGENT_TEAM.md`: **`auto_agents: true | false`** (may agents create agents?) and **`main_merge: true | false`** (may Main merge the PRs the script classifies as safe?). While `auto_agents` is `false`, an agent that spots a worthwhile spawn names it once and continues without it.
 
-- Spawn only when the work is genuinely parallel, owns a disjoint set of files, is worth more than ~3 tool calls, and has one narrow purpose. Planning the team during the plan phase is the ideal; spotting one mid-flight is fine.
+- Spawn only when the work is genuinely parallel, has declared file ownership, is worth more than ~3 tool calls, and has one narrow purpose. Designing the team during the plan is the ideal; spotting one mid-flight is fine.
 - Hard limits: spawn depth 3, four concurrent agents per project, three per parent. At a ceiling, report upward instead of spawning.
 - Each agent is a committed file `docs/agents/<3-letter function>-<area>-<role>.md` (e.g. `dev-api-tester.md`) with a CONFIGS block and SCOPE AND RULES. Create it with `bash scripts/agent-team.sh new`.
-- Never clobber concurrent work: `claim` before writing, `sync` before each unit of work, re-read before editing, `release` when done. A refused claim means wait, renegotiate scope, or take a worktree — never force.
+- **Every agent works in its own git worktree — never in the main working tree.** `start` creates it, `sync` rebases it onto `main`, `finish` gates it and opens a PR, `cleanup` removes it.
+- **No agent merges its own work.** Main reviews every PR. If `main_merge: true` and `agent-team.sh classify` says `mechanical` (docs, tests and formatting only, no sensitive path, under 400 lines), Main merges it; everything else waits for the Administrator. Merge one PR at a time, rebasing and re-running the gate before each.
 - Only Main edits `VERSION`, tags, CI, dependencies, `AGENTS.md` or `AGENT_TEAM.md`. Sub-agents inherit every rule here, including the budget guardrails.
 
-Full charter, limits and collision protocol: `AGENT_TEAM.md`.
+Full charter, limits, classification list and merge protocol: `AGENT_TEAM.md`.

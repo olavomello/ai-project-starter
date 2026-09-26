@@ -24,3 +24,6 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 - `docs/` reorganized: `docs/agents/` now holds agent definitions only; guides moved to `docs/guides/`; `repo-map.md` and `decisions.md` moved to `docs/`.
+- `main_merge` flag asked at plan time, alongside `auto_agents`.
+- Worktree-first isolation: `agent-team.sh start | sync | finish | cleanup`, with rebase onto `main`, gate before push, and automatic PR creation via `gh` when available.
+- `agent-team.sh classify`: rates a branch `mechanical` or `administrator` from the diff (sensitive-path list, docs/tests-only rule, 400-line cap).

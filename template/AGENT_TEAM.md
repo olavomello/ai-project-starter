@@ -6,7 +6,10 @@ How agents in this project create and coordinate other agents. Read by Main at p
 
 ```
 auto_agents: ask
+main_merge:  ask
 ```
+
+### auto_agents
 
 | Value | Meaning |
 |---|---|
@@ -19,12 +22,26 @@ auto_agents: ask
 If the answer is `false`, Main asks one follow-up: *"Disable auto agents completely for this project, so I stop asking?"* — a yes writes `disabled`.
 While `false`, an agent that spots a worthwhile spawn names it once per opportunity — what it would own, what it would parallelize, the expected saving — and continues without it. It does not re-raise the same one.
 
+### main_merge
+
+| Value | Meaning |
+|---|---|
+| `true` | Main may merge PRs that `agent-team.sh classify` rates **mechanical**. Everything else still waits for the Administrator. |
+| `false` | Every PR waits for the Administrator, mechanical or not. |
+| `ask` | Not decided yet — Main asks at the start of the first plan. |
+
+**At plan time**, if the value is `ask`, Main asks: *"May Main merge the PRs it classifies as safe — docs, tests and formatting only — without waiting for you?"* and writes `true` or `false` here.
+
+A PR is **mechanical** only when every changed path is documentation, a test, or a formatting-only change, **and** none of them is a sensitive path (list below), **and** the diff is under 400 changed lines. Anything else is **administrator**. The classification is produced by the script, not by an agent's judgement, and Main never overrides it upward.
+
+Sensitive paths, always administrator regardless of size: dependency manifests and lockfiles, `.github/`, CI and deploy config, Dockerfiles and infra, database migrations and schema, anything under an `auth`, `security`, `payment` or `billing` path, `VERSION`, `CHANGELOG.md`, `AGENTS.md`, `AGENT_TEAM.md`, `scripts/gate.sh`, `scripts/agent-team.sh`, `.claude/`.
+
 ## When to spawn
 
 Spawn only when **all** of these hold:
 
 1. **Real parallelism.** The work can run at the same time as the caller's, not merely instead of it. A step that must finish before the caller continues is not a spawn; it's the caller's next step.
-2. **Disjoint ownership.** The candidate can own a set of files nothing else is touching. Overlap means no spawn — or a worktree (see below).
+2. **Declared ownership.** The candidate can name the files it will change. Overlap with a live agent isn't fatal — every agent gets its own worktree — but it predicts a merge conflict, so prefer splitting the work differently.
 3. **Worth the setup.** More than ~3 tool calls of real work, and the spawn plus its report costs less than doing it inline.
 4. **A narrow purpose.** One area, one function. "Help with the backend" is not an agent; "write and run contract tests for the orders API" is.
 
@@ -55,27 +72,51 @@ This writes `docs/agents/dev-api-tester.md` from the template, with `Status: ON`
 
 Each agent file contains only what is specific to it. Project-wide rules live in `AGENTS.md` and are never copied into an agent file. An agent rule may narrow a project rule; it may never relax one.
 
-## Working without clobbering
+## Isolation: every agent gets a worktree
 
-Parallel agents on one working tree will overwrite each other unless ownership is explicit. The protocol:
+No agent writes in the main working tree. Ever. A shared tree loses work the moment two agents write at once, and no protocol run by agents that can forget will reliably prevent it. Isolation is structural instead.
 
-1. **Claim before writing.** `bash scripts/agent-team.sh claim <name>` takes the globs declared in the agent's file. The claim is atomic — if another agent holds an overlapping path, the claim fails and prints who holds it. A refused claim means wait or renegotiate scope, never force.
-2. **Sync before each unit of work.** `bash scripts/agent-team.sh sync` fetches and reports what changed since the agent's last checkpoint. Re-read any file before editing it; never write from a read taken before the last sync.
-3. **Edit narrowly.** Targeted replacements inside owned paths. Never a full-file rewrite of a file another agent may hold.
-4. **Release when done.** `bash scripts/agent-team.sh release <name>` — followed by a report to the parent: what changed, how it was verified, what's still open.
-5. **Shared files** — `package.json`, lockfiles, CI config, `CHANGELOG.md` — are claimed for the shortest possible window, by one agent at a time.
+```bash
+bash scripts/agent-team.sh start dev-api-tester
+```
 
-When two agents genuinely need the same files, don't interleave them. Give one a git worktree (`isolation: "worktree"` in Claude Code, or `git worktree add`) and merge the branch back. Slower to set up, but it cannot lose work.
+This creates branch `agent/dev-api-tester` and a worktree at `.agents/worktrees/dev-api-tester/`, branched from the current `main`. In Claude Code, `isolation: "worktree"` on the Agent tool does the same thing — either is fine, as long as the agent is not in the main tree.
 
-Stale claims older than 60 minutes are reported by `scripts/agent-team.sh check` and may be released by Main after confirming the holder is gone.
+Inside its worktree the agent works normally: no claiming, no waiting, no risk of clobbering. If it produces something wrong, the branch is deleted and nothing else is affected.
+
+**`claim` still exists, with a different job.** It now declares intent — which paths an agent expects to touch — so overlaps surface at planning time instead of at merge time. A refused claim is a warning, not a lock: it means two agents are heading for the same files and the work should probably be split differently. Main decides.
+
+**Sync before starting and before finishing:** `bash scripts/agent-team.sh sync <name>` fetches and rebases the agent's branch onto the current `main`. An agent that has been running a while rebases again before opening its PR, so the PR is reviewed against what `main` actually is now.
+
+Shared files — dependency manifests, lockfiles, CI config, `CHANGELOG.md` — are still best touched by one agent at a time, because a lockfile conflict is painful to resolve whether or not the trees were isolated.
+
+## Finishing: PR, then merge
+
+```bash
+bash scripts/agent-team.sh finish dev-api-tester
+```
+
+The script, in order: rebases onto `main`, runs `scripts/gate.sh`, refuses to continue if the gate fails, commits anything outstanding, pushes the branch, opens a PR (via `gh` when available, otherwise prints the URL to open), and prints the classification.
+
+The PR body states what changed, how it was verified, and what is still open. Title is Conventional Commits, so the release scope can be read off the merged history.
+
+**Merging:**
+
+- **Main reviews every PR** — the agent that wrote the code never merges its own work.
+- If `main_merge: true` and the classification is `mechanical`, Main merges it.
+- Otherwise the PR waits for the Administrator. Main says which PRs are waiting and why.
+- **One at a time.** Before each merge, rebase onto the current `main` and re-run the gate. Two PRs that each passed alone can still break together — a rename in one, a call to the old name in the other — and only a post-rebase gate catches it.
+- After merge: `bash scripts/agent-team.sh cleanup <name>` removes the worktree and the local branch.
+
+**A failing gate is never merged and never "fixed" by weakening the gate.** The agent fixes its branch, or reports the blocker to Main.
 
 ## Lifecycle
 
 - `Status: ON` — dispatchable. `Status: OFF` — kept for the record, not dispatched. Agents set their own status; deleting an agent file is an Administrator decision.
 - An agent whose area disappears goes `OFF` with a one-line reason appended to its SCOPE AND RULES.
 - Before spawning, check `docs/agents/` for an existing agent that already covers the area. Reuse beats creating a near-duplicate.
-- `bash scripts/agent-team.sh list` prints the roster with status, owner globs, and live claims.
+- `bash scripts/agent-team.sh list` prints the roster with status, declared paths, live worktrees and open branches.
 
 ## Boundaries
 
-Sub-agents inherit every rule in `AGENTS.md`, including the budget guardrails. In addition, no agent other than Main may: edit `VERSION`, create tags, promote `[Unreleased]`, change CI, add dependencies, or alter this file. Those go up the chain to Main, and from Main to the Administrator.
+Sub-agents inherit every rule in `AGENTS.md`, including the budget guardrails. In addition, no agent other than Main may: merge a PR, edit `VERSION`, create tags, promote `[Unreleased]`, change CI, add dependencies, or alter this file. An agent that needs one of these proposes it in its PR and stops. Those go up the chain to Main, and from Main to the Administrator.
