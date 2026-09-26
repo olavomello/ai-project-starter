@@ -49,6 +49,11 @@ run lint   "${LINT-}"   lint
 run types  "${TYPES-}"  types
 run test   "${TEST-}"   test
 
+if [[ -x scripts/agent-team.sh ]]; then
+  echo "--- agent team"
+  bash scripts/agent-team.sh check || FAILED=1
+fi
+
 GATE=.claude/skills/semver-release/scripts/check-version.sh
 if [[ -f $GATE ]]; then
   echo "--- version gate"

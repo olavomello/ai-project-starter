@@ -59,26 +59,33 @@ Day-to-day commands:
 | Task | Command |
 |---|---|
 | Verify everything | `bash scripts/gate.sh` |
+| See the agent team | `bash scripts/agent-team.sh list` |
 | See release state | `bash .claude/skills/semver-release/scripts/bump.sh status` |
 | Cut a release | ask Claude to run the `semver-release` skill |
 | Generate a photo | ask Claude — it uses the `photo-generation` skill |
 
 Agents never bump `VERSION` or create tags on their own; they report a `version-impact` line and you decide.
 
+At the start of the first plan, Main asks **`auto_agents: true or false`** — whether agents may create other agents to parallelize work. The answer is recorded in `AGENT_TEAM.md`, which also holds the spawn limits and the protocol that stops parallel agents from overwriting each other.
+
 ---
 
 ## What a new project gets
 
 ```
-AGENTS.md                         rules for all agents (tool-agnostic, ~110 lines)
+AGENTS.md                         rules for all agents (tool-agnostic, ~130 lines)
+AGENT_TEAM.md                     how agents create and coordinate other agents
 CLAUDE.md                         imports AGENTS.md for Claude Code
 VERSION                           0.0.1
 CHANGELOG.md                      Keep a Changelog, starts with [Unreleased]
-scripts/gate.sh                   one command: format, lint, types, tests, version gate
+scripts/gate.sh                   one command: format, lint, types, tests, agent team, version gate
+scripts/agent-team.sh             create agents, claim files, sync, check
 .claude/skills/semver-release/    release workflow + bump.sh + check-version.sh
 .claude/skills/photo-generation/  photos via OpenAI image generation
-docs/agents/                      loaded on demand: security, efficiency, delegation, repo-map, decisions
-.agents/                          local agent state (git-ignored), gate overrides, media requests
+docs/agents/                      one committed file per agent (dev-api-tester.md, ...)
+docs/guides/                      loaded on demand: security, efficiency, delegation
+docs/repo-map.md, decisions.md    agent cache, committed
+.agents/                          local state (git-ignored): claims, handoffs, gate overrides
 .github/workflows/gate.yml
 ```
 

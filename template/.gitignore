@@ -3,6 +3,7 @@
 !.agents/state/.gitkeep
 .agents/media/log.txt
 .agents/gate.conf
+.agents/locks/
 
 # Secrets
 .env

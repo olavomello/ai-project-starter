@@ -26,11 +26,11 @@ Read when tuning cost, routing models, or calling the API directly. The always-l
 
 | File | Content | Invalidate when |
 |---|---|---|
-| `docs/agents/repo-map.md` | Directory map, entry points, key modules (≤150 lines) | Structure changes; the header records the git SHA it was built from |
-| `docs/agents/decisions.md` | One line per durable decision, with date | Never — append only |
+| `docs/repo-map.md` | Directory map, entry points, key modules (≤150 lines) | Structure changes; the header records the git SHA it was built from |
+| `docs/decisions.md` | One line per durable decision, with date | Never — append only |
 | `.agents/state/<task-id>.md` | Task handoff: goal, done, next, open questions, files touched | Task closed (delete the file) |
 
-`docs/agents/` is committed. `.agents/state/` is local and git-ignored.
+`docs/` is committed. `.agents/state/` is local and git-ignored.
 
 ## Measuring
 
