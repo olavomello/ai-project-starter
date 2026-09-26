@@ -1,0 +1,27 @@
+# Security checklist
+
+Read before touching auth, data access, uploads, payments, or anything reachable from the network.
+
+## Before every commit
+
+- No secrets in code, tests, fixtures, logs, or error messages. Secrets come from env vars or a secret manager, and required ones are validated at startup.
+- Every external input validated at the boundary with a schema. Fail fast with a clear message; never trust client data, webhooks, or third-party responses.
+- Database access parameterized. No string-built SQL, no raw interpolation into queries.
+- Output escaped for its sink (HTML, shell, SQL, logs). No `dangerouslySetInnerHTML` / `eval` on user data.
+- Authentication and authorization checked on every non-public route, including the ownership check ("is this *their* record?"), not just "is someone logged in".
+- CSRF protection on state-changing form routes; CORS allowlist explicit, never `*` with credentials.
+- Rate limiting on auth, write, and expensive endpoints.
+- Errors return a generic message to the client; stack traces and internals only in server logs.
+- Dependencies: no new dependency without asking; audit output reviewed when one is added.
+
+## If something is found
+
+1. Stop the current work.
+2. Report severity and blast radius to the Administrator before pushing anything.
+3. Fix CRITICAL and HIGH before the commit lands.
+4. A leaked secret is treated as compromised: rotate first, then remove from code, then check history and logs for other copies.
+5. Search the codebase for the same pattern elsewhere — a class of bug is rarely a single instance.
+
+## Not an agent decision
+
+Disabling a security control, weakening auth for convenience, storing PII in a new place, or changing data retention — all go to the Administrator first.

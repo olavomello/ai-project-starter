@@ -1,0 +1,21 @@
+name: gate
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Add stack setup steps here (setup-node, setup-python, ...) before the gate.
+      - name: Gate
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            bash scripts/gate.sh --release
+          else
+            bash scripts/gate.sh
+          fi

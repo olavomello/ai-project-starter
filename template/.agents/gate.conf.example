@@ -1,0 +1,6 @@
+# Copy to .agents/gate.conf and override only what auto-detection gets wrong.
+# Use "skip" to disable a step.
+# FORMAT="npm run format:check"
+# LINT="npm run lint"
+# TYPES="npm run typecheck"
+# TEST="npm test -- --coverage"
