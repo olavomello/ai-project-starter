@@ -62,6 +62,7 @@ Day-to-day commands:
 | See the agent team | `bash scripts/agent-team.sh list` |
 | Start an agent in its worktree | `bash scripts/agent-team.sh start <name>` |
 | Gate it and open its PR | `bash scripts/agent-team.sh finish <name>` |
+| Refresh the dashboard | `node scripts/ai-report.mjs` |
 | See release state | `bash .claude/skills/semver-release/scripts/bump.sh status` |
 | Cut a release | ask Claude to run the `semver-release` skill |
 | Generate a photo | ask Claude — it uses the `photo-generation` skill |
@@ -72,6 +73,16 @@ At the start of the first plan, Main asks two questions and records the answers 
 
 - **`auto_agents`** — may agents create other agents to parallelize work?
 - **`main_merge`** — may Main merge the PRs it classifies as safe (docs, tests and formatting only), or does every PR wait for you?
+
+## Monitoring
+
+Agents log each task with `node scripts/ai-log.mjs` (Node, so it runs the same on Windows, macOS and Linux). `node scripts/ai-report.mjs` aggregates the local log into `dashboard/data.json`, and `dashboard/` is a dependency-free static page showing tokens, cache reuse, gate pass rate, cost and per-agent activity.
+
+Deploy it on Vercel by importing the repo with **Root Directory** set to `dashboard` — no build step. **The aggregate holds counts only: no prompts, no file paths, no source content**, and task names come from the fixed taxonomy in `docs/tasks.md` for exactly that reason. A Vercel deployment is still public by default, so turn on deployment protection before the first deploy if the project is client work. `dashboard/README.md` has the details.
+
+Cost stays blank until you fill `docs/model-prices.json` yourself — the starter ships no prices, because a stale price is worse than none.
+
+## Agents
 
 Every agent works in its own git worktree and finishes with a PR — no agent writes in the main tree, and no agent merges its own work. `AGENT_TEAM.md` holds the spawn limits, the classification rules and the merge protocol.
 
@@ -87,6 +98,10 @@ VERSION                           0.0.1
 CHANGELOG.md                      Keep a Changelog, starts with [Unreleased]
 scripts/gate.sh                   one command: format, lint, types, tests, agent team, version gate
 scripts/agent-team.sh             create agents, worktrees, PRs; classify and check
+scripts/ai-log.mjs                record one execution (Node, cross-platform)
+scripts/ai-report.mjs             aggregate the log into dashboard/data.json
+dashboard/                        static monitoring page, deployable to Vercel
+docs/tasks.md                     fixed task taxonomy used by the log
 .claude/skills/semver-release/    release workflow + bump.sh + check-version.sh
 .claude/skills/photo-generation/  photos via OpenAI image generation
 docs/agents/                      one committed file per agent (dev-api-tester.md, ...)

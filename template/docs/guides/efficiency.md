@@ -35,3 +35,20 @@ Read when tuning cost, routing models, or calling the API directly. The always-l
 ## Measuring
 
 Track per task: tool calls, tokens in/out, cache read ratio, wall time, and whether the gate passed first try. A rising token count with a flat first-try pass rate means the context is bloated, not that the work got harder.
+
+## Reading the numbers
+
+The dashboard (`dashboard/`, refreshed by `node scripts/ai-report.mjs`) turns the rules above into measurements. What to do with each:
+
+| Metric | Healthy | When it moves the wrong way |
+|---|---|---|
+| Cache read ratio | Rising, then stable | Something dynamic leaked into the stable prompt prefix — a timestamp, a request id, a changing file list. Find it before adding more context. |
+| Gate first pass | Stable or rising | Either the work got harder or the context got worse. Check whether token counts rose at the same time: more tokens with a lower first-pass rate means the extra context is noise. |
+| Tokens by task type | Roughly proportional to effort | A task type far above its share of the work is the first place to look for waste — usually re-exploration that `docs/repo-map.md` should have prevented. |
+| Tokens per day | Flat or falling for similar work | A steady climb with no change in workload usually means context accumulating across sessions. Compact, or start fresh. |
+
+Two cautions on interpreting this data:
+
+**Gate first pass is a proxy, not a quality score.** It measures whether deterministic checks passed on the first attempt. It says nothing about whether the design was right. Treat a drop as a signal to look, not as a verdict.
+
+**Never let an AI judge feed these numbers.** A model scoring another model's output agrees with itself far more than it should, and optimizing against that score optimizes for agreeableness rather than correctness. Every metric here is deterministic and countable on purpose.

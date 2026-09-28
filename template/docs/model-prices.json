@@ -1,0 +1,7 @@
+{
+  "_comment": "Fill in from each provider's current pricing page. Values are USD per 1,000,000 tokens. The dashboard shows no cost until at least one model is filled in, because a wrong price is worse than no price. Prices change — re-check before trusting a cost figure.",
+  "_source_checked": "",
+  "models": {
+    "example-model-name": { "in": 0, "out": 0, "cache_read": 0, "cache_write": 0 }
+  }
+}

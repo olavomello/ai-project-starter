@@ -5,6 +5,7 @@
 .agents/gate.conf
 .agents/locks/
 .agents/worktrees/
+.agents/log/
 
 # Secrets
 .env

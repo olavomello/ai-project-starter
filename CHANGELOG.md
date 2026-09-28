@@ -27,3 +27,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 ### Fixed
 - `check-version.sh` now reads the version from compact or minified JSON manifests.
 - Executable bit restored on all shipped scripts (lost in an earlier upload).
+- `scripts/ai-log.mjs` and `scripts/ai-report.mjs` (Node, zero-dependency, cross-platform): append-only execution log and aggregation into `dashboard/data.json`.
+- `docs/tasks.md`: fixed task taxonomy — keeps aggregates comparable and keeps client names out of a publishable dashboard.
+- `dashboard/`: dependency-free static monitoring page (tokens, cache reuse, gate first-pass rate, cost, per-agent activity) with light/dark themes, hover tooltips and table views; deployable to Vercel with no build step.
+- `docs/model-prices.json`: user-filled price table; cost is not shown until it is filled.
+- AGENTS.md section 4 now requires a log line per substantial task; `docs/guides/efficiency.md` explains how to read each metric.
