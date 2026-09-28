@@ -1,6 +1,8 @@
-# Dashboard
+# ai-dash
 
 Static monitoring page for this project's agent activity: tokens, cache reuse, gate pass rate, cost and per-agent breakdown.
+
+Named `ai-dash` (not `dashboard`) so it doesn't collide with a `dashboard/` folder a project built on this starter might already have for its own product.
 
 No build step, no framework, no dependencies — one HTML file plus `data.json`.
 
@@ -11,8 +13,8 @@ No build step, no framework, no dependencies — one HTML file plus `data.json`.
 Manual refresh is still available when you want it without running the full gate:
 
 ```bash
-node scripts/ai-report.mjs      # aggregates executions.jsonl -> dashboard/data.json
-git add dashboard/data.json && git commit -m "chore: refresh dashboard data"
+node scripts/ai-report.mjs      # aggregates executions.jsonl -> ai-dash/data.json
+git add ai-dash/data.json && git commit -m "chore: refresh dashboard data"
 ```
 
 Both the raw log and `data.json` are resolved from the repo's shared root (`git rev-parse --git-common-dir`), not the current directory — every git worktree of this project writes to the same files, so parallel agents don't fragment the data. The raw log itself is local and git-ignored; only the aggregate is committed, so the dashboard is as fresh as your last commit.
@@ -22,13 +24,13 @@ Both the raw log and `data.json` are resolved from the repo's shared root (`git 
 `file://` won't work — the page `fetch`es `data.json`, which browsers block on the file protocol. Serve the folder:
 
 ```bash
-npx --yes serve dashboard
-# or: python3 -m http.server -d dashboard 8000
+npx --yes serve ai-dash
+# or: python3 -m http.server -d ai-dash 8000
 ```
 
 ## Deploying to Vercel
 
-Import the repository and set **Root Directory** to `dashboard`. Framework preset: *Other*. No build command, no output directory — the files are served as they are. Every push that changes `data.json` redeploys.
+Import the repository and set **Root Directory** to `ai-dash`. Framework preset: *Other*. No build command, no output directory — the files are served as they are. Every push that changes `data.json` redeploys.
 
 ### Read this before deploying
 

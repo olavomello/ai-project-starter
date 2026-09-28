@@ -40,7 +40,7 @@ Track per task: tool calls, tokens in/out, cache read ratio, wall time, and whet
 
 ## Reading the numbers
 
-The dashboard (`dashboard/`, refreshed automatically by the gate, or manually by `node scripts/ai-report.mjs`) turns the rules above into measurements. What to do with each:
+The dashboard (`ai-dash/`, refreshed automatically by the gate, or manually by `node scripts/ai-report.mjs`) turns the rules above into measurements. What to do with each:
 
 | Metric | Healthy | When it moves the wrong way |
 |---|---|---|

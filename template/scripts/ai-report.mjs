@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Aggregate .agents/log/executions.jsonl into dashboard/data.json and print a summary.
+// Aggregate .agents/log/executions.jsonl into ai-dash/data.json and print a summary.
 // Usage: node scripts/ai-report.mjs [--quiet]
 //
 // The output holds AGGREGATES ONLY — counts, sums and rates over a fixed task
@@ -27,7 +27,7 @@ function repoRoot() {
 
 const ROOT = repoRoot();
 const LOG = join(ROOT, '.agents/log/executions.jsonl');
-const OUT = join(ROOT, 'dashboard/data.json');
+const OUT = join(ROOT, 'ai-dash/data.json');
 const PRICES = join(ROOT, 'docs/model-prices.json');
 const quiet = process.argv.includes('--quiet');
 

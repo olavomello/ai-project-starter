@@ -114,9 +114,9 @@ CHANGELOG.md                      Keep a Changelog, starts with [Unreleased]
 scripts/gate.sh                   one command: format, lint, types, tests, agent team, version gate
 scripts/agent-team.sh             create agents, worktrees, PRs; classify and check
 scripts/ai-log.mjs                record one execution (Node, cross-platform)
-scripts/ai-report.mjs             aggregate the log into dashboard/data.json
+scripts/ai-report.mjs             aggregate the log into ai-dash/data.json
 
-dashboard/                        static monitoring page, deployable to Vercel with zero config
+ai-dash/                          static monitoring page, deployable to Vercel with zero config
 docs/tasks.md                     fixed task taxonomy used by the log
 docs/model-prices.json            you fill this in — cost stays blank until you do
 docs/agents/                      one committed file per agent (dev-api-tester.md, ...)
@@ -178,7 +178,7 @@ No agent merges its own work. A PR is classified `mechanical` (docs/tests/format
 `scripts/gate.sh` logs every run itself — no manual step, and it can never affect the gate's own pass/fail result:
 
 ```
-gate runs  →  appends to .agents/log/executions.jsonl  →  refreshes dashboard/data.json
+gate runs  →  appends to .agents/log/executions.jsonl  →  refreshes ai-dash/data.json
 ```
 
 Set `AILOG_*` environment variables before the gate for richer entries (task type, agent, model, token counts) instead of a bare pass/fail:
@@ -189,11 +189,11 @@ AILOG_TOKENS_IN=18420 AILOG_TOKENS_OUT=2310 AILOG_CACHE_READ=15200 \
   bash scripts/gate.sh
 ```
 
-Both the log and `dashboard/data.json` resolve to the repo's **shared git root**, not the current directory — every worktree writes to the same files, so parallel agents never fragment the data.
+Both the log and `ai-dash/data.json` resolve to the repo's **shared git root**, not the current directory — every worktree writes to the same files, so parallel agents never fragment the data.
 
-`dashboard/` is a dependency-free static page (no build, no framework) showing tokens, cache reuse, gate first-pass rate, cost, and per-agent/per-task activity, light and dark. Deploy it on Vercel with **Root Directory** set to `dashboard` — nothing else to configure.
+`ai-dash/` (named to avoid colliding with a project's own `dashboard/` folder) is a dependency-free static page (no build, no framework) showing tokens, cache reuse, gate first-pass rate, cost, and per-agent/per-task activity, light and dark. Deploy it on Vercel with **Root Directory** set to `ai-dash` — nothing else to configure.
 
-**The aggregate holds counts only** — no prompts, no file paths, no source content — and task names come from the fixed taxonomy in `docs/tasks.md` for exactly that reason, since a Vercel deployment is public by default. Turn on Deployment Protection before the first deploy if the project is client work; details in `dashboard/README.md`. Cost stays blank until you fill in `docs/model-prices.json` yourself — a stale price is worse than none.
+**The aggregate holds counts only** — no prompts, no file paths, no source content — and task names come from the fixed taxonomy in `docs/tasks.md` for exactly that reason, since a Vercel deployment is public by default. Turn on Deployment Protection before the first deploy if the project is client work; details in `ai-dash/README.md`. Cost stays blank until you fill in `docs/model-prices.json` yourself — a stale price is worse than none.
 
 ### Skills
 
