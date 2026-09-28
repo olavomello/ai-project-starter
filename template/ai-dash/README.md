@@ -4,7 +4,7 @@ Static monitoring page for this project's agent activity: tokens, cache reuse, g
 
 Named `ai-dash` (not `dashboard`) so it doesn't collide with a `dashboard/` folder a project built on this starter might already have for its own product.
 
-No build step, no framework, no dependencies — one HTML file plus `data.json`.
+No build step, no framework — one HTML file plus `data.json`. The one external dependency is a loading-spinner library ([thinking-orbs-universal](https://libraries.dev/orbs)), loaded via `import()` from jsDelivr at runtime — no install, no bundler. If that CDN is unreachable, the page degrades to plain "loading"/"no data yet" text instead of breaking.
 
 ## Updating it
 
