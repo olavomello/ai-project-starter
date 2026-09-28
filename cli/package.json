@@ -1,0 +1,29 @@
+{
+  "name": "ai-project-starter",
+  "version": "0.1.0",
+  "description": "CLI for ai-project-starter: bootstrap a new project (init), pull starter improvements into an existing one (update), register an existing project so update can track it (adopt), and check a project's structural health (doctor). Zero runtime dependencies.",
+  "type": "module",
+  "bin": {
+    "ai-project-starter": "./bin.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin.js",
+    "src/**/*.js",
+    "README.md"
+  ],
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olavomello/ai-project-starter.git",
+    "directory": "cli"
+  },
+  "keywords": [
+    "claude-code",
+    "agents",
+    "scaffolding",
+    "project-starter"
+  ]
+}

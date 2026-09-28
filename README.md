@@ -21,6 +21,7 @@ Primary target is **Claude Code**. Also usable by Codex and other agents, since 
 ## Contents
 
 - [Quick start](#quick-start)
+- [The CLI](#the-cli)
 - [What you get](#what-you-get)
 - [How it works](#how-it-works)
   - [The gate](#the-gate)
@@ -40,27 +41,33 @@ Primary target is **Claude Code**. Also usable by Codex and other agents, since 
 
 ### 1. Create the project
 
+Two ways to do this — same result, pick based on what you have installed.
+
+**CLI (Node + git only — works the same on Windows, macOS, Linux):**
+
+```bash
+npx github:olavomello/ai-project-starter#main cli init my-project
+cd my-project
+```
+
+**Bash script (needs a real `bash` — Git Bash or WSL on Windows):**
+
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/olavomello/ai-project-starter/main/init-project.sh) my-project
 cd my-project
 ```
 
-This clones the starter, copies `template/` into `my-project`, runs `git init`, makes the first commit, and validates it with the version gate.
+Either way: it clones the starter, copies `template/` into `my-project`, runs `git init`, makes the first commit, and validates it with the version gate. Pin a specific starter release instead of `main` by adding it as an argument (`... init my-project --ref v0.1.0` for the CLI, `... my-project v0.1.0` for the script).
 
-Pin a specific starter release instead of `main`:
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/olavomello/ai-project-starter/main/init-project.sh) my-project v0.1.0
-```
-
-If the starter repo is private, the `curl` form can't authenticate — clone it first and run the script locally instead:
+If the starter repo is private, neither form above can authenticate — clone it first and run locally instead:
 
 ```bash
 git clone https://github.com/olavomello/ai-project-starter.git
+node ai-project-starter/cli/bin.js init my-project        # or:
 bash ai-project-starter/init-project.sh my-project
 ```
 
-> **Windows:** `init-project.sh` needs a real `bash` (Git Bash or WSL). If neither is available, clone the starter, copy `template/` into your new folder, then run `git init`, `git add -A`, `git commit` yourself — `bash .claude/skills/semver-release/scripts/check-version.sh` still needs bash, but everything else (`gate.sh`'s Node steps, `ai-log.mjs`, `ai-report.mjs`) is plain Node and runs the same on Windows, macOS and Linux.
+> **Windows and the bash script:** `init-project.sh` needs a real `bash`. If yours is broken, use the CLI above instead — it only needs `git` and `node`, both of which run natively on Windows. `bash .claude/skills/semver-release/scripts/check-version.sh` inside a generated project still needs bash either way, but everything else (`gate.sh`'s Node steps, `ai-log.mjs`, `ai-report.mjs`) is plain Node.
 
 ### 2. Fill in section 0 of `AGENTS.md`
 
@@ -99,6 +106,34 @@ At the start of the first plan, Main asks two questions once and records the ans
 - **`main_merge`** — may Main merge the PRs it classifies as safe (docs/tests/formatting only), or does every PR wait for you?
 
 Agents never bump `VERSION` or create tags on their own — they report a `version-impact` line and you decide.
+
+### 6. Keep the project current (optional)
+
+A project created with the CLI carries a `.ai-project-starter.json` manifest. Later, pull starter improvements in without hand-copying files:
+
+```bash
+npx github:olavomello/ai-project-starter#main cli update --dry-run   # see what would change
+npx github:olavomello/ai-project-starter#main cli update             # apply it
+```
+
+It only ever touches a file the project hasn't customized since the last sync — anything else is flagged, never silently overwritten (see the CLI's own [README](cli/README.md) for exactly how). A project created with `init-project.sh` (no manifest yet) can opt in with `cli adopt` first.
+
+---
+
+## The CLI
+
+`cli/` is a small, zero-dependency Node package with four commands — it exists specifically so bootstrapping and updating a project never require `bash` (only `node` and `git`, both native on Windows):
+
+| Command | Does |
+|---|---|
+| `init <dir>` | Same as `init-project.sh`, without the bash requirement |
+| `update [dir]` | Pulls starter improvements into an already-created project — conservatively, see above |
+| `adopt [dir]` | Registers a project made with `init-project.sh` (or by hand) so `update` can track it |
+| `doctor [dir]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed |
+
+Not published to npm yet — run it via `npx github:olavomello/ai-project-starter#main cli <command>` or clone and run `node ai-project-starter/cli/bin.js <command>` directly. Full command flags and the exact three-way sync rules `update` follows: [`cli/README.md`](cli/README.md).
+
+The `template/` repo stays the source of truth either way — the CLI only wraps it. Publishing to npm needs a real `LICENSE` file first (there isn't one yet, so `cli/package.json` currently marks it `UNLICENSED` as a placeholder).
 
 ---
 
@@ -281,5 +316,6 @@ A flag always overrides its `AILOG_*` env var when both are given to `ai-log.mjs
 ## Repo layout (this repo itself)
 
 - `template/` — everything copied into new projects. **Edit here**, never in a generated project.
-- `init-project.sh` — the bootstrap script.
+- `init-project.sh` — the bash bootstrap script.
+- `cli/` — the Node CLI (`init`/`update`/`adopt`/`doctor`); wraps `template/`, doesn't replace it. See [The CLI](#the-cli) and [`cli/README.md`](cli/README.md).
 - `VERSION` / `CHANGELOG.md` at the repo root — the **starter's own** version, independent of any project it creates (which always starts at `0.0.1`).
