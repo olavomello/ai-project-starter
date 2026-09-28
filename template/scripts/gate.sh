@@ -62,5 +62,49 @@ else
   echo "skip: version gate (script missing)"
 fi
 
+automatic_log() {
+  # Best-effort execution logging — never allowed to affect FAILED. Runs only
+  # when node and a real git repo are present; silently skipped otherwise.
+  has node || return 0
+  [[ -f scripts/ai-log.mjs ]] || return 0
+  local common_dir
+  common_dir="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || return 0
+  [[ -n "$common_dir" ]] || return 0
+  local root="$(dirname "$common_dir")"
+
+  # gate_first_try: did the gate pass on the very first attempt for this
+  # branch since the last pass? One counter file per branch, shared across
+  # worktrees via the common .git dir's parent (the repo root).
+  local attempt_dir="$root/.agents/state/gate-attempts"
+  mkdir -p "$attempt_dir" 2>/dev/null
+  local branch safe_branch attempt_file prior=0 result first_try
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+  safe_branch="$(echo "$branch" | tr -c 'A-Za-z0-9._-' '_')"
+  attempt_file="$attempt_dir/$safe_branch"
+  [[ -f "$attempt_file" ]] && prior="$(cat "$attempt_file" 2>/dev/null)"
+  [[ "$prior" =~ ^[0-9]+$ ]] || prior=0
+
+  if (( FAILED )); then
+    result=fail
+    echo $(( prior + 1 )) > "$attempt_file" 2>/dev/null
+  else
+    result=pass
+    rm -f "$attempt_file" 2>/dev/null
+  fi
+  if (( prior == 0 )); then
+    [[ "$result" == pass ]] && first_try=true || first_try=false
+  else
+    first_try=false
+  fi
+
+  AILOG_TASK_TYPE="${AILOG_TASK_TYPE:-other}" \
+  AILOG_AGENT="${AILOG_AGENT:-main}" \
+  AILOG_GATE="$result" \
+  AILOG_GATE_FIRST_TRY="$first_try" \
+    node scripts/ai-log.mjs >/dev/null 2>&1 || true
+  node scripts/ai-report.mjs --quiet >/dev/null 2>&1 || true
+}
+automatic_log
+
 (( FAILED )) && { echo "GATE FAILED" >&2; exit 1; }
 echo "Gate passed"

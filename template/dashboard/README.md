@@ -6,12 +6,16 @@ No build step, no framework, no dependencies — one HTML file plus `data.json`.
 
 ## Updating it
 
+**Automatic:** `scripts/gate.sh` calls `ai-log.mjs` and `ai-report.mjs` itself at the end of every run — pass or fail — so `data.json` refreshes every time anyone runs the gate. No manual step, and it never affects the gate's pass/fail result. Richer entries (task type, agent, model, tokens) come from `AILOG_*` env vars set before the gate runs; see `AGENTS.md` section 4. Without them, the gate still logs a bare pass/fail.
+
+Manual refresh is still available when you want it without running the full gate:
+
 ```bash
-node scripts/ai-report.mjs      # aggregates .agents/log/executions.jsonl -> dashboard/data.json
+node scripts/ai-report.mjs      # aggregates executions.jsonl -> dashboard/data.json
 git add dashboard/data.json && git commit -m "chore: refresh dashboard data"
 ```
 
-The raw log is local and git-ignored. Only the aggregate is committed, so the dashboard is as fresh as your last commit.
+Both the raw log and `data.json` are resolved from the repo's shared root (`git rev-parse --git-common-dir`), not the current directory — every git worktree of this project writes to the same files, so parallel agents don't fragment the data. The raw log itself is local and git-ignored; only the aggregate is committed, so the dashboard is as fresh as your last commit.
 
 ## Viewing it locally
 

@@ -5,11 +5,30 @@
 // The output holds AGGREGATES ONLY — counts, sums and rates over a fixed task
 // taxonomy. It never contains prompt text, file paths or source content, so it is
 // safe to commit and deploy. See docs/tasks.md.
+//
+// Paths resolve against the repo's shared root (`git rev-parse --git-common-dir`),
+// not the current working directory, so this reads and writes the same files
+// regardless of which git worktree it runs from.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 
-const LOG = '.agents/log/executions.jsonl';
-const OUT = 'dashboard/data.json';
-const PRICES = 'docs/model-prices.json';
+function repoRoot() {
+  try {
+    const gitCommonDir = execFileSync(
+      'git',
+      ['rev-parse', '--path-format=absolute', '--git-common-dir'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    ).trim();
+    if (gitCommonDir) return dirname(gitCommonDir);
+  } catch { /* not a git repo, or git missing — fall back to cwd */ }
+  return process.cwd();
+}
+
+const ROOT = repoRoot();
+const LOG = join(ROOT, '.agents/log/executions.jsonl');
+const OUT = join(ROOT, 'dashboard/data.json');
+const PRICES = join(ROOT, 'docs/model-prices.json');
 const quiet = process.argv.includes('--quiet');
 
 if (!existsSync(LOG)) {
@@ -106,7 +125,7 @@ const data = {
   by_model: group('model'),
 };
 
-mkdirSync('dashboard', { recursive: true });
+mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(data, null, 2) + '\n');
 
 if (!quiet) {

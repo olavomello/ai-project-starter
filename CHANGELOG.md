@@ -4,6 +4,16 @@ All notable changes to ai-project-starter are documented here.
 The format follows Keep a Changelog, and this project adheres to Semantic Versioning.
 
 ## [Unreleased]
+### Added
+- Automatic execution logging: `scripts/gate.sh` now calls `ai-log.mjs` and `ai-report.mjs` itself at the end of every run (pass or fail), so `dashboard/data.json` is always current without any agent having to remember a manual step. Never affects the gate's own pass/fail result (best-effort, errors swallowed).
+- `AILOG_*` environment-variable convention (`AILOG_TASK_TYPE`, `AILOG_AGENT`, `AILOG_MODEL`, `AILOG_SIZE`, `AILOG_TOKENS_IN`, `AILOG_TOKENS_OUT`, `AILOG_CACHE_READ`, `AILOG_CACHE_WRITE`, `AILOG_TOOL_CALLS`, `AILOG_DURATION`, `AILOG_PR`, `AILOG_OUTCOME`) so an agent can export richer data before running the gate instead of calling `ai-log.mjs` separately; `ai-log.mjs` accepts the same fields as flags too, flag wins over env var.
+- `gate_first_try` is now tracked automatically per branch, under `.agents/state/gate-attempts/`: a fail increments the counter, a pass resets it, and the log records whether *this* run was a clean first pass.
+- `.agents/README.md`: explains what actually lives in `.agents/` (worktrees, locks, the raw log, local state) and that it is deliberately separate from `docs/agents/`, which holds the committed agent roster.
+
+### Changed
+- `scripts/ai-log.mjs` and `scripts/ai-report.mjs` resolve the log and `dashboard/data.json` against the repo's shared root (`git rev-parse --git-common-dir`) instead of the current working directory, so every git worktree of a project writes to the same files instead of fragmenting the data.
+- AGENTS.md section 4, `docs/guides/efficiency.md` and `dashboard/README.md` updated to describe the automatic logging and the `AILOG_*` convention; the old "every task ends with a manual log line" instruction is gone.
+- AGENT_TEAM.md and AGENTS.md section 7 now state explicitly, up front, that agent definitions live in `docs/agents/` and `.agents/` is unrelated runtime state — the split was previously implicit and easy to miss.
 
 ## [0.1.0] - 2026-09-26
 ### Added

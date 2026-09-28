@@ -1,6 +1,11 @@
 # AGENT_TEAM.md
 
-How agents in this project create and coordinate other agents. Read by Main at plan time and by any agent considering a spawn. Agent definitions live in `docs/agents/`.
+How agents in this project create and coordinate other agents. Read by Main at plan time and by any agent considering a spawn.
+
+**Agent definitions (identity, scope, rules) are committed files in `docs/agents/`.**
+`.agents/` (git-ignored) is a different thing — local runtime state: worktrees, locks,
+the execution log. It never holds an agent's identity. See `.agents/README.md` for
+what lives there and why the two are split.
 
 ## CONFIGS
 

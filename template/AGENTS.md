@@ -79,15 +79,9 @@ Same quality, fewer tokens. Quality wins on conflict — never skip a check to s
 - **Output:** targeted edits, not full-file rewrites. No restating the task or narrating steps. Final report is what changed, how it was verified, open risks.
 - **Deterministic first:** if a script can verify it, run the script and read the exit code.
 
-**Measure, don't assert.** Every substantial task ends with one log line:
+**Measure, don't assert — automatically.** `scripts/gate.sh` logs every run itself: it appends one execution record and refreshes `dashboard/data.json` at the end, pass or fail, without ever affecting the gate's own result. Nothing has to remember to call the logger separately.
 
-```
-node scripts/ai-log.mjs --task-type <from docs/tasks.md> --agent <name> --model <id> \
-  --size S|M|L --tokens-in N --tokens-out N --cache-read N --tool-calls N \
-  --gate pass|fail --gate-first-try true|false --pr mechanical|administrator|none
-```
-
-`task_type` comes from the fixed taxonomy in `docs/tasks.md` — never a free-form name, because the aggregate may be published. The log records counts only: no prompts, no file paths, no source content. `node scripts/ai-report.mjs` turns it into `dashboard/data.json`, which is what the dashboard reads and the only part that is committed.
+For more than a bare pass/fail, export `AILOG_*` env vars before calling the gate — `AILOG_TASK_TYPE` (from `docs/tasks.md`), `AILOG_AGENT`, `AILOG_MODEL`, `AILOG_SIZE`, `AILOG_TOKENS_IN`, `AILOG_TOKENS_OUT`, `AILOG_CACHE_READ`, `AILOG_CACHE_WRITE`, `AILOG_TOOL_CALLS`, `AILOG_DURATION`, `AILOG_PR`, `AILOG_OUTCOME` — unset ones default sensibly (`task_type` to `other`, numeric fields to `0`). Example: `AILOG_TASK_TYPE=fix-bug AILOG_AGENT=dev-api-tester AILOG_TOKENS_IN=18420 bash scripts/gate.sh`. `node scripts/ai-log.mjs` (flags or the same env vars) still works standalone for logging outside the gate. `task_type` is always from the fixed taxonomy — never free-form, because the aggregate may be published — and the log records counts only, never prompts, paths or source content. Both files live at the repo's shared root (`git rev-parse --git-common-dir`), so every worktree writes to the same place.
 
 Prompt caching, model routing, session hygiene and what the numbers mean: `docs/guides/efficiency.md`.
 
@@ -131,7 +125,7 @@ Agents may create other agents to run work in parallel. At plan time Main asks t
 
 - Spawn only when the work is genuinely parallel, has declared file ownership, is worth more than ~3 tool calls, and has one narrow purpose. Designing the team during the plan is the ideal; spotting one mid-flight is fine.
 - Hard limits: spawn depth 3, four concurrent agents per project, three per parent. At a ceiling, report upward instead of spawning.
-- Each agent is a committed file `docs/agents/<3-letter function>-<area>-<role>.md` (e.g. `dev-api-tester.md`) with a CONFIGS block and SCOPE AND RULES. Create it with `bash scripts/agent-team.sh new`.
+- Each agent is a committed file `docs/agents/<3-letter function>-<area>-<role>.md` (e.g. `dev-api-tester.md`) with a CONFIGS block and SCOPE AND RULES. Create it with `bash scripts/agent-team.sh new`. `docs/agents/` is the roster (committed); `.agents/` is unrelated local runtime state (worktrees, locks, log) — never agent identity. See `.agents/README.md`.
 - **Every agent works in its own git worktree — never in the main working tree.** `start` creates it, `sync` rebases it onto `main`, `finish` gates it and opens a PR, `cleanup` removes it.
 - **No agent merges its own work.** Main reviews every PR. If `main_merge: true` and `agent-team.sh classify` says `mechanical` (docs, tests and formatting only, no sensitive path, under 400 lines), Main merges it; everything else waits for the Administrator. Merge one PR at a time, rebasing and re-running the gate before each.
 - Only Main edits `VERSION`, tags, CI, dependencies, `AGENTS.md` or `AGENT_TEAM.md`. Sub-agents inherit every rule here, including the budget guardrails.
