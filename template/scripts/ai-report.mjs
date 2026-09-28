@@ -82,9 +82,16 @@ for (const r of recs) {
 const prSplit = recs.reduce((s, r) => { if (r.pr && r.pr !== 'none') s[r.pr] = (s[r.pr] || 0) + 1; return s; },
   { mechanical: 0, administrator: 0 });
 
+const SAFE_FIELDS = ['ts', 'task_type', 'agent', 'model', 'gate', 'tokens_in', 'tokens_out'];
+const recent = [...recs]
+  .sort((a, b) => (b.ts || '').localeCompare(a.ts || ''))
+  .slice(0, 10)
+  .map(r => Object.fromEntries(SAFE_FIELDS.map(k => [k, r[k]])));
+
 const data = {
   generated_at: new Date().toISOString(),
   log_records: recs.length,
+  recent,
   totals,
   rates: {
     cache_read_ratio: totals.tokens_in ? +(totals.cache_read / totals.tokens_in).toFixed(3) : null,

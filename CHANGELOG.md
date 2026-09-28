@@ -32,3 +32,9 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 - `dashboard/`: dependency-free static monitoring page (tokens, cache reuse, gate first-pass rate, cost, per-agent activity) with light/dark themes, hover tooltips and table views; deployable to Vercel with no build step.
 - `docs/model-prices.json`: user-filled price table; cost is not shown until it is filled.
 - AGENTS.md section 4 now requires a log line per substantial task; `docs/guides/efficiency.md` explains how to read each metric.
+- Dashboard redesign: dark-first theme (matches common monitoring-dashboard conventions), stat tiles with inline sparklines and day-over-day deltas, a "recent executions" table, badge-style gate/status indicators.
+- `ai-report.mjs` now emits `recent` (last 10 executions — task type, agent, model, gate, tokens; no prompts or paths) for the new table.
+- Part-to-whole breakdown switched from a plain bar to a single segmented share bar (donut avoided — deprioritized for part-to-whole per the dataviz skill; a stacked/segmented bar carries the comparison better).
+- `dashboard/README.md`: step-by-step for Vercel Deployment Protection (password gate, no code, no database) and a note on IP allowlisting as an additional layer.
+- Fixed: a share-bar segment's `class="hit"` was silently overridden by the CSS rule that makes hover-catcher rectangles transparent, hiding the colored strip.
+- Fixed: sparkline SVGs had no explicit width, so the generic `svg { width: 100% }` rule expanded them to the flex row's full width and overflowed the tile on narrow screens.

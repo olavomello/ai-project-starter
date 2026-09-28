@@ -7,111 +7,150 @@
 <title>Agent Activity</title>
 <style>
   :root {
-    color-scheme: light;
-    --surface-0: #f6f5f3;
-    --surface-1: #fcfcfb;
-    --border:    #e2e1dd;
-    --text-1:    #0b0b0b;
-    --text-2:    #52514e;
-    --text-3:    #7c7a74;
-    --series-1:  #2a78d6;
-    --series-2:  #eb6834;
-    --series-3:  #1baf7a;
-    --good:      #0ca30c;
-    --warning:   #fab219;
-    --critical:  #d03b3b;
-    --grid:      #eceae6;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --surface-0: #121211;
-      --surface-1: #1a1a19;
-      --border:    #32322f;
-      --text-1:    #ffffff;
-      --text-2:    #c3c2b7;
-      --text-3:    #94938a;
-      --series-1:  #3987e5;
-      --series-2:  #d95926;
-      --series-3:  #199e70;
-      --grid:      #2a2a27;
-    }
-  }
-  :root[data-theme="dark"] {
     color-scheme: dark;
-    --surface-0: #121211;
-    --surface-1: #1a1a19;
-    --border:    #32322f;
+    --surface-0: #101012;
+    --surface-1: #17171a;
+    --surface-2: #1e1e22;
+    --border:    #2a2a2f;
     --text-1:    #ffffff;
-    --text-2:    #c3c2b7;
-    --text-3:    #94938a;
+    --text-2:    #b7b6c2;
+    --text-3:    #85838f;
+    --accent:    #7c6ee8;
     --series-1:  #3987e5;
     --series-2:  #d95926;
     --series-3:  #199e70;
-    --grid:      #2a2a27;
+    --series-4:  #c98500;
+    --series-5:  #d55181;
+    --good:      #2fbf5f;
+    --warning:   #eab308;
+    --critical:  #ef4444;
+    --grid:      #26262b;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --surface-0: #f4f3f1;
+    --surface-1: #ffffff;
+    --surface-2: #f9f8f6;
+    --border:    #e4e2dd;
+    --text-1:    #0b0b0c;
+    --text-2:    #55545c;
+    --text-3:    #85838f;
+    --accent:    #6a5cd6;
+    --series-1:  #2a78d6;
+    --series-2:  #eb6834;
+    --series-3:  #1baf7a;
+    --series-4:  #eda100;
+    --series-5:  #e87ba4;
+    --good:      #0ca30c;
+    --warning:   #b8860b;
+    --critical:  #d03b3b;
+    --grid:      #ececea;
   }
   * { box-sizing: border-box; }
+  html { overflow-x: hidden; }
   body {
-    margin: 0; background: var(--surface-0); color: var(--text-1);
-    font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0; overflow-x: hidden; background: var(--surface-0); color: var(--text-1);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 16px 72px; }
-  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
-  h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0; }
-  .meta { color: var(--text-3); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 20px 72px; }
+
+  /* header */
+  header { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 650; font-size: 15px; margin-right: 6px; }
+  .brand .dot { width: 22px; height: 22px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), var(--series-1)); flex: none; }
+  .crumb { color: var(--text-3); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .crumb b { color: var(--text-1); font-weight: 600; }
+  .spacer { flex: 1; }
+  .meta { color: var(--text-3); font-size: 12.5px; font-variant-numeric: tabular-nums; }
   button.theme {
     background: var(--surface-1); color: var(--text-2); border: 1px solid var(--border);
-    border-radius: 7px; padding: 5px 11px; font: inherit; font-size: 13px; cursor: pointer;
+    border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer;
   }
-  button.theme:hover { color: var(--text-1); }
-  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
-       color: var(--text-3); margin: 36px 0 12px; }
-  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 20px; }
-  .tile .label { font-size: 12px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
-  .tile .value { font-size: 28px; font-weight: 640; letter-spacing: -0.02em; margin-top: 6px;
-                 font-variant-numeric: tabular-nums; }
-  .tile .sub { font-size: 12px; color: var(--text-3); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  button.theme:hover { color: var(--text-1); border-color: var(--text-3); }
+
+  h1 { font-size: 21px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 3px; }
+  .sub { color: var(--text-3); font-size: 13.5px; margin: 0 0 22px; }
+  h2 { font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em;
+       color: var(--text-3); margin: 30px 0 12px; }
+  h2:first-child { margin-top: 0; }
+
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; overflow: hidden; }
+
+  /* stat tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .tile { display: flex; flex-direction: column; gap: 10px; }
+  .tile .top { display: flex; align-items: center; justify-content: space-between; }
+  .tile .label { font-size: 12.5px; color: var(--text-3); font-weight: 500; }
+  .tile .icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center;
+    justify-content: center; flex: none; }
+  .tile .value { font-size: 25px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .tile .delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tile .delta.up { color: var(--good); } .tile .delta.down { color: var(--critical); } .tile .delta.flat { color: var(--text-3); }
+  .tile .bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; min-width: 0; }
+  .tile .bottom > div:first-child { min-width: 0; }
+  .tile .foot { font-size: 11.5px; color: var(--text-3); }
+  .tile svg.spark { flex: none; width: 84px; height: 26px; }  /* override the generic svg{width:100%} rule, which otherwise expands this flex item to the row width */
+
   .grid2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
-  @media (min-width: 840px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 900px) { .grid2 { grid-template-columns: 1.3fr 1fr; } }
+  .grid3 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 900px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+
   svg { display: block; width: 100%; height: auto; overflow: visible; }
   .ax { font-size: 11px; fill: var(--text-3); font-variant-numeric: tabular-nums; }
   .dl { font-size: 11px; font-weight: 600; fill: var(--text-2); font-variant-numeric: tabular-nums; }
   .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 14px; font-size: 12px; color: var(--text-2); }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .sw { width: 9px; height: 9px; border-radius: 2px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sw { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+
+  .table-scroll { overflow-x: auto; margin: 0 -2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
   th { text-align: left; font-weight: 600; color: var(--text-3); font-size: 11px;
-       text-transform: uppercase; letter-spacing: 0.05em; padding: 0 10px 8px 0; }
-  td { padding: 8px 10px 8px 0; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+       text-transform: uppercase; letter-spacing: 0.05em; padding: 0 10px 9px 0; }
+  td { padding: 9px 10px 9px 0; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  tr:hover td { background: var(--surface-2); }
   td.name { font-variant-numeric: normal; }
   th.n, td.n { text-align: right; padding-right: 0; }
-  .pill { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 600; }
-  .pill.ok { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
-  .pill.warn { color: var(--warning); background: color-mix(in srgb, var(--warning) 18%, transparent); }
-  .pill.bad { color: var(--critical); background: color-mix(in srgb, var(--critical) 14%, transparent); }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 99px;
+    font-size: 11.5px; font-weight: 600; }
+  .badge .pt { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.ok { color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
+  .badge.warn { color: var(--warning); background: color-mix(in srgb, var(--warning) 18%, transparent); }
+  .badge.bad { color: var(--critical); background: color-mix(in srgb, var(--critical) 16%, transparent); }
+  .badge.ok .pt { background: var(--good); } .badge.warn .pt { background: var(--warning); } .badge.bad .pt { background: var(--critical); }
+
+  .bars-list { display: flex; flex-direction: column; gap: 14px; }
+  .bar-row { display: grid; grid-template-columns: 90px 1fr 52px; align-items: center; gap: 10px; font-size: 13px; }
+  .bar-row .nm { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; }
+  .bar-row .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-1); font-weight: 600; font-size: 12.5px; }
+
   details { margin-top: 12px; }
   summary { cursor: pointer; font-size: 12px; color: var(--text-3); }
   summary:hover { color: var(--text-1); }
   .empty { color: var(--text-2); }
-  .empty code { background: var(--surface-0); border: 1px solid var(--border); border-radius: 5px;
+  .empty code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px;
                 padding: 2px 6px; font-size: 13px; }
   .tip { position: fixed; pointer-events: none; opacity: 0; transition: opacity .1s;
          background: var(--text-1); color: var(--surface-1); font-size: 12px; line-height: 1.45;
-         padding: 7px 10px; border-radius: 7px; z-index: 10; white-space: nowrap;
+         padding: 7px 10px; border-radius: 8px; z-index: 10; white-space: nowrap;
          font-variant-numeric: tabular-nums; }
   .hit { fill: transparent; }
-  .note { font-size: 12px; color: var(--text-3); margin-top: 10px; }
+  .seg { cursor: default; }
+  .note { font-size: 12px; color: var(--text-3); margin-top: 14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div>
-      <h1>Agent Activity</h1>
-      <div class="meta" id="meta">loading…</div>
-    </div>
+    <div class="brand"><span class="dot"></span>Agent Activity</div>
+    <div class="crumb" id="crumb"></div>
+    <div class="spacer"></div>
+    <div class="meta" id="meta">loading…</div>
     <button class="theme" id="theme" type="button">Theme</button>
   </header>
   <div id="root"></div>
@@ -133,10 +172,13 @@ function showTip(e, html) {
   tip.style.left = x + 'px'; tip.style.top = y + 'px';
 }
 const hideTip = () => { tip.style.opacity = '0'; };
+function wireTips(root) { for (const el of root.querySelectorAll('[data-tip]')) {
+  el.addEventListener('mousemove', e => showTip(e, el.dataset.tip));
+  el.addEventListener('mouseleave', hideTip);
+} }
 
 document.getElementById('theme').onclick = () => {
-  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-  const cur = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+  const cur = document.documentElement.dataset.theme || 'dark';
   document.documentElement.dataset.theme = cur === 'dark' ? 'light' : 'dark';
 };
 
@@ -145,23 +187,69 @@ const fmt = n => n == null ? '—' : n.toLocaleString();
 const pct = v => v == null ? '—' : Math.round(v * 100) + '%';
 const kilo = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(n);
 const rateClass = v => v == null ? '' : v >= 0.8 ? 'ok' : v >= 0.5 ? 'warn' : 'bad';
+const SERIES = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)', 'var(--series-5)'];
 
-function tiles(d) {
-  const t = d.totals, r = d.rates;
-  const items = [
-    ['Tokens in', kilo(t.tokens_in), fmt(t.tokens_in) + ' total'],
-    ['Cache read', pct(r.cache_read_ratio), kilo(t.cache_read) + ' of input reused'],
-    ['Gate first pass', pct(r.gate_first_pass), pct(r.gate_pass) + ' pass overall'],
-    d.cost
-      ? ['Est. cost', '$' + d.cost.usd.toFixed(2), d.cost.unpriced ? d.cost.unpriced + ' execs unpriced' : 'all execs priced']
-      : ['Est. cost', '—', 'fill docs/model-prices.json'],
-    ['Executions', fmt(t.executions), fmt(t.tool_calls) + ' tool calls'],
-  ];
-  return `<div class="tiles">${items.map(([l, v, s]) =>
-    `<div class="card tile"><div class="label">${esc(l)}</div><div class="value">${esc(v)}</div><div class="sub">${esc(s)}</div></div>`).join('')}</div>`;
+// Small inline trend line for a stat tile. No axis — the tile's own number is the label.
+function sparkline(values, color) {
+  if (values.length < 2) return '';
+  const W = 96, H = 30, pad = 3;
+  const max = Math.max(...values), min = Math.min(...values);
+  const span = max - min || 1;
+  const x = i => pad + (i * (W - pad * 2)) / (values.length - 1);
+  const y = v => pad + (1 - (v - min) / span) * (H - pad * 2);
+  const d = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+  const last = values.length - 1;
+  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${x(last).toFixed(1)}" cy="${y(values[last]).toFixed(1)}" r="2.5" fill="${color}"/>
+  </svg>`;
 }
 
-// Line chart: input tokens vs cache-read tokens per day. Two series -> legend + direct end labels.
+function deltaTag(cur, prev, goodIsUp) {
+  if (prev == null || prev === 0) return '<span class="delta flat">—</span>';
+  const d = (cur - prev) / prev;
+  const dir = d > 0.005 ? 'up' : d < -0.005 ? 'down' : 'flat';
+  const good = dir === 'flat' ? 'flat' : (goodIsUp ? dir === 'up' : dir === 'down') ? 'up' : 'down';
+  const arrow = dir === 'up' ? '↑' : dir === 'down' ? '↓' : '·';
+  return `<span class="delta ${good}">${arrow} ${Math.abs(d * 100).toFixed(0)}%</span>`;
+}
+
+function halves(days, key) {
+  const n = days.length;
+  const mid = Math.floor(n / 2) || 1;
+  const sum = (arr) => arr.reduce((s, d) => s + (d[key] || 0), 0);
+  return [sum(days.slice(0, mid)) / mid, sum(days.slice(mid)) / Math.max(n - mid, 1)];
+}
+
+function tiles(d) {
+  const t = d.totals, r = d.rates, days = d.by_day;
+  const [prevIn, curIn] = days.length >= 2 ? halves(days, 'tokens_in') : [null, null];
+  const spark = (key, color) => sparkline(days.map(x => x[key] || 0), color);
+  const items = [
+    { label: 'Tokens in', value: kilo(t.tokens_in), delta: deltaTag(curIn, prevIn, false),
+      foot: fmt(t.tokens_in) + ' total', spark: spark('tokens_in', 'var(--series-1)'), color: 'var(--series-1)' },
+    { label: 'Cache read', value: pct(r.cache_read_ratio), delta: '',
+      foot: kilo(t.cache_read) + ' of input reused', spark: spark('cache_read', 'var(--series-3)'), color: 'var(--series-3)' },
+    { label: 'Gate first pass', value: pct(r.gate_first_pass), delta: '',
+      foot: pct(r.gate_pass) + ' pass overall', spark: '', color: 'var(--series-4)' },
+    d.cost
+      ? { label: 'Est. cost', value: '$' + d.cost.usd.toFixed(2), delta: '',
+          foot: d.cost.unpriced ? d.cost.unpriced + ' execs unpriced' : 'all execs priced', spark: '', color: 'var(--series-2)' }
+      : { label: 'Est. cost', value: '—', delta: '', foot: 'fill docs/model-prices.json', spark: '', color: 'var(--text-3)' },
+    { label: 'Executions', value: fmt(t.executions), delta: '',
+      foot: fmt(t.tool_calls) + ' tool calls', spark: spark('executions', 'var(--series-5)'), color: 'var(--series-5)' },
+  ];
+  return `<div class="tiles">${items.map(it => `<div class="card tile">
+    <div class="top"><span class="label">${esc(it.label)}</span></div>
+    <div class="value">${esc(it.value)}</div>
+    <div class="bottom">
+      <div>${it.delta}<div class="foot">${esc(it.foot)}</div></div>
+      ${it.spark}
+    </div>
+  </div>`).join('')}</div>`;
+}
+
+// Line chart: input vs cache-read tokens per day. Two series -> legend + direct end labels, one axis.
 function lineChart(days) {
   if (days.length < 2) return `<div class="card"><h2 style="margin-top:0">Tokens per day</h2><p class="empty">Needs at least two days of records.</p></div>`;
   const W = 1040, H = 300, P = { t: 16, r: 62, b: 30, l: 54 };
@@ -195,29 +283,40 @@ function lineChart(days) {
   </div>`;
 }
 
-// Horizontal bars: one measure (magnitude) -> single sequential hue, direct labels.
-function barChart(rows, key, title) {
+// Part-to-whole by task type or model: single stacked bar, not a donut (skill: donut deprioritized
+// for part-to-whole; stacked bar carries it). Fixed categorical slot order, direct % + value labels.
+function shareBar(rows, key, title, total) {
   if (!rows.length) return '';
-  const top = rows.slice(0, 8);
-  const max = Math.max(...top.map(r => r.tokens_in)) || 1;
-  const BH = 22, GAP = 8, LW = 128, W = 520;
-  const H = top.length * (BH + GAP);
+  const top = rows.slice(0, 5);
+  const rest = rows.slice(5).reduce((s, r) => s + r.tokens_in, 0);
+  const segs = rest > 0 ? [...top, { [key]: 'Other', tokens_in: rest, executions: rows.slice(5).reduce((s, r) => s + r.executions, 0) }] : top;
+  let acc = 0;
+  const W = 100;
   return `<div class="card">
     <h2 style="margin-top:0">${esc(title)}</h2>
-    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">
-      ${top.map((r, i) => {
-        const yy = i * (BH + GAP);
-        const bw = Math.max((r.tokens_in / max) * (W - LW - 56), 2);
-        return `<text class="ax" x="0" y="${yy + BH / 2 + 4}" style="fill:var(--text-2)">${esc(String(r[key]).slice(0, 20))}</text>
-          <rect x="${LW}" y="${yy}" width="${bw.toFixed(1)}" height="${BH}" rx="4" fill="var(--series-1)"/>
-          <text class="dl" x="${(LW + bw + 8).toFixed(1)}" y="${yy + BH / 2 + 4}">${kilo(r.tokens_in)}</text>
-          <rect class="hit" x="0" y="${yy}" width="${W}" height="${BH}"
-            data-tip="<b>${esc(r[key])}</b><br>${r.executions} execution(s)<br>input ${fmt(r.tokens_in)}<br>output ${fmt(r.tokens_out)}<br>gate first pass ${pct(r.gate_first_pass)}"/>`;
+    <svg viewBox="0 0 ${W} 14" style="border-radius:4px;overflow:hidden" role="img" aria-label="${esc(title)} share">
+      ${segs.map((r, i) => {
+        const w = (r.tokens_in / total) * W;
+        const x0 = acc; acc += w;
+        const c = i === segs.length - 1 && rest > 0 ? 'var(--text-3)' : SERIES[i % SERIES.length];
+        return `<rect class="seg" x="${x0.toFixed(2)}" y="0" width="${Math.max(w - 0.3, 0).toFixed(2)}" height="14" fill="${c}"
+          data-tip="<b>${esc(r[key])}</b><br>${pct(r.tokens_in / total)} of tokens<br>${fmt(r.tokens_in)} tokens · ${r.executions} exec(s)"/>`;
       }).join('')}
     </svg>
+    <div class="bars-list" style="margin-top:16px">
+      ${segs.map((r, i) => {
+        const c = i === segs.length - 1 && rest > 0 ? 'var(--text-3)' : SERIES[i % SERIES.length];
+        const w = Math.max((r.tokens_in / total) * 100, 1.5);
+        return `<div class="bar-row">
+          <span class="nm"><i class="sw" style="background:${c};display:inline-block;margin-right:6px"></i>${esc(r[key])}</span>
+          <span class="bar-track"><span class="bar-fill" style="width:${w.toFixed(1)}%;background:${c}"></span></span>
+          <span class="val">${pct(r.tokens_in / total)}</span>
+        </div>`;
+      }).join('')}
+    </div>
     <details><summary>Table view</summary>
-      <table><thead><tr><th>${esc(key.replace(/_/g, ' '))}</th><th class="n">Execs</th><th class="n">In</th><th class="n">Out</th><th class="n">1st pass</th></tr></thead>
-      <tbody>${rows.map(r => `<tr><td class="name">${esc(r[key])}</td><td class="n">${r.executions}</td><td class="n">${fmt(r.tokens_in)}</td><td class="n">${fmt(r.tokens_out)}</td><td class="n">${pct(r.gate_first_pass)}</td></tr>`).join('')}</tbody></table>
+      <div class="table-scroll"><table><thead><tr><th>${esc(key.replace(/_/g, ' '))}</th><th class="n">Execs</th><th class="n">Tokens in</th><th class="n">1st pass</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td class="name">${esc(r[key])}</td><td class="n">${r.executions}</td><td class="n">${fmt(r.tokens_in)}</td><td class="n">${pct(r.gate_first_pass)}</td></tr>`).join('')}</tbody></table></div>
     </details>
   </div>`;
 }
@@ -227,33 +326,54 @@ function agentTable(d) {
   if (!rows.length) return '';
   return `<div class="card">
     <h2 style="margin-top:0">Agents</h2>
-    <table><thead><tr><th>Agent</th><th class="n">Execs</th><th class="n">Tokens in</th><th class="n">Tool calls</th><th class="n">Gate 1st pass</th></tr></thead>
+    <div class="table-scroll"><table><thead><tr><th>Agent</th><th class="n">Execs</th><th class="n">Tokens in</th><th class="n">Tool calls</th><th class="n">Gate 1st pass</th></tr></thead>
     <tbody>${rows.map(r => `<tr>
       <td class="name">${esc(r.agent)}</td>
       <td class="n">${r.executions}</td>
       <td class="n">${fmt(r.tokens_in)}</td>
       <td class="n">${fmt(r.tool_calls)}</td>
-      <td class="n"><span class="pill ${rateClass(r.gate_first_pass)}">${pct(r.gate_first_pass)}</span></td>
-    </tr>`).join('')}</tbody></table>
-    <p class="note">PRs: ${d.pr_split.mechanical} mechanical · ${d.pr_split.administrator} administrator</p>
+      <td class="n"><span class="badge ${rateClass(r.gate_first_pass)}"><i class="pt"></i>${pct(r.gate_first_pass)}</span></td>
+    </tr>`).join('')}</tbody></table></div>
+    <p class="note" style="margin-top:12px">PRs: ${d.pr_split.mechanical} mechanical · ${d.pr_split.administrator} administrator</p>
+  </div>`;
+}
+
+function recentTable(recs) {
+  if (!recs || !recs.length) return '';
+  return `<div class="card">
+    <h2 style="margin-top:0">Recent executions</h2>
+    <div class="table-scroll"><table><thead><tr><th>Task</th><th>Agent</th><th>Model</th><th>Gate</th><th class="n">Tokens</th><th class="n">When</th></tr></thead>
+    <tbody>${recs.map(r => {
+      const cls = r.gate === 'pass' ? 'ok' : r.gate === 'fail' ? 'bad' : 'warn';
+      const when = r.ts ? new Date(r.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+      return `<tr>
+        <td class="name">${esc(r.task_type)}</td>
+        <td>${esc(r.agent)}</td>
+        <td>${esc(r.model)}</td>
+        <td><span class="badge ${cls}"><i class="pt"></i>${esc(r.gate)}</span></td>
+        <td class="n">${fmt((r.tokens_in || 0) + (r.tokens_out || 0))}</td>
+        <td class="n">${esc(when)}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>
   </div>`;
 }
 
 function render(d) {
-  document.getElementById('meta').textContent =
-    `${d.log_records} execution${d.log_records === 1 ? '' : 's'} · generated ${new Date(d.generated_at).toLocaleString()}`;
+  document.getElementById('crumb').innerHTML = `<b>${esc(d.log_records)}</b> execution${d.log_records === 1 ? '' : 's'} logged`;
+  document.getElementById('meta').textContent = `updated ${new Date(d.generated_at).toLocaleString()}`;
+  const total = d.by_task.reduce((s, r) => s + r.tokens_in, 0) || 1;
   document.getElementById('root').innerHTML =
     tiles(d) +
     '<h2>Trend</h2>' + lineChart(d.by_day) +
-    '<h2>Breakdown</h2><div class="grid2">' +
-      barChart(d.by_task, 'task_type', 'Tokens by task type') +
-      barChart(d.by_model, 'model', 'Tokens by model') +
+    '<h2>Breakdown</h2><div class="grid3">' +
+      shareBar(d.by_task, 'task_type', 'Tokens by task type', total) +
+      shareBar(d.by_model, 'model', 'Tokens by model', total) +
     '</div>' +
-    '<h2>Team</h2>' + agentTable(d);
-  for (const el of document.querySelectorAll('[data-tip]')) {
-    el.addEventListener('mousemove', e => showTip(e, el.dataset.tip));
-    el.addEventListener('mouseleave', hideTip);
-  }
+    '<h2>Activity</h2><div class="grid2">' +
+      recentTable(d.recent) +
+      agentTable(d) +
+    '</div>';
+  wireTips(document.getElementById('root'));
 }
 
 fetch('data.json', { cache: 'no-store' })
@@ -262,7 +382,7 @@ fetch('data.json', { cache: 'no-store' })
   .catch(() => {
     document.getElementById('meta').textContent = 'no data yet';
     document.getElementById('root').innerHTML =
-      `<div class="card empty" style="margin-top:20px">
+      `<div class="card empty" style="margin-top:8px">
         <p>No execution data. Log a task, then regenerate:</p>
         <p><code>node scripts/ai-log.mjs --task-type build-feature --tokens-in 1200 --gate pass</code></p>
         <p><code>node scripts/ai-report.mjs</code></p>

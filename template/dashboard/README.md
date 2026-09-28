@@ -30,11 +30,20 @@ Import the repository and set **Root Directory** to `dashboard`. Framework prese
 
 A Vercel deployment is **public by default**. Anyone with the URL sees the page.
 
-The data is designed to be safe: `scripts/ai-report.mjs` writes only counts, sums and rates over the fixed task taxonomy in `docs/tasks.md`. No prompts, no file paths, no source content, no branch names. That is deliberate — it is the reason the taxonomy is generic rather than free-form.
+The data is designed to be safe: `scripts/ai-report.mjs` writes only counts, sums and rates over the fixed task taxonomy in `docs/tasks.md`, plus the last 10 executions' task type, agent, model, gate result and token counts — never prompts, file paths, source content or branch names. That is deliberate — it is the reason the taxonomy is generic rather than free-form.
 
-Even so, the aggregate reveals how much AI work this project consumes, which models it uses and how often the gate fails. For client work or anything unreleased, turn on Vercel's deployment protection (password or SSO) in the project's settings before the first deploy. The exact setting name and location change over time — look under the project's protection or security settings.
+Even so, the aggregate reveals how much AI work this project consumes, which models it uses and how often the gate fails. **Turn on password protection before the first deploy** if the project is client work or anything unreleased:
+
+1. Vercel dashboard → the project → **Settings → Deployment Protection**.
+2. Under **Vercel Authentication** or **Password Protection** (naming has changed before — look for the protection/security section if these exact labels have moved), turn it on for Production, and Preview too if you use preview deploys.
+3. Set a password, or gate it behind Vercel/SSO login if your plan supports that.
+4. Redeploy. Every visitor now hits an auth prompt before the page loads.
+
+This is a project setting, not a code change — nothing here needs updating when you turn it on. It is also the whole solution for a single-person dashboard: no accounts, no database, nothing to maintain. It only stops working as the answer if you outgrow "one shared password" and need per-person logins with individual access history — that is a different, heavier build (real auth, a user store) and not something this template takes on.
 
 If you would rather not host it at all, serve it locally with the command above. Nothing about the dashboard requires a deploy.
+
+**IP allowlisting**, if you want it as a second layer on top of the password: Vercel's Firewall (Pro plan and above, as of my last check — confirm on your plan) can restrict by IP or country at the edge, before the request reaches the page at all. It complements the password rather than replacing it — a dynamic IP or a shared network makes IP-only access fragile alone.
 
 ## What each number means
 
