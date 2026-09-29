@@ -14,6 +14,7 @@ function parseFlags(argv) {
     const a = argv[i];
     if (a === '--dry-run') { flags.dryRun = true; continue; }
     if (a === '--force') { flags.force = true; continue; }
+    if (a === '--no-prompt') { flags.noPrompt = true; continue; }
     if (a.startsWith('--')) {
       const key = a.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       const val = argv[i + 1];
@@ -28,8 +29,11 @@ function parseFlags(argv) {
 const HELP = `ai-project-starter — bootstrap and maintain projects built on the starter.
 
 Usage:
-  ai-project-starter init <target-dir> [--ref <branch-or-tag>] [--source <path-or-url>]
-      Create a new project from the starter template.
+  ai-project-starter init <target-dir> [--ref <branch-or-tag>] [--source <path-or-url>] [--no-prompt]
+      Create a new project from the starter template. Interactively asks for
+      AGENTS.md section 0 (name, purpose, stack, administrator, knobs) when
+      run in a terminal, so the first commit is already filled in; skip with
+      --no-prompt (also skipped automatically outside a TTY, e.g. in CI).
 
   ai-project-starter update [<target-dir>] [--ref <branch-or-tag>] [--source <path>] [--dry-run]
       Pull starter improvements into an existing project. Only ever changes a
@@ -52,7 +56,7 @@ pass a local path (one containing a template/ folder) to skip the network.
 switch (cmd) {
   case 'init': {
     const { positional, flags } = parseFlags(rest);
-    init({ target: positional[0], ref: flags.ref, source: flags.source });
+    await init({ target: positional[0], ref: flags.ref, source: flags.source, noPrompt: !!flags.noPrompt });
     break;
   }
   case 'update': {

@@ -22,6 +22,7 @@ Primary target is **Claude Code**. Also usable by Codex and other agents, since 
 
 - [Quick start](#quick-start)
 - [The CLI](#the-cli)
+- [PROMPTS.md — bootstrapping via an agent instead of the CLI](#promptsmd--bootstrapping-via-an-agent-instead-of-the-cli)
 - [What you get](#what-you-get)
 - [How it works](#how-it-works)
   - [The gate](#the-gate)
@@ -60,6 +61,8 @@ cd my-project
 
 Either way: it clones the starter, copies `template/` into `my-project`, runs `git init`, makes the first commit, and validates it with the version gate. Pin a specific starter release instead of `main` by adding it as an argument (`... init my-project --ref v0.1.0` for the CLI, `... my-project v0.1.0` for the script).
 
+The CLI additionally asks a few questions right there in the terminal — name, purpose, stack, administrator, the knobs — and writes the answers into `AGENTS.md` before the first commit, so step 2 below is already done. Pass `--no-prompt` to skip that and fill it in yourself later (it's also skipped automatically when there's no terminal to prompt in, e.g. piped input or CI).
+
 If the starter repo is private, neither form above can authenticate — clone it first and run locally instead:
 
 ```bash
@@ -72,7 +75,7 @@ bash ai-project-starter/init-project.sh my-project
 
 ### 2. Fill in section 0 of `AGENTS.md`
 
-Name, purpose, stack, administrator, and the knobs (coverage floor, file-size limits, branch model). Agents read these instead of assuming defaults — a wrong value here becomes a wrong rule everywhere else.
+Name, purpose, stack, administrator, and the knobs (coverage floor, file-size limits, branch model). Agents read these instead of assuming defaults — a wrong value here becomes a wrong rule everywhere else. Skip this step if you used the CLI interactively (step 1 already did it) or used the [PROMPTS.md bootstrap prompt](#promptsmd--bootstrapping-via-an-agent-instead-of-the-cli) with an agent.
 
 ### 3. Point the gate at your stack
 
@@ -127,7 +130,7 @@ It only ever touches a file the project hasn't customized since the last sync �
 
 | Command | Does |
 |---|---|
-| `init <dir>` | Same as `init-project.sh`, without the bash requirement |
+| `init <dir>` | Same as `init-project.sh`, without the bash requirement. Interactively fills `AGENTS.md` section 0 when run in a terminal (`--no-prompt` to skip) |
 | `update [dir]` | Pulls starter improvements into an already-created project — conservatively, see above |
 | `adopt [dir]` | Registers a project made with `init-project.sh` (or by hand) so `update` can track it |
 | `doctor [dir]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed |
@@ -135,6 +138,14 @@ It only ever touches a file the project hasn't customized since the last sync �
 Not published to npm yet — run it via `npx github:olavomello/ai-project-starter#main cli <command>` or clone and run `node ai-project-starter/cli/bin.js <command>` directly. Full command flags and the exact three-way sync rules `update` follows: [`cli/README.md`](cli/README.md).
 
 The `template/` repo stays the source of truth either way — the CLI only wraps it. Publishing to npm needs a real `LICENSE` file first (there isn't one yet, so `cli/package.json` currently marks it `UNLICENSED` as a placeholder).
+
+---
+
+## PROMPTS.md — bootstrapping via an agent instead of the CLI
+
+Some people never leave their agent's chat to run a CLI command. [`PROMPTS.md`](PROMPTS.md) at the repo root is the prompt-based equivalent of the CLI: a maintained, copy-pasteable library of prompts for working with a project built on this starter, starting with one that bootstraps a brand-new project — clone the starter, fill in `AGENTS.md` section 0 by asking you the same questions the CLI's guided `init` asks, and get the project ready to work on — entirely by pasting a prompt into an agent instead of running `node`.
+
+It grows over time: as the framework gains capabilities, useful prompts for driving them get added here too, each dated so you can tell what's current. Always Markdown, one prompt per entry, following a fixed template so entries stay easy to scan and diff.
 
 ---
 
@@ -146,6 +157,7 @@ AGENT_TEAM.md                     how agents create and coordinate other agents
 CLAUDE.md                         imports AGENTS.md for Claude Code
 VERSION                           0.0.1
 CHANGELOG.md                      Keep a Changelog, starts with [Unreleased]
+PROMPTS.md                        library of prompts for bootstrapping/working via an agent instead of the CLI
 
 scripts/gate.sh                   one command: format, lint, types, tests, agent team, version gate
 scripts/agent-team.sh             create agents, worktrees, PRs; classify and check

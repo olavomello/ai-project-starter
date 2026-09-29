@@ -38,7 +38,7 @@ ai-project-starter doctor [<target-dir>]
 
 ### `init`
 
-Copies `template/`, writes `.ai-project-starter.json` (the manifest `update` needs), `git init`s, and makes the first commit. Then runs `doctor` and prints next steps. Equivalent to `init-project.sh`, minus the bash requirement.
+Copies `template/`, then — when run in a terminal — asks for AGENTS.md section 0 (name, purpose, stack, administrator, the five knobs) and writes the answers straight into `AGENTS.md` before anything is committed, so the first commit already has a real project identity instead of the template's blanks. Pass `--no-prompt` to skip this and leave section 0 blank (it's also skipped automatically when stdin/stdout isn't a TTY, e.g. in CI or when piped). After that it writes `.ai-project-starter.json` (the manifest `update` needs, hashed *after* the guided setup so the baseline matches what's actually committed), `git init`s, and makes the first commit. Then runs `doctor` and prints next steps. Equivalent to `init-project.sh`, minus the bash requirement.
 
 ### `update`
 
