@@ -52,6 +52,19 @@ export function runDoctor(target, { quiet }) {
     }
   }
 
+  const adrDir = join(target, 'docs', 'adr');
+  if (isDir(adrDir)) {
+    const adrFiles = readdirSync(adrDir).filter((f) => /^\d{4}-.*\.md$/.test(f));
+    for (const f of adrFiles) {
+      const text = readText(join(adrDir, f));
+      const problems = ['## Status', '## Context', '## Decision', '## Consequences']
+        .filter((h) => !text.includes(h))
+        .map((h) => `missing "${h}"`);
+      if (problems.length) { failed = true; say(warn, `docs/adr/${f}: ${problems.join(', ')}`); }
+      else say(ok, `docs/adr/${f}`);
+    }
+  }
+
   const manifest = readManifest(target);
   if (manifest) {
     say(info, `\nCreated from ai-project-starter v${manifest.starterVersion} (${manifest.starterRef.slice(0, 12)}).`);

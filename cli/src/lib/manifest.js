@@ -15,6 +15,7 @@ export const PROTECTED = [
   'CHANGELOG.md',
   'docs/model-prices.json',
   'docs/agents/',
+  'docs/adr/',
 ];
 
 export function isProtected(relPath) {

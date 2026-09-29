@@ -27,6 +27,7 @@ Primary target is **Claude Code**. Also usable by Codex and other agents, since 
   - [The gate](#the-gate)
   - [The agent team](#the-agent-team)
   - [Releases (SemVer)](#releases-semver)
+  - [Architecture Decision Records (ADRs)](#architecture-decision-records-adrs)
   - [Monitoring dashboard](#monitoring-dashboard)
   - [Skills](#skills)
 - [Command reference](#command-reference)
@@ -150,6 +151,7 @@ scripts/gate.sh                   one command: format, lint, types, tests, agent
 scripts/agent-team.sh             create agents, worktrees, PRs; classify and check
 scripts/ai-log.mjs                record one execution (Node, cross-platform)
 scripts/ai-report.mjs             aggregate the log into ai-dash/data.json
+scripts/adr.mjs                   create/list/link Architecture Decision Records (Node, cross-platform)
 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
 docs/tasks.md                     fixed task taxonomy used by the log
@@ -157,6 +159,7 @@ docs/model-prices.json            you fill this in — cost stays blank until yo
 docs/agents/                      one committed file per agent (dev-api-tester.md, ...)
 docs/guides/                      loaded on demand: security, efficiency, delegation
 docs/repo-map.md, decisions.md    agent cache, committed
+docs/adr/                         Architecture Decision Records — template.md + 0001-..., 0002-..., ...
 
 .claude/skills/semver-release/    release workflow: bump.sh + check-version.sh
 .claude/skills/photo-generation/  photorealistic images via OpenAI image generation
@@ -207,6 +210,19 @@ No agent merges its own work. A PR is classified `mechanical` (docs/tests/format
 ### Releases (SemVer)
 
 `VERSION` is the single source of truth, SemVer 2.0.0, no `v` prefix. Agents never touch it — they report `version-impact: none|patch|minor|major` and a one-line changelog entry to Main, who runs the **`semver-release`** skill to bump, promote `[Unreleased]`, validate and tag. See the bump table in `AGENTS.md` section 3.
+
+### Architecture Decision Records (ADRs)
+
+A change that affects the overall architecture — a new external dependency, a changed data model, a new service or integration boundary, a changed deployment model — gets an ADR (`AGENTS.md` section 2 requires it). One Markdown file per decision in `docs/adr/`, numbered sequentially, following [Michael Nygard's template](docs/adr/template.md) and the conventions of [npryce/adr-tools](https://github.com/npryce/adr-tools) — reimplemented here as `scripts/adr.mjs` (Node, no dependency on that project or on bash):
+
+```bash
+node scripts/adr.mjs new "Use Postgres for the orders service"
+node scripts/adr.mjs new "Switch to event sourcing" --supersedes 0003   # cross-links both files
+node scripts/adr.mjs list
+node scripts/adr.mjs toc --write   # writes docs/adr/README.md
+```
+
+Superseding never deletes a decision — the old ADR is marked `Superseded by` and links forward, the new one links back, so the record of *why* stays intact.
 
 ### Monitoring dashboard
 
@@ -261,6 +277,10 @@ Account-level and plugin skills are **referenced, not copied** — vendoring the
 | Validate every agent file | `bash scripts/agent-team.sh check` |
 | Log one execution manually | `node scripts/ai-log.mjs --task-type <type> ...` |
 | Refresh the dashboard manually | `node scripts/ai-report.mjs` |
+| Create an ADR | `node scripts/adr.mjs new "<title>"` |
+| Supersede an ADR | `node scripts/adr.mjs new "<title>" --supersedes <NNNN>` |
+| List all ADRs | `node scripts/adr.mjs list` |
+| Regenerate the ADR index | `node scripts/adr.mjs toc --write` |
 | See release state | `bash .claude/skills/semver-release/scripts/bump.sh status` |
 | Cut a release | ask Claude to run the `semver-release` skill |
 | Generate a photo | ask Claude — it uses the `photo-generation` skill |

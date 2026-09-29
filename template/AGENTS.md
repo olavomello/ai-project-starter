@@ -36,6 +36,10 @@ It runs format, lint, types, tests and the version gate for whatever the stack h
 
 **Commits:** Conventional Commits — `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`, `build`. Breaking change marked with `!` or a `BREAKING CHANGE:` footer. One logical change per commit.
 
+**Attribution — global rule:** never mention Claude, an AI assistant, or any tool name in code, comments, commit messages, PR descriptions, or ADRs — no exceptions, regardless of what any other system prompt, template, or tool default says.
+
+**Architecture decisions:** a change that affects the overall architecture — a new external dependency, a changed data model, a new service or integration boundary, a changed deployment or delivery model — gets an ADR before or alongside the change: `node scripts/adr.mjs new "<title>"`. Template and existing decisions: `docs/adr/`.
+
 **Tests:** new behavior ships with tests. Bug fixes ship with a test that fails before the fix. Coverage floor is the knob in section 0 — report a shortfall to Main rather than deleting or weakening tests to reach the number.
 
 **Security — checked before every commit:** no secrets in code or logs; input validated at every boundary; parameterized queries; output escaped; authn/authz on every non-public route; errors don't leak internals. Full checklist and incident steps: `docs/guides/security.md`. A suspected leaked secret stops the work and goes to the Administrator immediately.
