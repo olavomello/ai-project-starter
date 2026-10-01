@@ -32,6 +32,13 @@ Read when tuning cost, routing models, or calling the API directly. The always-l
 
 `docs/` is committed. `.agents/state/` is local and git-ignored.
 
+This is distinct from Claude Code's own "auto memory" (notes Claude writes about your
+corrections and preferences, stored per-machine outside the repo at
+`~/.claude/projects/<project>/memory/`). Auto memory is not committed, not shared
+across machines, and not configured by this template — it just works on its own.
+The table above is this project's own memory: versioned, shared by every agent and
+machine, and the thing to use for anything that must survive a clone.
+
 ## Measuring
 
 Track per task: tool calls, tokens in/out, cache read ratio, wall time, and whether the gate passed first try. A rising token count with a flat first-try pass rate means the context is bloated, not that the work got harder.

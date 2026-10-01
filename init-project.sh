@@ -13,6 +13,7 @@ mkdir -p "$TARGET"
 cp -R "$TMP/starter/template/." "$TARGET/"
 cd "$TARGET"
 chmod +x .claude/skills/*/scripts/*.sh
+chmod +x .claude/hooks/*.sh 2>/dev/null || true
 git init --quiet
 git branch -M main 2>/dev/null || true
 git add -A

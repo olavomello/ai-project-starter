@@ -1,0 +1,21 @@
+{
+  "//": "Project-scoped MCP servers — copy to .mcp.json and fill in to share tools with everyone who clones this project. Claude Code reads .mcp.json at session start and asks each person to approve it the first time. Not required: the starter itself doesn't depend on any MCP server, this is scaffolding for projects that need one (an issue tracker, a database, GitHub, a browser). Remove the servers you don't use and delete the '//' comment keys before committing — JSON has no real comment syntax, these are just ignored keys.",
+
+  "mcpServers": {
+    "//github": "Static-token example — needs a GitHub token with repo scope.",
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    },
+
+    "//playwright": "Local stdio example — runs as a subprocess via npx, no account needed.",
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}

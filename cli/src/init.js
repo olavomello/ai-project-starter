@@ -24,7 +24,7 @@ export async function init({ target, ref = 'main', source, noPrompt = false }) {
     copyTree(templateDir, target);
 
     for (const rel of walk(target)) {
-      if (/^scripts\/.*\.sh$/.test(rel) || /^\.claude\/skills\/.+\/scripts\/.+\.sh$/.test(rel)) {
+      if (/^scripts\/.*\.sh$/.test(rel) || /^\.claude\/skills\/.+\/scripts\/.+\.sh$/.test(rel) || /^\.claude\/hooks\/.+\.sh$/.test(rel)) {
         makeExecutable(join(target, rel));
       }
     }

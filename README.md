@@ -31,6 +31,7 @@ Primary target is **Claude Code**. Also usable by Codex and other agents, since 
   - [Architecture Decision Records (ADRs)](#architecture-decision-records-adrs)
   - [Monitoring dashboard](#monitoring-dashboard)
   - [Skills](#skills)
+  - [Enforcement: hooks, rules, MCP](#enforcement-hooks-rules-mcp)
 - [Command reference](#command-reference)
 - [Configuration](#configuration)
 - [Environment variables](#environment-variables)
@@ -175,10 +176,14 @@ docs/adr/                         Architecture Decision Records — template.md 
 
 .claude/skills/semver-release/    release workflow: bump.sh + check-version.sh
 .claude/skills/photo-generation/  photorealistic images via OpenAI image generation
+.claude/settings.json             hooks: protect VERSION/CHANGELOG, block force-push
+.claude/hooks/                    the hook scripts settings.json calls
+.claude/rules/security.md         auto-loads docs/guides/security.md on a matching path
 
 .agents/                          local runtime state (git-ignored): worktrees, locks, raw log
 .agents/README.md                 what actually lives here, and why it's separate from docs/agents/
 .github/workflows/gate.yml        CI: runs the gate on every push/PR
+.mcp.json.example                 scaffolding for project-scoped MCP servers — copy to .mcp.json to use
 ```
 
 `AGENTS.md` stays short on purpose — it's loaded into **every** session. Everything else is read only when the task actually touches it, which is the whole point of the layered-context design (see `docs/guides/efficiency.md`).
@@ -268,6 +273,19 @@ Two skills are vendored in the template and travel with every project (`.claude/
 | `photo-generation` | Routes photorealistic images to OpenAI; non-photographic assets (icons, diagrams, UI, charts) stay with Claude |
 
 Account-level and plugin skills are **referenced, not copied** — vendoring them would duplicate files that already load automatically. `AGENTS.md` section 6 tells agents when to reach for `dataviz` (charts), `frontend-design` (UI), `skill-creator` (capturing a repeated procedure) and `deep-research`; if one isn't installed, the agent just works without it. Project-specific skills you write later belong in the project's own `.claude/skills/`; promote one to the starter only when it applies to every project.
+
+### Enforcement: hooks, rules, MCP
+
+A rule an agent is only *told* about can be forgotten or skipped. `.claude/settings.json` turns the two rules most worth never missing into Claude Code hooks — deterministic shell checks that run regardless of model, permission mode, or whether anyone's watching ([ADR 0002](docs/adr/0002-enforce-project-rules-with-claude-code-hooks-instead-of-convention-only-text.md)):
+
+| Hook | Blocks |
+|---|---|
+| `.claude/hooks/protect-version.sh` | Editing `VERSION` directly, or introducing a new release heading in `CHANGELOG.md`, through the `Edit`/`Write` tools. The sanctioned release path (`.claude/skills/semver-release/scripts/bump.sh`) still works — it writes through the shell, not through those tools. |
+| `.claude/hooks/block-force-push.sh` | Any `git push` with `--force`, `--force-with-lease`, or `-f`. |
+
+`.claude/rules/security.md` is a path-scoped rule (auth, api, routes, middleware, payment, webhook, upload, migrations, `.sql`, `.env*`) that loads `docs/guides/security.md` automatically the moment a matching file is opened, instead of depending on the agent choosing to go read it. The path patterns are heuristic by design — the starter is stack-agnostic, so they can't be exact.
+
+`.mcp.json.example` is scaffolding, not a live config — the starter itself depends on no MCP server. Copy it to `.mcp.json` and fill in real servers (GitHub, a database, Playwright, …) when a project built on this starter needs one; Claude Code reads `.mcp.json` at session start and every teammate who clones the repo gets a one-time approval prompt for it.
 
 ---
 

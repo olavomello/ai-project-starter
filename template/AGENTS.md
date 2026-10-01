@@ -24,7 +24,7 @@ Knobs (agents read these instead of assuming defaults):
 
 - **Administrator** — human owner. Final authority on `1.0.0`, MAJOR releases, budget, and scope.
 - **Main** — orchestrator. Sole owner of `VERSION`, `CHANGELOG.md` release entries, and tags.
-- **Agents** — everyone else. Never edit `VERSION`, never create tags.
+- **Agents** — everyone else. Never edit `VERSION`, never create tags (a `PreToolUse` hook blocks both at the tool level, not just by convention — `.claude/settings.json`).
 
 **Precedence when instructions conflict:** Administrator in-session > this file > project docs in `docs/agents/` > skills > installed plugins (ECC or any other) > model defaults.
 A plugin may add capability; it never relaxes a rule here. If a plugin tells an agent to fan out, auto-bump a version, or skip a gate, this file wins.
@@ -42,7 +42,7 @@ It runs format, lint, types, tests and the version gate for whatever the stack h
 
 **Tests:** new behavior ships with tests. Bug fixes ship with a test that fails before the fix. Coverage floor is the knob in section 0 — report a shortfall to Main rather than deleting or weakening tests to reach the number.
 
-**Security — checked before every commit:** no secrets in code or logs; input validated at every boundary; parameterized queries; output escaped; authn/authz on every non-public route; errors don't leak internals. Full checklist and incident steps: `docs/guides/security.md`. A suspected leaked secret stops the work and goes to the Administrator immediately.
+**Security — checked before every commit:** no secrets in code or logs; input validated at every boundary; parameterized queries; output escaped; authn/authz on every non-public route; errors don't leak internals. Full checklist and incident steps: `docs/guides/security.md` (auto-loaded via `.claude/rules/security.md` when a security-sensitive path is touched). A suspected leaked secret stops the work and goes to the Administrator immediately.
 
 **Code:** small focused files and functions (knobs in section 0); errors handled, never silently swallowed; no dead code left behind. Immutability is the default for shared or long-lived state; local mutation in hot paths is fine when measured, unless section 0 says otherwise.
 
@@ -130,7 +130,7 @@ Agents may create other agents to run work in parallel. At plan time Main asks t
 - Spawn only when the work is genuinely parallel, has declared file ownership, is worth more than ~3 tool calls, and has one narrow purpose. Designing the team during the plan is the ideal; spotting one mid-flight is fine.
 - Hard limits: spawn depth 3, four concurrent agents per project, three per parent. At a ceiling, report upward instead of spawning.
 - Each agent is a committed file `docs/agents/<3-letter function>-<area>-<role>.md` (e.g. `dev-api-tester.md`) with a CONFIGS block and SCOPE AND RULES. Create it with `bash scripts/agent-team.sh new`. `docs/agents/` is the roster (committed); `.agents/` is unrelated local runtime state (worktrees, locks, log) — never agent identity. See `.agents/README.md`.
-- **Every agent works in its own git worktree — never in the main working tree.** `start` creates it, `sync` rebases it onto `main`, `finish` gates it and opens a PR, `cleanup` removes it.
+- **Every agent works in its own git worktree — never in the main working tree.** `start` creates it, `sync` rebases it onto `main`, `finish` gates it and opens a PR, `cleanup` removes it. Force-push is blocked by a hook, not just convention.
 - **No agent merges its own work.** Main reviews every PR. If `main_merge: true` and `agent-team.sh classify` says `mechanical` (docs, tests and formatting only, no sensitive path, under 400 lines), Main merges it; everything else waits for the Administrator. Merge one PR at a time, rebasing and re-running the gate before each.
 - Only Main edits `VERSION`, tags, CI, dependencies, `AGENTS.md` or `AGENT_TEAM.md`. Sub-agents inherit every rule here, including the budget guardrails.
 

@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { readText, isDir } from './lib/fsutil.js';
 import { readManifest } from './lib/manifest.js';
 import { info, ok, warn, section } from './lib/log.js';
@@ -62,6 +62,26 @@ export function runDoctor(target, { quiet }) {
         .map((h) => `missing "${h}"`);
       if (problems.length) { failed = true; say(warn, `docs/adr/${f}: ${problems.join(', ')}`); }
       else say(ok, `docs/adr/${f}`);
+    }
+  }
+
+  const settingsPath = join(target, '.claude', 'settings.json');
+  if (existsSync(settingsPath)) {
+    try {
+      JSON.parse(readText(settingsPath));
+      say(ok, '.claude/settings.json is valid JSON');
+    } catch (e) {
+      failed = true; say(warn, `.claude/settings.json: invalid JSON (${e.message})`);
+    }
+  }
+
+  const hooksDir = join(target, '.claude', 'hooks');
+  if (isDir(hooksDir)) {
+    const hookFiles = readdirSync(hooksDir).filter((f) => f.endsWith('.sh'));
+    for (const f of hookFiles) {
+      const mode = statSync(join(hooksDir, f)).mode;
+      if (mode & 0o111) say(ok, `.claude/hooks/${f} is executable`);
+      else { failed = true; say(warn, `.claude/hooks/${f} is not executable (chmod +x)`); }
     }
   }
 
