@@ -18,6 +18,12 @@ Every new project starts the same way: copy this repo, fill in a handful of knob
 
 Primary target is **Claude Code**. Also usable by Codex and other agents, since the rules live in a tool-agnostic `AGENTS.md`.
 
+<div align="center">
+
+![Directory structure of what a new project gets](assets/directory-structure.svg)
+
+</div>
+
 ## Contents
 
 - [Quick start](#quick-start)
@@ -151,6 +157,8 @@ It grows over time: as the framework gains capabilities, useful prompts for driv
 ---
 
 ## What you get
+
+Visual version at the top of this page ([`assets/directory-structure.svg`](assets/directory-structure.svg)); text version for copy-pasting below:
 
 ```text
 AGENTS.md                         rules for all agents (tool-agnostic, ~130 lines, always loaded)
