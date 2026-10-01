@@ -20,6 +20,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 - `.claude/rules/security.md`: a path-scoped rule (auth, api, routes, middleware, payment, webhook, upload, migrations, `.sql`, `.env*`) that auto-loads `docs/guides/security.md` the moment a matching file is touched, instead of depending on the agent remembering to read it.
 - `.mcp.json.example`: scaffolding for projects that want to commit shared, project-scoped MCP server configuration. The starter itself depends on no MCP server; copy to `.mcp.json` and fill in to use.
 - `cli doctor`: now also validates `.claude/settings.json` as JSON (if present) and checks that every `.claude/hooks/*.sh` is executable. `cli init` makes `.claude/hooks/*.sh` executable the same way it already does for `scripts/*.sh`; `init-project.sh` does the same.
+- `docs/guides/claude-code.md`: Claude Code–only guide — why `CLAUDE.md` keeps the `@AGENTS.md` import (a `CLAUDE.local.md` would otherwise stop native `AGENTS.md` loading), auto memory vs. committed project memory, skills instead of the legacy `.claude/commands/`, the one bar `.claude/rules/security.md` had to clear to exist, and which settings/MCP files are committed vs. personal. `template/.gitignore` now ignores `CLAUDE.local.md` and `.claude/settings.local.json`.
 
 ### Changed
 - Dashboard folder renamed `dashboard/` → `ai-dash/` (script, docs and generated `data.json` all moved with it) so it doesn't collide with a `dashboard/` folder a project built on this starter might already have for its own product.

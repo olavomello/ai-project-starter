@@ -11,3 +11,7 @@
 .env
 .env.*
 !.env.example
+
+# Personal Claude Code files (never shared)
+CLAUDE.local.md
+.claude/settings.local.json

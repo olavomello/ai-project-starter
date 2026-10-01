@@ -32,12 +32,10 @@ Read when tuning cost, routing models, or calling the API directly. The always-l
 
 `docs/` is committed. `.agents/state/` is local and git-ignored.
 
-This is distinct from Claude Code's own "auto memory" (notes Claude writes about your
-corrections and preferences, stored per-machine outside the repo at
-`~/.claude/projects/<project>/memory/`). Auto memory is not committed, not shared
-across machines, and not configured by this template — it just works on its own.
-The table above is this project's own memory: versioned, shared by every agent and
-machine, and the thing to use for anything that must survive a clone.
+This is this project's **own** memory — distinct from Claude Code's own "auto
+memory," which is per-machine and not committed. See
+`docs/guides/claude-code.md` for the difference and the rule for which one wins
+when they disagree.
 
 ## Measuring
 
