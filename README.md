@@ -36,6 +36,7 @@ Primary target is **Claude Code**. Also usable by Codex and other agents, since 
   - [Releases (SemVer)](#releases-semver)
   - [Architecture Decision Records (ADRs)](#architecture-decision-records-adrs)
   - [Monitoring dashboard](#monitoring-dashboard)
+  - [Session mod (optional)](#session-mod-optional)
   - [Skills](#skills)
   - [Enforcement: hooks, rules, MCP](#enforcement-hooks-rules-mcp)
 - [Command reference](#command-reference)
@@ -133,14 +134,15 @@ It only ever touches a file the project hasn't customized since the last sync �
 
 ## The CLI
 
-`cli/` is a small, zero-dependency Node package with four commands — it exists specifically so bootstrapping and updating a project never require `bash` (only `node` and `git`, both native on Windows):
+`cli/` is a small, zero-dependency Node package with five commands — it exists specifically so bootstrapping and updating a project never require `bash` (only `node` and `git`, both native on Windows):
 
 | Command | Does |
 |---|---|
-| `init <dir>` | Same as `init-project.sh`, without the bash requirement. Interactively fills `AGENTS.md` section 0 when run in a terminal (`--no-prompt` to skip) |
+| `init <dir>` | Same as `init-project.sh`, without the bash requirement. Interactively fills `AGENTS.md` section 0 when run in a terminal (`--no-prompt` to skip), including whether to turn on the optional session mod (`--mod`/`--no-mod` to decide non-interactively) |
 | `update [dir]` | Pulls starter improvements into an already-created project — conservatively, see above |
 | `adopt [dir]` | Registers a project made with `init-project.sh` (or by hand) so `update` can track it |
-| `doctor [dir]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed |
+| `doctor [dir]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed, and the session mod's current on/off state |
+| `mod <status\|enable\|disable> [dir]` | Turns the optional `starter-hud` session mod on or off by editing `.claude/settings.json` — the one implementation of that toggle, shared with `ai-dash`'s Settings area |
 
 Not published to npm yet — run it via `npx github:olavomello/ai-project-starter#main cli <command>` or clone and run `node ai-project-starter/cli/bin.js <command>` directly. Full command flags and the exact three-way sync rules `update` follows: [`cli/README.md`](cli/README.md).
 
@@ -173,6 +175,8 @@ scripts/agent-team.sh             create agents, worktrees, PRs; classify and ch
 scripts/ai-log.mjs                record one execution (Node, cross-platform)
 scripts/ai-report.mjs             aggregate the log into ai-dash/data.json
 scripts/adr.mjs                   create/list/link Architecture Decision Records (Node, cross-platform)
+scripts/mod.mjs                   toggle the optional starter-hud session mod (.claude/settings.json)
+scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings area's API
 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
 docs/tasks.md                     fixed task taxonomy used by the log
@@ -271,6 +275,14 @@ Both the log and `ai-dash/data.json` resolve to the repo's **shared git root**, 
 
 **The aggregate holds counts only** — no prompts, no file paths, no source content — and task names come from the fixed taxonomy in `docs/tasks.md` for exactly that reason, since a Vercel deployment is public by default. Turn on Deployment Protection before the first deploy if the project is client work; details in `ai-dash/README.md`. Cost stays blank until you fill in `docs/model-prices.json` yourself — a stale price is worse than none.
 
+**Viewed locally, `ai-dash/` can do more than display.** `node scripts/ai-dash.mjs` serves the dashboard on `127.0.0.1` and adds a Settings area (the gear icon) that reads and writes `.claude/settings.json` directly — today, a single switch for the optional session mod below. It's a local-only server (it refuses any request whose `Host`/`Origin` isn't `127.0.0.1`), and opening `ai-dash/index.html` as a static file still works — the Settings area just falls back to showing the toggle command instead of a live switch.
+
+**Real usage numbers instead of mostly zeros.** Getting the `AILOG_*` variables right by hand is easy to forget. The optional `starter-hud` session mod (next section) measures them for real, straight from Claude Code, and hands them to this same pipeline — nothing about the gate or the log format changes, the zeros just stop being zeros.
+
+### Session mod (optional)
+
+An opt-in Claude Code plugin, `starter-hud` (`mods/starter-hud/`), that reads real per-turn token, cache and tool-call usage from the engine itself and draws a small band above the prompt (task size and budget, cache ratio, last gate result, live agent count). It hands the measured numbers to `ai-log.mjs` through a per-branch file, ahead of `AILOG_*` variables but behind an explicit flag, so enabling it is the only thing that changes — the log format and the dashboard it feeds stay the same. Off by default, and inert outside a git repository with `scripts/gate.sh`. Turn it on or off with `node scripts/mod.mjs enable|disable`, the CLI's `mod` command, or the dashboard's Settings switch above — all three edit the same `.claude/settings.json` key. Full details, what it reads and writes, and known limitations: [`mods/starter-hud/README.md`](mods/starter-hud/README.md); the design rationale: [ADR 0003](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md); day-to-day usage (the `/budget` command, turning it on for Claude Code specifically): `docs/guides/claude-code.md`.
+
 ### Skills
 
 Two skills are vendored in the template and travel with every project (`.claude/skills/`, committed):
@@ -294,6 +306,8 @@ A rule an agent is only *told* about can be forgotten or skipped. `.claude/setti
 `.claude/rules/security.md` is a path-scoped rule (auth, api, routes, middleware, payment, webhook, upload, migrations, `.sql`, `.env*`) that loads `docs/guides/security.md` automatically the moment a matching file is opened, instead of depending on the agent choosing to go read it. The path patterns are heuristic by design — the starter is stack-agnostic, so they can't be exact.
 
 `.mcp.json.example` is scaffolding, not a live config — the starter itself depends on no MCP server. Copy it to `.mcp.json` and fill in real servers (GitHub, a database, Playwright, …) when a project built on this starter needs one; Claude Code reads `.mcp.json` at session start and every teammate who clones the repo gets a one-time approval prompt for it.
+
+A Claude Code **mod** (a plugin with JavaScript hooks — `starter-hud` above, or any other) runs with your own permissions, and one with a `tool.check` hook can approve a call these project hooks blocked — a different trust boundary from a rule or a skill. `docs/guides/security.md` has the checklist to run (`claude plugin validate <dir>`, read its `hooks:`/`calls:` lines) before installing any mod, this starter's own included.
 
 ---
 
@@ -319,6 +333,9 @@ A rule an agent is only *told* about can be forgotten or skipped. `.claude/setti
 | Supersede an ADR | `node scripts/adr.mjs new "<title>" --supersedes <NNNN>` |
 | List all ADRs | `node scripts/adr.mjs list` |
 | Regenerate the ADR index | `node scripts/adr.mjs toc --write` |
+| Check the session mod's on/off state | `node scripts/mod.mjs status` |
+| Turn the session mod on / off | `node scripts/mod.mjs enable` / `node scripts/mod.mjs disable` |
+| Serve the dashboard locally, with Settings | `node scripts/ai-dash.mjs` |
 | See release state | `bash .claude/skills/semver-release/scripts/bump.sh status` |
 | Cut a release | ask Claude to run the `semver-release` skill |
 | Generate a photo | ask Claude — it uses the `photo-generation` skill |
@@ -336,6 +353,7 @@ All of it lives in two committed files — nothing is hidden in code:
 | Mutation allowed in hot paths | Whether measured local mutation is acceptable |
 | Branch model | e.g. trunk (`main`) |
 | Release cadence | e.g. on demand |
+| Task token budget S / M / L | `off`, or three numbers (e.g. `40000 / 120000 / 300000`) the optional session mod warns against |
 
 **`AGENT_TEAM.md` — team behavior**
 
@@ -347,6 +365,8 @@ All of it lives in two committed files — nothing is hidden in code:
 Both default to `ask` — Main asks once, at the start of the first plan, and records the answer.
 
 Local, per-machine overrides for the gate itself go in `.agents/gate.conf` (copy from `.agents/gate.conf.example`); this file is git-ignored on purpose.
+
+The optional session mod's on/off state is the one setting that lives outside these two files, in `.claude/settings.json` (`enabledPlugins`) — see [Session mod (optional)](#session-mod-optional). Toggling it is why `cli update` may start flagging that file as project-customized; `cli/README.md` has the details.
 
 ## Environment variables
 
@@ -375,5 +395,7 @@ A flag always overrides its `AILOG_*` env var when both are given to `ai-log.mjs
 
 - `template/` — everything copied into new projects. **Edit here**, never in a generated project.
 - `init-project.sh` — the bash bootstrap script.
-- `cli/` — the Node CLI (`init`/`update`/`adopt`/`doctor`); wraps `template/`, doesn't replace it. See [The CLI](#the-cli) and [`cli/README.md`](cli/README.md).
+- `cli/` — the Node CLI (`init`/`update`/`adopt`/`doctor`/`mod`); wraps `template/`, doesn't replace it. See [The CLI](#the-cli) and [`cli/README.md`](cli/README.md).
+- `mods/starter-hud/` — the optional session mod's own code, loaded by projects as a plugin rather than copied. See [`mods/starter-hud/README.md`](mods/starter-hud/README.md) and [ADR 0003](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md).
+- `.claude-plugin/marketplace.json` — publishes `starter-hud` as a plugin any project built on this starter can enable.
 - `VERSION` / `CHANGELOG.md` at the repo root — the **starter's own** version, independent of any project it creates (which always starts at `0.0.1`).

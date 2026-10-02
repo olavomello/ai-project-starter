@@ -50,6 +50,8 @@ TREE = [
         ("ai-log.mjs", "Record one execution (Node, cross-platform)", None),
         ("ai-report.mjs", "Aggregate the log into ai-dash/data.json", None),
         ("adr.mjs", "Create / list / link Architecture Decision Records", None),
+        ("mod.mjs", "Toggle the optional starter-hud session mod", None),
+        ("ai-dash.mjs", "Local server for ai-dash/, incl. the Settings API", None),
     ]),
     ("ai-dash", "Static monitoring dashboard — zero-config Vercel deploy", []),
     ("docs", None, [

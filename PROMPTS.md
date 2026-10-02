@@ -42,19 +42,52 @@ I want to start a new project from the ai-project-starter template
    - Mutation allowed in hot paths — yes/no (default: no)
    - Branch model (default: trunk (`main`))
    - Release cadence (default: on demand)
+   - Task token budget S / M / L (default: off)
+   - Enable the in-session status mod for Claude Code? — y/N (default: no)
 3. Write my answers into section 0 of the new project's `AGENTS.md` (the `- Name:`
    / `- Purpose (one line):` / `- Stack:` / `- Administrator:` lines, and the
-   `Knobs` table below them) — do not touch anything else in the file.
-4. Run `git init`, stage everything, and make the first commit with a message
+   `Knobs` table below them, now including the task-token-budget row) — do not
+   touch anything else in the file.
+4. If I answered yes to the mod question, run `node scripts/mod.mjs enable`
+   inside the new project before the first commit, so it's included in it.
+5. Run `git init`, stage everything, and make the first commit with a message
    like "chore: initialize project from ai-project-starter (agent-guided)".
    Do not mention any AI assistant or tool name anywhere in that commit message
    or in any file you write — this is a hard rule of the starter itself
    (see AGENTS.md section 2 once it exists in the new project).
-5. Run `scripts/gate.sh` inside the new project and report the result. If it's
+6. Run `scripts/gate.sh` inside the new project and report the result. If it's
    not executable yet, make it so first.
-6. Tell me the next manual steps: adding a git remote and pushing, and reading
+7. Tell me the next manual steps: adding a git remote and pushing, and reading
    through the rest of AGENTS.md.
 
-If git isn't available, skip step 4 and tell me so — copy the files and let me
+If git isn't available, skip step 5 and tell me so — copy the files and let me
 init the repo myself.
+```
+
+## Turn the in-session status mod on or off
+
+Toggles the optional `starter-hud` session mod ([ADR](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md),
+`docs/guides/claude-code.md` once it exists in the project) the same way
+`node scripts/mod.mjs enable`/`disable` would, for an agent working in a
+project that already exists.
+
+### Date : 2026-10-01
+
+# Prompt
+
+```
+Turn the optional starter-hud session mod on (or off — tell me which) for this
+project:
+
+1. Confirm `scripts/mod.mjs` exists here. If it doesn't, tell me to run
+   `ai-project-starter update` first and stop.
+2. Run `node scripts/mod.mjs enable` (or `disable`) — don't edit
+   `.claude/settings.json` by hand, that script is the one implementation of
+   this toggle, shared with the CLI and the ai-dash Settings area.
+3. Show me the resulting `.claude/settings.json` diff.
+4. Tell me to run `/reload-plugins` (or restart the session) and to commit the
+   settings file so the rest of the team gets the same setting.
+
+Do not mention any AI assistant or tool name anywhere in the commit message if
+I ask you to commit this.
 ```
