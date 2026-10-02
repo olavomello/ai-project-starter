@@ -19,6 +19,7 @@ Knobs (agents read these instead of assuming defaults):
 | Mutation allowed in hot paths | no |
 | Branch model | trunk (`main`) |
 | Release cadence | on demand |
+| Task token budget S / M / L | off |
 
 ## 1. Roles and precedence
 
@@ -119,7 +120,7 @@ Skills that come from the account or an installed plugin, not vendored here. Use
 | A procedure repeated across sessions is worth capturing | `skill-creator` — new skills land in `.claude/skills/` and are committed |
 | Multi-source research feeding a decision | `deep-research` |
 
-- **Claude Code (primary):** skills load from `.claude/skills/`; `CLAUDE.md` imports this file with `@AGENTS.md`. Keep that import; instruction loading, auto memory vs. project memory, and path-scoped rules: `docs/guides/claude-code.md`.
+- **Claude Code (primary):** skills load from `.claude/skills/`; `CLAUDE.md` imports this file with `@AGENTS.md`. Keep that import; instruction loading, auto memory vs. project memory, path-scoped rules, and the optional in-session status mod (an Administrator decision, on or off) are in `docs/guides/claude-code.md`.
 - **Codex and others:** if the tool doesn't load skills natively, read the listed `SKILL.md` when its trigger applies. The scripts run the same from any agent.
 - Keep this file tool-agnostic. Plugin-specific agent rosters and triggers belong in `docs/guides/delegation.md`.
 

@@ -43,6 +43,8 @@ Track per task: tool calls, tokens in/out, cache read ratio, wall time, and whet
 
 **This is automatic.** `scripts/gate.sh` calls `scripts/ai-log.mjs` and `scripts/ai-report.mjs` itself at the end of every run, pass or fail — no agent has to remember to log. It picks up richer data (task type, agent, model, token counts) from `AILOG_*` environment variables when they're set before the gate runs; without them it still logs a bare pass/fail under `task_type: other`. See AGENTS.md section 4 for the variable names, `scripts/ai-log.mjs --help`-style comments at the top of the file for the full list, and the log/report scripts' own comments for how the path is resolved (the repo's shared git root, not the current worktree, so parallel agents don't fragment the data).
 
+**Measured telemetry, when the optional session mod is on.** If the `starter-hud` mod (`docs/guides/claude-code.md`) is enabled, it reads the real per-turn usage straight from Claude Code and hands it to `ai-log.mjs` through a per-branch file — ahead of `AILOG_*` variables, behind an explicit flag. `tokens_in` always means **total** input tokens, cache included: uncached input plus cache read plus cache write (that's what the cache-read-ratio math above assumes). With the mod off, nothing changes — `AILOG_*` variables are still how an agent reports richer numbers by hand.
+
 ## Reading the numbers
 
 The dashboard (`ai-dash/`, refreshed automatically by the gate, or manually by `node scripts/ai-report.mjs`) turns the rules above into measurements. What to do with each:
