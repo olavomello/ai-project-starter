@@ -1,6 +1,6 @@
 # ai-project-starter CLI
 
-Node, zero dependencies. Wraps `template/` with four commands: `init`, `update`, `adopt`, `doctor`. Works the same on Windows, macOS and Linux — it shells out to `git` (which runs natively on Windows), never to `bash`.
+Node, zero dependencies. Wraps `template/` with five commands: `init`, `update`, `adopt`, `doctor`, `mod`. Works the same on Windows, macOS and Linux — it shells out to `git` (which runs natively on Windows), never to `bash`.
 
 ## Why this exists
 
@@ -28,17 +28,18 @@ npx ai-project-starter init my-project
 ## Commands
 
 ```
-ai-project-starter init <target-dir> [--ref <branch-or-tag>] [--source <path-or-url>]
+ai-project-starter init <target-dir> [--ref <branch-or-tag>] [--source <path-or-url>] [--mod|--no-mod]
 ai-project-starter update [<target-dir>] [--ref <branch-or-tag>] [--source <path>] [--dry-run]
 ai-project-starter adopt [<target-dir>] [--ref <branch-or-tag>] [--source <path>] [--force]
 ai-project-starter doctor [<target-dir>]
+ai-project-starter mod <status|enable|disable> [<target-dir>] [--local] [--ref <ref>] [--json]
 ```
 
 `--source` defaults to this repo on GitHub; pass a local path (one containing a `template/` folder) to skip the network — useful for testing, or for an offline clone.
 
 ### `init`
 
-Copies `template/`, then — when run in a terminal — asks for AGENTS.md section 0 (name, purpose, stack, administrator, the five knobs) and writes the answers straight into `AGENTS.md` before anything is committed, so the first commit already has a real project identity instead of the template's blanks. Pass `--no-prompt` to skip this and leave section 0 blank (it's also skipped automatically when stdin/stdout isn't a TTY, e.g. in CI or when piped). After that it writes `.ai-project-starter.json` (the manifest `update` needs, hashed *after* the guided setup so the baseline matches what's actually committed), `git init`s, and makes the first commit. Then runs `doctor` and prints next steps. Equivalent to `init-project.sh`, minus the bash requirement.
+Copies `template/`, then — when run in a terminal — asks for AGENTS.md section 0 (name, purpose, stack, administrator, the six knobs, including the new task token budget) and whether to enable the optional [starter-hud](../mods/starter-hud/README.md) session mod, writing the answers straight into `AGENTS.md` and, if enabled, `.claude/settings.json`, before anything is committed — so the first commit already has a real project identity instead of the template's blanks. Pass `--no-prompt` to skip the AGENTS.md questions and leave section 0 blank (it's also skipped automatically when stdin/stdout isn't a TTY, e.g. in CI or when piped); the mod question is answered the same way unless `--mod`/`--no-mod` is passed, which wins outright either way. After that it writes `.ai-project-starter.json` (the manifest `update` needs, hashed *after* the guided setup so the baseline matches what's actually committed), `git init`s, and makes the first commit. Then runs `doctor` and prints next steps. Equivalent to `init-project.sh`, minus the bash requirement (`init-project.sh` doesn't ask either question — it just prints the `mod.mjs enable` command at the end).
 
 ### `update`
 
@@ -61,7 +62,18 @@ For a project that doesn't have `.ai-project-starter.json` yet — created by `i
 
 ### `doctor`
 
-Structural checks only, no network: required files present, `VERSION` is valid SemVer, `CHANGELOG.md` has `[Unreleased]`, every `docs/agents/*.md` has `## CONFIGS`, `## SCOPE AND RULES` and a `Status:` line, every `docs/adr/NNNN-*.md` has all four required headings, `.claude/settings.json` (if present) is valid JSON, and every `.claude/hooks/*.sh` is executable. Exit code `1` on any failure — safe to wire into CI. `init` runs this automatically at the end.
+Structural checks only, no network: required files present, `VERSION` is valid SemVer, `CHANGELOG.md` has `[Unreleased]`, every `docs/agents/*.md` has `## CONFIGS`, `## SCOPE AND RULES` and a `Status:` line, every `docs/adr/NNNN-*.md` has all four required headings, `.claude/settings.json` (if present) is valid JSON, and every `.claude/hooks/*.sh` is executable. Exit code `1` on any failure — safe to wire into CI. `init` runs this automatically at the end. It also reports the optional session mod's state (`enabled`/`disabled`/`not configured`) as information only — that alone never fails doctor, though a mod enabled with no matching marketplace entry gets a warning.
+
+### `mod`
+
+Turns the optional [starter-hud](../mods/starter-hud/README.md) session mod on or off in a project, or reports its state. A thin wrapper: it spawns `node <target-dir>/scripts/mod.mjs <status|enable|disable>` — that script, not this CLI, is the one implementation of the toggle (the `ai-dash` Settings area calls the same script). Fails with a clear message if the target project predates `scripts/mod.mjs` (run `update` first).
+
+## One thing to know about `update` and the session mod
+
+The first time the mod is toggled (by any of its three paths — `init`, `mod`, or the
+`ai-dash` Settings area), `.claude/settings.json` differs from the template's and
+`update` treats it as customized from then on, the same as any other hand-edited
+file: a later starter change to that file is never auto-applied, only flagged.
 
 ## What it deliberately doesn't do
 

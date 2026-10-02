@@ -20,3 +20,4 @@ git add -A
 git commit --quiet -m "chore: initialize project from ai-project-starter v$STARTER_VERSION"
 bash .claude/skills/semver-release/scripts/check-version.sh
 echo "Project created at $TARGET (starter v$STARTER_VERSION). Fill in AGENTS.md section 0."
+echo "Optional: node scripts/mod.mjs enable   (turns on the in-session status mod for Claude Code)"

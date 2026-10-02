@@ -113,3 +113,44 @@ picking hooks over convention are in
 no MCP server. `.mcp.json.example` is the committed scaffold — copy it, fill in
 real servers, and commit the result when a project built on this starter needs
 one; everyone who clones the repo then gets a one-time approval prompt for it.
+
+## Session mod (optional)
+
+A **mod** is a plugin whose JavaScript hooks run inside Claude Code. This starter
+publishes one, `starter-hud`, at `mods/starter-hud/` in the
+[ai-project-starter repo itself](https://github.com/olavomello/ai-project-starter)
+(not copied into `template/` — a project built from this starter loads it from
+there as a plugin, it doesn't vendor its code).
+
+**What it shows and measures:** a 1-3 line band above the prompt — agent, task
+size, fresh tokens against the "Task token budget" knob (section 0) if one is
+set, cache ratio, the last gate result, live agent count — plus a tool-call
+count appended to the spinner. It measures real per-turn token and tool-call
+usage and hands it to `scripts/ai-log.mjs` through a per-branch file, so the log
+stops depending on an agent remembering to export `AILOG_*` variables.
+
+**Turning it on or off is an Administrator decision**, same as `auto_agents` and
+`main_merge` in `AGENT_TEAM.md` — not something an agent enables on its own
+initiative. Three equivalent ways, all backed by the single implementation in
+`scripts/mod.mjs`:
+
+- `cli init`'s guided setup (or its `--mod`/`--no-mod` flags);
+- any time afterwards: `node scripts/mod.mjs enable` / `disable`, or
+  `ai-project-starter mod enable` / `disable` through the CLI;
+- the **Settings** area (gear icon) in `ai-dash`, when it's served locally with
+  `node scripts/ai-dash.mjs` — read-only on static hosting.
+
+All three write the same key: `.claude/settings.json`'s
+`enabledPlugins["starter-hud@ai-project-starter"]`. Commit that file so the rest
+of the team gets the same setting, and run `/reload-plugins` (or restart the
+session) after toggling it.
+
+**Where it runs and where it doesn't:** the band and spinner suffix draw only in
+the terminal and the Desktop Code tab — the measuring hooks and the usage file
+still run under the VS Code panel and `claude -p`, since those don't depend on
+drawing. It never loads in a cloud session (cloud sessions don't add
+marketplaces declared in a repo's settings) or in any non-Claude-Code agent
+(Codex and the rest). Off, missing, or on an older Claude Code (before
+v2.1.287), the mod is inert and everything behaves exactly as it does today:
+`ai-log.mjs` falls back to `AILOG_*` variables, same as always. Full detail,
+including its known limitations: `mods/starter-hud/README.md` at the repo root.

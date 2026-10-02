@@ -135,6 +135,46 @@
   .bar-fill { height: 100%; border-radius: 99px; }
   .bar-row .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-1); font-weight: 600; font-size: 12.5px; }
 
+  /* settings */
+  button.gear {
+    background: var(--surface-1); color: var(--text-2); border: 1px solid var(--border);
+    border-radius: 8px; width: 32px; height: 32px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  button.gear:hover { color: var(--text-1); border-color: var(--text-3); }
+  button.gear svg { width: 16px; height: 16px; }
+  .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px 0; border-top: 1px solid var(--border); }
+  .settings-row:first-of-type { border-top: none; }
+  .settings-row .label { font-size: 13.5px; color: var(--text-1); font-weight: 550; }
+  .settings-row .desc { font-size: 12.5px; color: var(--text-3); margin-top: 3px; max-width: 46ch; }
+  .switch { position: relative; width: 38px; height: 22px; border-radius: 99px; border: none;
+    background: var(--surface-2); border: 1px solid var(--border); cursor: pointer; flex: none; padding: 0; }
+  .switch[aria-checked="true"] { background: var(--accent); border-color: var(--accent); }
+  .switch .knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--surface-1); transition: left .12s ease; }
+  .switch[aria-checked="true"] .knob { left: 18px; background: #fff; }
+  .switch:disabled { cursor: not-allowed; opacity: .6; }
+  .settings-static { font-size: 12.5px; color: var(--text-3); }
+  .settings-static code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px;
+    padding: 2px 6px; font-size: 12px; }
+  .copy-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text-2);
+    font-size: 11px; padding: 2px 8px; cursor: pointer; margin-left: 6px; }
+  .copy-btn:hover { color: var(--text-1); border-color: var(--text-3); }
+  .settings-note { font-size: 11.5px; color: var(--text-3); margin-top: 8px; }
+  .modal-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, black 45%, transparent);
+    display: none; align-items: flex-start; justify-content: center; padding-top: 10vh; z-index: 20; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+    width: min(480px, 92vw); padding: 20px 22px; }
+  .modal h2 { margin: 0 0 4px; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text-1); }
+  .modal .modal-sub { font-size: 12.5px; color: var(--text-3); margin: 0 0 4px; }
+  .modal-close { position: absolute; }
+  .modal-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  button.close { background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 18px;
+    line-height: 1; padding: 2px; }
+  button.close:hover { color: var(--text-1); }
+
   details { margin-top: 12px; }
   summary { cursor: pointer; font-size: 12px; color: var(--text-3); }
   summary:hover { color: var(--text-1); }
@@ -164,6 +204,12 @@
     <div class="crumb" id="crumb"></div>
     <div class="spacer"></div>
     <div class="meta" id="meta"><span class="orb" id="orb"></span><span id="meta-text">loading</span></div>
+    <button class="gear" id="settings-btn" type="button" title="Settings" aria-label="Open settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
     <button class="theme" id="theme" type="button" title="Toggle theme" aria-label="Toggle light/dark theme">
       <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="4"/>
@@ -177,6 +223,25 @@
   <div id="root"></div>
 </div>
 <div class="tip" id="tip"></div>
+
+<div class="modal-backdrop" id="settings-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-top">
+      <h2 id="settings-title">Settings</h2>
+      <button class="close" id="settings-close" type="button" aria-label="Close settings">&times;</button>
+    </div>
+    <p class="modal-sub">Changes here write to this project's files — see each row for what and where.</p>
+    <div id="settings-body">
+      <div class="settings-row">
+        <div>
+          <div class="label">In-session status mod (Claude Code)</div>
+          <div class="desc">Measures real token/tool-call usage and shows a small band above the prompt. Requires Claude Code v2.1.287+, terminal or Desktop Code tab.</div>
+        </div>
+        <div id="mod-control">…</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const tip = document.getElementById('tip');
@@ -198,6 +263,78 @@ document.getElementById('theme').onclick = () => {
   const cur = document.documentElement.dataset.theme || 'dark';
   document.documentElement.dataset.theme = cur === 'dark' ? 'light' : 'dark';
 };
+
+// Settings area: a gear button opens a modal. One row for now — the
+// starter-hud mod toggle — structured so later rows can be added beside it
+// without rework (each row owns its own control markup/logic).
+(function setupSettings() {
+  const backdrop = document.getElementById('settings-backdrop');
+  const openBtn = document.getElementById('settings-btn');
+  const closeBtn = document.getElementById('settings-close');
+  const modControl = document.getElementById('mod-control');
+
+  function open() { backdrop.classList.add('open'); refreshModRow(); }
+  function close() { backdrop.classList.remove('open'); }
+  openBtn.onclick = open;
+  closeBtn.onclick = close;
+  backdrop.onclick = (e) => { if (e.target === backdrop) close(); };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && backdrop.classList.contains('open')) close(); });
+
+  function staticFallback() {
+    modControl.innerHTML = `<div class="settings-static">
+      Read-only on static hosting. Run locally to toggle:<br>
+      <code>node scripts/ai-dash.mjs</code><button class="copy-btn" data-copy="node scripts/ai-dash.mjs" type="button">Copy</button><br>
+      <code>node scripts/mod.mjs enable</code><button class="copy-btn" data-copy="node scripts/mod.mjs enable" type="button">Copy</button>
+    </div>`;
+    wireCopyButtons();
+  }
+
+  function wireCopyButtons() {
+    for (const btn of modControl.querySelectorAll('[data-copy]')) {
+      btn.onclick = () => { navigator.clipboard?.writeText(btn.dataset.copy).catch(() => {}); };
+    }
+  }
+
+  function renderSwitch(enabled, note) {
+    modControl.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <button class="switch" id="mod-switch" type="button" role="switch" aria-checked="${enabled ? 'true' : 'false'}" aria-label="Enable the in-session status mod">
+          <span class="knob"></span>
+        </button>
+        ${note ? `<span class="settings-note" id="mod-note">${esc(note)}</span>` : '<span class="settings-note" id="mod-note"></span>'}
+      </div>`;
+    const sw = document.getElementById('mod-switch');
+    sw.onclick = async () => {
+      const next = sw.getAttribute('aria-checked') !== 'true';
+      sw.disabled = true;
+      try {
+        const r = await fetch('api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-AI-Dash': '1' },
+          body: JSON.stringify({ mod: { enabled: next } }),
+        });
+        if (!r.ok) throw new Error(String(r.status));
+        const data = await r.json();
+        renderSwitch(data.mod.enabled === true, 'Run /reload-plugins (or restart the session), then commit the settings file.');
+      } catch {
+        sw.disabled = false;
+        document.getElementById('mod-note').textContent = 'Could not reach the local server — is it still running?';
+      }
+    };
+  }
+
+  async function refreshModRow() {
+    modControl.textContent = '…';
+    try {
+      const r = await fetch('api/config', { cache: 'no-store' });
+      if (!r.ok) throw new Error(String(r.status));
+      const data = await r.json();
+      renderSwitch(data.mod.enabled === true);
+    } catch {
+      staticFallback();
+    }
+  }
+})();
 
 // Animated loading indicators (thinking-orbs-universal, via CDN — https://libraries.dev/orbs).
 // Vanilla JS build, no bundler required. Degrades to plain text if the CDN

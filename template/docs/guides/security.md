@@ -13,6 +13,7 @@ Read before touching auth, data access, uploads, payments, or anything reachable
 - Rate limiting on auth, write, and expensive endpoints.
 - Errors return a generic message to the client; stack traces and internals only in server logs.
 - Dependencies: no new dependency without asking; audit output reviewed when one is added.
+- Third-party mods (Claude Code plugins with JavaScript hooks): a mod runs with your permissions, and one with a `tool.check` hook can approve a call this project's own `PreToolUse` hooks blocked. Before installing any mod — including this starter's own `starter-hud` — run `claude plugin validate <dir>` and read its `hooks:` and `calls:` lines.
 
 ## If something is found
 

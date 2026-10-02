@@ -85,7 +85,12 @@ function cost() {
     const p = prices[r.model];
     if (!p) continue;
     priced++;
-    c += (r.tokens_in * (p.in || 0) + r.tokens_out * (p.out || 0)
+    // tokens_in is TOTAL input (uncached + cache_read + cache_write — see
+    // ai-log.mjs's header comment), so pricing it at the plain `in` rate on
+    // top of cache_read/cache_write would charge the cached portion twice.
+    // Only the uncached remainder is priced at `in`.
+    const uncachedIn = Math.max(0, r.tokens_in - r.cache_read - r.cache_write);
+    c += (uncachedIn * (p.in || 0) + r.tokens_out * (p.out || 0)
        + r.cache_read * (p.cache_read || 0) + r.cache_write * (p.cache_write || 0)) / 1e6;
   }
   return { usd: +c.toFixed(4), priced_executions: priced, unpriced: recs.length - priced };
