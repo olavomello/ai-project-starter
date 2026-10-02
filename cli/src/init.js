@@ -1,5 +1,6 @@
 import { join, basename, resolve } from 'node:path';
 import { readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import {
   existsSync, mkdirSync, copyTree, makeExecutable, isDir, walk,
 } from './lib/fsutil.js';
@@ -10,7 +11,7 @@ import { die, info, section, warn } from './lib/log.js';
 import { runDoctor } from './doctor.js';
 import { guideAgentsSetup } from './setup.js';
 
-export async function init({ target, ref = 'main', source, noPrompt = false }) {
+export async function init({ target, ref = 'main', source, noPrompt = false, mod }) {
   if (!target) die('usage: ai-project-starter init <target-dir> [--ref <branch-or-tag>] [--source <path-or-url>] [--no-prompt]');
   if (existsSync(target) && readdirSync(target).length > 0) {
     die(`target "${target}" exists and is not empty`);
@@ -30,7 +31,23 @@ export async function init({ target, ref = 'main', source, noPrompt = false }) {
     }
 
     const projectNameHint = basename(resolve(target));
-    const configured = await guideAgentsSetup(target, { skip: noPrompt, projectNameHint });
+    const { configured, mod: enableModFlag } = await guideAgentsSetup(target, {
+      skip: noPrompt, projectNameHint, modFlag: mod,
+    });
+
+    // Run before the manifest hashes are computed (below), so the first
+    // commit and the manifest baseline both already include the toggle —
+    // same reasoning as hashing after the guided setup.
+    if (enableModFlag) {
+      const modScript = join(target, 'scripts', 'mod.mjs');
+      if (existsSync(modScript)) {
+        try {
+          execFileSync(process.execPath, [modScript, 'enable', '--dir', target], { stdio: 'inherit' });
+        } catch {
+          warn('Could not enable the session mod automatically — run `node scripts/mod.mjs enable` yourself.');
+        }
+      }
+    }
 
     // Hashed after the guided setup (if any) so the manifest baseline reflects
     // what's actually in the first commit, not the template's blank AGENTS.md.

@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { existsSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { readText, isDir } from './lib/fsutil.js';
 import { readManifest } from './lib/manifest.js';
 import { info, ok, warn, section } from './lib/log.js';
@@ -72,6 +73,25 @@ export function runDoctor(target, { quiet }) {
       say(ok, '.claude/settings.json is valid JSON');
     } catch (e) {
       failed = true; say(warn, `.claude/settings.json: invalid JSON (${e.message})`);
+    }
+  }
+
+  // Session-mod state — informational only; never fails doctor on its own.
+  const modScript = join(target, 'scripts', 'mod.mjs');
+  if (existsSync(modScript)) {
+    try {
+      const out = execFileSync(process.execPath, [modScript, 'status', '--dir', target, '--json'], { encoding: 'utf8' });
+      const { mod } = JSON.parse(out);
+      if (mod.enabled === null) {
+        say(info, 'starter-hud mod: not configured');
+      } else {
+        say(info, `starter-hud mod: ${mod.enabled ? 'enabled' : 'disabled'} (${mod.source} settings)`);
+        if (mod.enabled && !mod.ref) {
+          say(warn, 'starter-hud mod is enabled but its marketplace entry is missing — run `node scripts/mod.mjs enable` again.');
+        }
+      }
+    } catch (e) {
+      say(warn, `could not read session-mod state (${e.message})`);
     }
   }
 
