@@ -75,6 +75,14 @@ The first time the mod is toggled (by any of its three paths — `init`, `mod`, 
 `update` treats it as customized from then on, the same as any other hand-edited
 file: a later starter change to that file is never auto-applied, only flagged.
 
+## Running the test suite
+
+`cli/test/` (Node's built-in test runner, not shipped in the npm package — see `package.json`'s `files`) covers `scripts/mod.mjs`, `scripts/ai-dash.mjs`'s local server, and the `ai-log.mjs`/`ai-report.mjs` log pipeline:
+
+```bash
+node --test cli/test/*.test.mjs
+```
+
 ## What it deliberately doesn't do
 
 No real merge. A conflict during `update` is never resolved for you — `<file>.incoming` sits next to your file and you decide, same as you would with `git diff --no-index`. Template-sync tools that promise automatic merging (create-react-app-style "eject", cookiecutter's various sync add-ons) have a long history of getting this wrong silently; this CLI would rather hand you two files and a diff command than guess.
