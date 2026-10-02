@@ -11,15 +11,32 @@
 // flag, so `scripts/gate.sh` can call this with no args at all):
 //   AILOG_TASK_TYPE=fix-bug AILOG_AGENT=dev-api-tester AILOG_GATE=pass node scripts/ai-log.mjs
 //
-// A flag always wins over its env var. Only the fields below are ever
-// written — no prompt text, no file paths, no source content — the log is
-// designed to be safe to aggregate and publish.
+// Measured fields (model, size, tokens_in, tokens_out, cache_read,
+// cache_write, tool_calls, duration) have a third source, ahead of the env
+// var: the optional starter-hud mod's per-branch usage file (see
+// mods/starter-hud/README.md at the repo root — vendored separately, not
+// copied into this template). Precedence is flag > usage file > env var >
+// default. The usage file is deleted once its values are read, whether or
+// not it changed anything (a flag can still override a measured field); a
+// missing or malformed file is ignored silently.
+//
+// `tokens_in` means TOTAL input tokens, cache included: uncached input plus
+// cache read plus cache write. That's what `cache_read / tokens_in` in
+// ai-report.mjs assumes, and what the usage file's `uncached_in` +
+// `cache_read` + `cache_write` already adds up to.
+//
+// Only the fields below are ever written — no prompt text, no file paths,
+// no source content — the log is designed to be safe to aggregate and
+// publish.
 //
 // The log lives at the repo's shared root (resolved via
 // `git rev-parse --git-common-dir`), not the current working directory, so
 // every git worktree of this repo appends to the SAME file instead of
-// fragmenting the data per worktree.
-import { appendFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
+// fragmenting the data per worktree. The usage file is resolved against the
+// same root, under the sanitized branch name (see the comment in
+// scripts/gate.sh for the exact sanitizing rule — ai-log.mjs, gate.sh and
+// the mod must all derive the identical name).
+import { appendFileSync, mkdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
@@ -35,9 +52,46 @@ function repoRoot() {
   return process.cwd();
 }
 
+function currentBranch() {
+  try {
+    return execFileSync(
+      'git',
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    ).trim() || 'unknown';
+  } catch { return 'unknown'; }
+}
+
+// Same transform as scripts/gate.sh's `printf '%s' "$branch" | tr -c 'A-Za-z0-9._-' '_'`.
+function sanitizeBranch(branch) {
+  return String(branch).replace(/[^A-Za-z0-9._-]/g, '_');
+}
+
 const ROOT = repoRoot();
 const LOG = join(ROOT, '.agents/log/executions.jsonl');
 const TASKS_DOC = join(ROOT, 'docs/tasks.md');
+const USAGE_FILE = join(ROOT, '.agents/state/usage', `${sanitizeBranch(currentBranch())}.json`);
+
+/** Reads and deletes the starter-hud usage file, mapped onto ai-log's field names. */
+function readUsageFile() {
+  if (!existsSync(USAGE_FILE)) return {};
+  let out = {};
+  try {
+    const u = JSON.parse(readFileSync(USAGE_FILE, 'utf8'));
+    out = {
+      tokens_in: (u.uncached_in || 0) + (u.cache_read || 0) + (u.cache_write || 0),
+      tokens_out: u.out || 0,
+      cache_read: u.cache_read || 0,
+      cache_write: u.cache_write || 0,
+      tool_calls: u.tool_calls || 0,
+      duration: u.duration_s || 0,
+      model: u.model || undefined,
+      size: u.size || undefined,
+    };
+  } catch { out = {}; /* malformed — ignored silently */ }
+  try { rmSync(USAGE_FILE); } catch { /* best-effort */ }
+  return out;
+}
 
 const ENUMS = {
   size: ['S', 'M', 'L'],
@@ -73,10 +127,24 @@ function parseArgs(argv) {
     if (v === undefined || v.startsWith('--')) die(`${k} needs a value`);
     out[k.slice(2).replace(/-/g, '_')] = v;
   }
-  // Flags win; an AI_* env var fills anything the flags didn't set. This is
-  // what lets scripts/gate.sh invoke this file with no flags at all.
-  for (const [field, envName] of Object.entries(ENV_FALLBACK)) {
-    if (out[field] === undefined && process.env[envName] !== undefined && process.env[envName] !== '') {
+  return out;
+}
+
+/**
+ * Resolves every field's final value: an explicit flag wins outright; next,
+ * for the measured fields, the starter-hud usage file (if present); next,
+ * the AILOG_* env var; otherwise the field is left unset (a default fills
+ * it in below). This is what lets scripts/gate.sh invoke this file with no
+ * flags at all, and what lets the mod's usage file improve on a bare
+ * AILOG_* run without needing to change how gate.sh calls either.
+ */
+function resolveFields(flags, usage) {
+  const out = { ...flags };
+  for (const field of Object.keys(ENV_FALLBACK)) {
+    if (out[field] !== undefined) continue;
+    if (usage[field] !== undefined) { out[field] = usage[field]; continue; }
+    const envName = ENV_FALLBACK[field];
+    if (process.env[envName] !== undefined && process.env[envName] !== '') {
       out[field] = process.env[envName];
     }
   }
@@ -95,7 +163,7 @@ function taxonomy() {
   return list.length ? list : null;
 }
 
-const a = parseArgs(process.argv.slice(2));
+const a = resolveFields(parseArgs(process.argv.slice(2)), readUsageFile());
 if (!a.task_type) die('--task-type (or AILOG_TASK_TYPE) is required (see docs/tasks.md)');
 
 const types = taxonomy();

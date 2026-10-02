@@ -79,7 +79,10 @@ automatic_log() {
   mkdir -p "$attempt_dir" 2>/dev/null
   local branch safe_branch attempt_file prior=0 result first_try
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
-  safe_branch="$(echo "$branch" | tr -c 'A-Za-z0-9._-' '_')"
+  # printf, not echo: echo adds a trailing newline that `tr -c` turns into a
+  # trailing underscore ("agent/dev-api-tester" -> "agent_dev-api-tester_").
+  # ai-log.mjs and the starter-hud mod must derive the identical safe name.
+  safe_branch="$(printf '%s' "$branch" | tr -c 'A-Za-z0-9._-' '_')"
   attempt_file="$attempt_dir/$safe_branch"
   [[ -f "$attempt_file" ]] && prior="$(cat "$attempt_file" 2>/dev/null)"
   [[ "$prior" =~ ^[0-9]+$ ]] || prior=0

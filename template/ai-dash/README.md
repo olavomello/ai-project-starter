@@ -24,9 +24,24 @@ Both the raw log and `data.json` are resolved from the repo's shared root (`git 
 `file://` won't work — the page `fetch`es `data.json`, which browsers block on the file protocol. Serve the folder:
 
 ```bash
-npx --yes serve ai-dash
+node scripts/ai-dash.mjs            # recommended — also powers the Settings area below
+# or: npx --yes serve ai-dash
 # or: python3 -m http.server -d ai-dash 8000
 ```
+
+`scripts/ai-dash.mjs [--port 4173]` is a small, dependency-free local server bound to
+`127.0.0.1` only. It serves these same files, plus `GET`/`POST /api/config`, which the
+page's **Settings** area (gear icon, top right) uses to read and flip the optional
+`starter-hud` session mod (see `AGENTS.md` section 6 and
+`docs/guides/claude-code.md`) without you editing `.claude/settings.json` by hand.
+`npx serve` and a static host don't have that endpoint, so under those the Settings
+row is read-only and shows the two commands to run instead
+(`node scripts/ai-dash.mjs` and `node scripts/mod.mjs enable`).
+
+The `POST` endpoint only accepts requests whose `Host` (and `Origin`, when sent) name
+that same local server, with a `X-AI-Dash: 1` header and a small JSON body — enough to
+stop another page or script from flipping the setting without you asking for it, not a
+general-purpose API.
 
 ## Deploying to Vercel
 
