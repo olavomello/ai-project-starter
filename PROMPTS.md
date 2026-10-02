@@ -28,9 +28,9 @@ I want to start a new project from the ai-project-starter template
 (https://github.com/olavomello/ai-project-starter). Do the following:
 
 1. Clone https://github.com/olavomello/ai-project-starter.git (main branch,
-   unless I tell you to pin a specific tag) into a temporary location, and copy
-   its `template/` directory into a new directory named <project-directory>
-   (ask me for this name if I haven't given it to you).
+   unless I tell you to pin a specific tag or ref) into a temporary location,
+   and copy its `template/` directory into a new directory named
+   <project-directory> (ask me for this name if I haven't given it to you).
 2. Ask me these questions, one at a time, and wait for each answer before asking
    the next. Offer the default in parentheses and accept it if I answer blank:
    - Name (default: the project directory's name)
@@ -50,17 +50,26 @@ I want to start a new project from the ai-project-starter template
    touch anything else in the file.
 4. If I answered yes to the mod question, run `node scripts/mod.mjs enable`
    inside the new project before the first commit, so it's included in it.
-5. Run `git init`, stage everything, and make the first commit with a message
+5. Run `node <path-to-the-clone-from-step-1>/cli/bin.js adopt <project-directory>
+   --ref <the branch or tag you cloned>` so the project gets
+   `.ai-project-starter.json` — the manifest `ai-project-starter update` needs to
+   track it later — before the first commit, so the manifest baseline matches
+   what's actually committed. This is the same file the CLI's own `init` writes;
+   without it I can't later pull starter improvements with `update`.
+6. Run `git init`, stage everything, and make the first commit with a message
    like "chore: initialize project from ai-project-starter (agent-guided)".
    Do not mention any AI assistant or tool name anywhere in that commit message
    or in any file you write — this is a hard rule of the starter itself
    (see AGENTS.md section 2 once it exists in the new project).
-6. Run `scripts/gate.sh` inside the new project and report the result. If it's
+7. Run `node <path-to-the-clone-from-step-1>/cli/bin.js doctor <project-directory>`
+   and report the result (the same structural check `cli init` runs
+   automatically at the end).
+8. Run `scripts/gate.sh` inside the new project and report the result. If it's
    not executable yet, make it so first.
-7. Tell me the next manual steps: adding a git remote and pushing, and reading
+9. Tell me the next manual steps: adding a git remote and pushing, and reading
    through the rest of AGENTS.md.
 
-If git isn't available, skip step 5 and tell me so — copy the files and let me
+If git isn't available, skip step 6 and tell me so — copy the files and let me
 init the repo myself.
 ```
 
