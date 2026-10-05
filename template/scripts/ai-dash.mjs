@@ -12,11 +12,12 @@
 // exist, and the page's Settings row falls back to showing the commands to
 // run instead — see the GET /api/config contract in ai-dash/README.md.
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { dirname, join, normalize, extname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { statusOf, enableMod, disableMod } from './mod.mjs';
-import { listSkills } from './skills.mjs';
+import { listSkills, usageMap, NEVER } from './skills.mjs';
+import { listFunctions } from './functions.mjs';
 
 function repoRoot() {
   try {
@@ -105,10 +106,21 @@ async function handleGetConfig(req, res) {
   sendJson(res, 200, { mod: { enabled: status.enabled, source: status.source, ref: status.ref } });
 }
 
-/** Skill names, descriptions and validity only — never the SKILL.md bodies. */
+/** Names, descriptions, dates and validity of skills, functions and agents — never their bodies. */
 async function handleGetSkills(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
-  sendJson(res, 200, { skills: listSkills(TARGET_DIR) });
+  const used = usageMap(TARGET_DIR);
+  const agents = [];
+  const agentsDir = join(TARGET_DIR, 'docs', 'agents');
+  if (existsSync(agentsDir)) {
+    for (const f of readdirSync(agentsDir).filter((x) => x.endsWith('.md') && !x.startsWith('_')).sort()) {
+      const text = readFileSync(join(agentsDir, f), 'utf8');
+      const field = (k) => (new RegExp(`^${k}\\s*:\\s*(.*)$`, 'mi').exec(text) || [, ''])[1].trim();
+      const name = f.slice(0, -3);
+      agents.push({ name, description: field('Description'), status: field('Status'), creationDate: field('Creation date'), createdBy: field('Created by'), lastUsage: used.get(`agent:${name}`) || NEVER });
+    }
+  }
+  sendJson(res, 200, { skills: listSkills(TARGET_DIR), functions: listFunctions(TARGET_DIR), agents });
 }
 
 async function handlePostConfig(req, res) {

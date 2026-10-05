@@ -3,7 +3,7 @@
 // Run: node --test cli/test/skills.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
@@ -128,4 +128,81 @@ test('GET /api/skills lists name/description (no bodies) and enforces Host', asy
     const bad = await fetch(`http://127.0.0.1:${port}/api/skills`, { headers: { Origin: 'http://evil.example' } });
     assert.equal(bad.status, 400);
   } finally { child.kill(); rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- creation/usage dates, functions catalog ----
+import { parseFunction, listFunctions, createFunction } from '../../template/scripts/functions.mjs';
+import { createSkill, recordUse, usageMap, DATE_RE, NEVER } from '../../template/scripts/skills.mjs';
+const FUNCTIONS_MJS = join(ROOT, 'template', 'scripts', 'functions.mjs');
+
+const DATE_FN = '```\nfunction dateFormat( dte : Date ) {\n  ---\n  Formats a date.\n  Creation date : 2026-10-04 22:14:00\n  Created by : admin\n  Last usage : 0000-00-00 00:00:00\n  ---\n  return dte formatted in YYYY-MM-DD HH:MM:SS\n}\n```\n';
+
+test('skill creation-date must be YYYY-MM-DD HH:MM:SS when present', () => {
+  assert.deepEqual(check('a', skill('a', GOOD_DESC, 'creation-date: 2026-10-04 22:14:00\ncreated-by: admin\n')).errors, []);
+  assert.ok(check('a', skill('a', GOOD_DESC, 'creation-date: 04/10/2026\n')).errors.some((e) => /creation-date/.test(e)));
+});
+
+test('createSkill stamps dates, quotes the description, and refuses duplicates', () => {
+  const dir = project({});
+  try {
+    const f = createSkill(dir, 'new-one', 'Does: a thing. Use when asked.', 'tester');
+    const [s] = listSkills(dir);
+    assert.deepEqual(s.errors, []);
+    assert.equal(s.createdBy, 'tester');
+    assert.match(s.creationDate, DATE_RE);
+    assert.equal(s.description, 'Does: a thing. Use when asked.');
+    assert.throws(() => createSkill(dir, 'new-one', 'x'.repeat(50)), /already exists/);
+    assert.throws(() => createSkill(dir, 'Bad Name', GOOD_DESC), /lowercase/);
+    assert.ok(f.endsWith('SKILL.md'));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('usage log feeds lastUsage; unused is zeroed', () => {
+  const dir = project({ a: skill('a', GOOD_DESC), b: skill('b', GOOD_DESC) });
+  try {
+    recordUse('skill', 'a', dir);
+    const [a, b] = listSkills(dir);
+    assert.match(a.lastUsage, DATE_RE);
+    assert.equal(b.lastUsage, NEVER);
+    assert.ok(usageMap(dir).has('skill:a'));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('parseFunction accepts the documented format and rejects broken ones', () => {
+  const ok = parseFunction(DATE_FN);
+  assert.deepEqual(ok.errors, []);
+  assert.deepEqual(ok.fn.params, ['dte : Date']);
+  assert.equal(ok.fn.createdBy, 'admin');
+  assert.ok(parseFunction('nonsense').errors.length);
+  assert.ok(parseFunction(DATE_FN.replace('2026-10-04 22:14:00', 'yesterday')).errors.some((e) => /Creation date/.test(e)));
+  assert.ok(parseFunction(DATE_FN.replace('dte : Date', 'dte')).errors.some((e) => /name : Type/.test(e)));
+  assert.ok(parseFunction(DATE_FN.replace('  return dte formatted in YYYY-MM-DD HH:MM:SS\n', '')).errors.some((e) => /body/.test(e)));
+});
+
+test('functions: new, list, check, use, index and name/file match', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'fn-test-'));
+  try {
+    createFunction(dir, { name: 'slugify', params: ['text : string'], description: 'Make a URL slug.', prompt: 'return text as a lowercase-hyphen slug', by: 'tester' });
+    assert.throws(() => createFunction(dir, { name: 'slugify', description: 'x' }), /already exists/);
+    assert.throws(() => createFunction(dir, { name: 'Bad_Name', description: 'x' }), /camelCase/);
+    let [f] = listFunctions(dir);
+    assert.deepEqual(f.errors, []);
+    assert.equal(f.lastUsage, NEVER);
+    const run = (...a) => spawnSync(process.execPath, [FUNCTIONS_MJS, ...a, '--dir', dir], { encoding: 'utf8' });
+    assert.equal(run('use', 'slugify').status, 0);
+    [f] = listFunctions(dir);
+    assert.match(f.lastUsage, DATE_RE);
+    assert.equal(run('check').status, 0);
+    assert.match(readFileSync(join(dir, 'docs', 'functions', 'README.md'), 'utf8'), /\| \[`slugify`\]/);
+    writeFileSync(join(dir, 'docs', 'functions', 'other.md'), DATE_FN); // name dateFormat != file other
+    assert.equal(run('check').status, 1);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('the template ships a valid dateFormat function and a hook that never fails', () => {
+  const list = listFunctions(join(ROOT, 'template'));
+  assert.deepEqual(list.map((f) => [f.name, f.errors.length]), [['dateFormat', 0]]);
+  const hook = join(ROOT, 'template', '.claude', 'hooks', 'log-skill-use.sh');
+  const r = spawnSync('bash', [hook], { input: 'not json', encoding: 'utf8' });
+  assert.equal(r.status, 0);
 });

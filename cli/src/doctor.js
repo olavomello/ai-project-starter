@@ -121,6 +121,21 @@ export function runDoctor(target, { quiet }) {
     }
   }
 
+  if (existsSync(join(target, 'scripts', 'functions.mjs')) && isDir(join(target, 'docs', 'functions'))) {
+    try {
+      const out = execFileSync('node', ['scripts/functions.mjs', 'check', '--json'], { cwd: target, encoding: 'utf8' });
+      const n = JSON.parse(out).functions.length;
+      say(ok, `${n} function${n === 1 ? '' : 's'}, format valid`);
+    } catch (e) {
+      failed = true;
+      let fns = [];
+      try { fns = JSON.parse(e.stdout || '{}').functions || []; } catch { /* script itself failed */ }
+      const bad = fns.filter((x) => x.errors.length);
+      if (!bad.length) say(warn, `could not check functions (${e.message.split('\n')[0]})`);
+      for (const x of bad) for (const m of x.errors) say(warn, `docs/functions/${x.file}: ${m}`);
+    }
+  }
+
   const manifest = readManifest(target);
   if (manifest) {
     say(info, `\nCreated from ai-project-starter v${manifest.starterVersion} (${manifest.starterRef.slice(0, 12)}).`);

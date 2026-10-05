@@ -5,6 +5,7 @@ Description : <one line — what this agent does>
 Status : ON
 Owns : <comma-separated globs this agent may write>
 Created by : <parent agent, or Main>
+Creation date : <YYYY-MM-DD HH:MM:SS>
 --------------------------------------
 
 ## SCOPE AND RULES

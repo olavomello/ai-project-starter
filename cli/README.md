@@ -52,7 +52,7 @@ Compares your project's current files, the manifest's recorded baseline, and the
 | changed | unchanged | kept as-is (your edit becomes the new baseline) |
 | changed | changed | **conflict** — `<file>.incoming` written, original left untouched |
 
-`AGENTS.md`, `AGENT_TEAM.md`, `VERSION`, `CHANGELOG.md`, `docs/model-prices.json` and everything under `docs/agents/` and `docs/adr/` are **never** auto-applied or conflict-written — they're always project-specific. If the starter's copy changed, `update` just names the file and points at `CHANGELOG.md` for what changed there.
+`AGENTS.md`, `AGENT_TEAM.md`, `VERSION`, `CHANGELOG.md`, `docs/model-prices.json` and everything under `docs/agents/`, `docs/adr/` and `docs/functions/` are **never** auto-applied or conflict-written — they're always project-specific. If the starter's copy changed, `update` just names the file and points at `CHANGELOG.md` for what changed there.
 
 A file the starter dropped is removed locally only if you never touched it; a file the starter added is added. Run with `--dry-run` first to see the report without writing anything.
 
@@ -62,7 +62,7 @@ For a project that doesn't have `.ai-project-starter.json` yet — created by `i
 
 ### `doctor`
 
-Structural checks only, no network: required files present, `VERSION` is valid SemVer, `CHANGELOG.md` has `[Unreleased]`, every `docs/agents/*.md` has `## CONFIGS`, `## SCOPE AND RULES` and a `Status:` line, every `docs/adr/NNNN-*.md` has all four required headings, `.claude/settings.json` (if present) is valid JSON, and every `.claude/hooks/*.sh` is executable, and every skill's YAML frontmatter is valid (via the project's own `scripts/skills.mjs check`; errors fail, warnings don't). Exit code `1` on any failure — safe to wire into CI. `init` runs this automatically at the end. It also reports the optional session mod's state (`enabled`/`disabled`/`not configured`) as information only — that alone never fails doctor, though a mod enabled with no matching marketplace entry gets a warning.
+Structural checks only, no network: required files present, `VERSION` is valid SemVer, `CHANGELOG.md` has `[Unreleased]`, every `docs/agents/*.md` has `## CONFIGS`, `## SCOPE AND RULES` and a `Status:` line, every `docs/adr/NNNN-*.md` has all four required headings, `.claude/settings.json` (if present) is valid JSON, and every `.claude/hooks/*.sh` is executable, every skill's YAML frontmatter is valid and every `docs/functions/*.md` follows the function format (via the project's own `scripts/skills.mjs` / `scripts/functions.mjs` `check`; errors fail, warnings don't). Exit code `1` on any failure — safe to wire into CI. `init` runs this automatically at the end. It also reports the optional session mod's state (`enabled`/`disabled`/`not configured`) as information only — that alone never fails doctor, though a mod enabled with no matching marketplace entry gets a warning.
 
 ### `mod`
 

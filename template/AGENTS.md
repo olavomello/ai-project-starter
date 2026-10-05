@@ -122,6 +122,7 @@ Skills that come from the account or an installed plugin, not vendored here. Use
 
 - **Claude Code (primary):** skills load from `.claude/skills/`; `CLAUDE.md` imports this file with `@AGENTS.md`. Keep that import; instruction loading, auto memory vs. project memory, path-scoped rules, and the optional in-session status mod (an Administrator decision, on or off) are in `docs/guides/claude-code.md`.
 - **Codex and others:** if the tool doesn't load skills natively, read the listed `SKILL.md` when its trigger applies. The scripts run the same from any agent.
+- **Functions:** a short, parameterised prompt you keep rewriting goes in `docs/functions/<camelCase>.md` (`node scripts/functions.mjs new`; format and rules in `docs/functions/README.md`). A multi-step procedure is a skill; a deterministic algorithm is a script.
 - Keep this file tool-agnostic. Plugin-specific agent rosters and triggers belong in `docs/guides/delegation.md`.
 
 ## 7. Agent team

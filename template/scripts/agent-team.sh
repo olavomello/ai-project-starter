@@ -65,6 +65,7 @@ cmd_new() {
       -e "s|<one line — what this agent does>|$desc|" \
       -e "s|<comma-separated globs this agent may write>|$owns|" \
       -e "s|<parent agent, or Main>|${AGENT_PARENT:-Main}|" \
+      -e "s|<YYYY-MM-DD HH:MM:SS>|$(date '+%Y-%m-%d %H:%M:%S')|" \
       "$DIR/_TEMPLATE.md" > "$DIR/$name.md"
   echo "created $DIR/$name.md — fill in SCOPE AND RULES before dispatching"
 }
@@ -75,6 +76,8 @@ cmd_claim() {
   [[ "${1:-}" == "--as" ]] && holder="${2:?holder}"
   [[ -f "$DIR/$name.md" ]] || { echo "unknown agent: $name" >&2; exit 1; }
   [[ "$(field "$DIR/$name.md" Status)" == "ON" ]] || { echo "$name is not ON" >&2; exit 1; }
+  # best-effort "last usage" record (local log, never blocks a claim)
+  node scripts/skills.mjs use "$name" --kind agent >/dev/null 2>&1 || true
   # conflict check against live claims
   local mine conflict=0
   mine="$(globs_of "$name")"

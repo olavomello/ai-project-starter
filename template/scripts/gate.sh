@@ -59,6 +59,11 @@ if command -v node >/dev/null 2>&1 && [[ -f scripts/skills.mjs && -d .claude/ski
   node scripts/skills.mjs check || FAILED=1
 fi
 
+if command -v node >/dev/null 2>&1 && [[ -f scripts/functions.mjs && -d docs/functions ]]; then
+  echo "--- functions"
+  node scripts/functions.mjs check || FAILED=1
+fi
+
 GATE=.claude/skills/semver-release/scripts/check-version.sh
 if [[ -f $GATE ]]; then
   echo "--- version gate"
