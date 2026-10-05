@@ -69,6 +69,10 @@ command plus supporting files, frontmatter, and loading on demand.
   stored in the file — a `PostToolUse` hook (`.claude/hooks/log-skill-use.sh`) records
   each use in the local, git-ignored `.agents/log/usage.jsonl`, and `list` and the
   ai-dash viewer read it from there. (The hook relies on `jq`, like the other hooks.)
+- Use the account's `skill-creator` to write and tune skills whose triggering matters (its
+  full eval flow is token-heavy; for a simple skill use `skills.mjs new`). Whatever created
+  the skill, `skills.mjs check` is the gate: it requires valid frontmatter and does not
+  require `creation-date`/`created-by`, so fill those in if the tool left them out.
 - List each vendored skill in `AGENTS.md` section 6 so non-Claude agents know to
   read its `SKILL.md`.
 
