@@ -56,6 +56,13 @@ command plus supporting files, frontmatter, and loading on demand.
   in the skill's frontmatter so only a person triggers them with `/<name>`, never
   Claude on its own judgment. `semver-release` should carry this flag once it's
   invokable as a slash command — check before assuming it already does.
+- **Every skill's frontmatter must be valid YAML and complete** — `node scripts/skills.mjs check`
+  enforces it (the gate and `cli doctor` run it). Required: `name` (lowercase letters,
+  digits, single hyphens; equals the folder name; ≤64 chars) and `description` (≤1024
+  chars) saying what the skill does **and when to use it** ("Use when…"). The classic
+  breakage is an unquoted `: ` or ` #` in the description — quote it or use `>`.
+  Optional fields such as `disable-model-invocation` stay as they are. View them all
+  with `node scripts/skills.mjs list` or the ai-dash Skills viewer.
 - List each vendored skill in `AGENTS.md` section 6 so non-Claude agents know to
   read its `SKILL.md`.
 

@@ -16,6 +16,7 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 import { dirname, join, normalize, extname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { statusOf, enableMod, disableMod } from './mod.mjs';
+import { listSkills } from './skills.mjs';
 
 function repoRoot() {
   try {
@@ -104,6 +105,12 @@ async function handleGetConfig(req, res) {
   sendJson(res, 200, { mod: { enabled: status.enabled, source: status.source, ref: status.ref } });
 }
 
+/** Skill names, descriptions and validity only — never the SKILL.md bodies. */
+async function handleGetSkills(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  sendJson(res, 200, { skills: listSkills(TARGET_DIR) });
+}
+
 async function handlePostConfig(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
   if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
@@ -143,6 +150,7 @@ function serveStatic(req, res, urlPath) {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
+    if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
     if (url.pathname === '/api/config' && req.method === 'POST') return await handlePostConfig(req, res);
     if (url.pathname === '/api/config') return send(res, 405, 'method not allowed', 'text/plain');
