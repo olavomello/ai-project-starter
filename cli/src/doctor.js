@@ -105,6 +105,22 @@ export function runDoctor(target, { quiet }) {
     }
   }
 
+  if (existsSync(join(target, 'scripts', 'skills.mjs')) && isDir(join(target, '.claude', 'skills'))) {
+    try {
+      const out = execFileSync('node', ['scripts/skills.mjs', 'check', '--json'], { cwd: target, encoding: 'utf8' });
+      const skills = JSON.parse(out).skills;
+      say(ok, `${skills.length} skill${skills.length === 1 ? '' : 's'}, frontmatter valid`);
+      for (const k of skills) for (const w of k.warnings) say(warn, `.claude/skills/${k.dir}/SKILL.md: ${w}`);
+    } catch (e) {
+      failed = true;
+      let skills = [];
+      try { skills = JSON.parse(e.stdout || '{}').skills || []; } catch { /* not JSON: script itself failed */ }
+      const bad = skills.filter((k) => k.errors.length);
+      if (!bad.length) say(warn, `could not check skills (${e.message.split('\n')[0]})`);
+      for (const k of bad) for (const m of k.errors) say(warn, `.claude/skills/${k.dir}/SKILL.md: ${m}`);
+    }
+  }
+
   const manifest = readManifest(target);
   if (manifest) {
     say(info, `\nCreated from ai-project-starter v${manifest.starterVersion} (${manifest.starterRef.slice(0, 12)}).`);

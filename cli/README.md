@@ -62,7 +62,7 @@ For a project that doesn't have `.ai-project-starter.json` yet — created by `i
 
 ### `doctor`
 
-Structural checks only, no network: required files present, `VERSION` is valid SemVer, `CHANGELOG.md` has `[Unreleased]`, every `docs/agents/*.md` has `## CONFIGS`, `## SCOPE AND RULES` and a `Status:` line, every `docs/adr/NNNN-*.md` has all four required headings, `.claude/settings.json` (if present) is valid JSON, and every `.claude/hooks/*.sh` is executable. Exit code `1` on any failure — safe to wire into CI. `init` runs this automatically at the end. It also reports the optional session mod's state (`enabled`/`disabled`/`not configured`) as information only — that alone never fails doctor, though a mod enabled with no matching marketplace entry gets a warning.
+Structural checks only, no network: required files present, `VERSION` is valid SemVer, `CHANGELOG.md` has `[Unreleased]`, every `docs/agents/*.md` has `## CONFIGS`, `## SCOPE AND RULES` and a `Status:` line, every `docs/adr/NNNN-*.md` has all four required headings, `.claude/settings.json` (if present) is valid JSON, and every `.claude/hooks/*.sh` is executable, every skill's YAML frontmatter is valid (via the project's own `scripts/skills.mjs check`; errors fail, warnings don't). Exit code `1` on any failure — safe to wire into CI. `init` runs this automatically at the end. It also reports the optional session mod's state (`enabled`/`disabled`/`not configured`) as information only — that alone never fails doctor, though a mod enabled with no matching marketplace entry gets a warning.
 
 ### `mod`
 

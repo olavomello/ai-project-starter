@@ -54,6 +54,12 @@ if [[ -x scripts/agent-team.sh ]]; then
   bash scripts/agent-team.sh check || FAILED=1
 fi
 
+if command -v node >/dev/null 2>&1 && [[ -f scripts/skills.mjs && -d .claude/skills ]]; then
+  echo "--- skills frontmatter"
+  node scripts/skills.mjs check || FAILED=1
+fi
+
+
 GATE=.claude/skills/semver-release/scripts/check-version.sh
 if [[ -f $GATE ]]; then
   echo "--- version gate"

@@ -12,10 +12,11 @@
 // exist, and the page's Settings row falls back to showing the commands to
 // run instead — see the GET /api/config contract in ai-dash/README.md.
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { dirname, join, normalize, extname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { statusOf, enableMod, disableMod } from './mod.mjs';
+import { listSkills, usageMap, NEVER } from './skills.mjs';
 
 function repoRoot() {
   try {
@@ -104,6 +105,23 @@ async function handleGetConfig(req, res) {
   sendJson(res, 200, { mod: { enabled: status.enabled, source: status.source, ref: status.ref } });
 }
 
+/** Names, descriptions, dates and validity of skills, functions and agents — never their bodies. */
+async function handleGetSkills(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  const used = usageMap(TARGET_DIR);
+  const agents = [];
+  const agentsDir = join(TARGET_DIR, 'docs', 'agents');
+  if (existsSync(agentsDir)) {
+    for (const f of readdirSync(agentsDir).filter((x) => x.endsWith('.md') && !x.startsWith('_')).sort()) {
+      const text = readFileSync(join(agentsDir, f), 'utf8');
+      const field = (k) => (new RegExp(`^${k}\\s*:\\s*(.*)$`, 'mi').exec(text) || [, ''])[1].trim();
+      const name = f.slice(0, -3);
+      agents.push({ name, description: field('Description'), status: field('Status'), creationDate: field('Creation date'), createdBy: field('Created by'), lastUsage: used.get(`agent:${name}`) || NEVER });
+    }
+  }
+  sendJson(res, 200, { skills: listSkills(TARGET_DIR), agents });
+}
+
 async function handlePostConfig(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
   if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
@@ -143,6 +161,7 @@ function serveStatic(req, res, urlPath) {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
+    if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
     if (url.pathname === '/api/config' && req.method === 'POST') return await handlePostConfig(req, res);
     if (url.pathname === '/api/config') return send(res, 405, 'method not allowed', 'text/plain');

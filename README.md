@@ -176,6 +176,7 @@ scripts/ai-log.mjs                record one execution (Node, cross-platform)
 scripts/ai-report.mjs             aggregate the log into ai-dash/data.json
 scripts/adr.mjs                   create/list/link Architecture Decision Records (Node, cross-platform)
 scripts/mod.mjs                   toggle the optional starter-hud session mod (.claude/settings.json)
+scripts/skills.mjs                list, create and validate skills (YAML frontmatter); records usage for "last usage"
 scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings area's API
 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
@@ -275,7 +276,7 @@ Both the log and `ai-dash/data.json` resolve to the repo's **shared git root**, 
 
 **The aggregate holds counts only** — no prompts, no file paths, no source content — and task names come from the fixed taxonomy in `docs/tasks.md` for exactly that reason, since a Vercel deployment is public by default. Turn on Deployment Protection before the first deploy if the project is client work; details in `ai-dash/README.md`. Cost stays blank until you fill in `docs/model-prices.json` yourself — a stale price is worse than none.
 
-**Viewed locally, `ai-dash/` can do more than display.** `node scripts/ai-dash.mjs` serves the dashboard on `127.0.0.1` and adds a Settings area (the gear icon) that reads and writes `.claude/settings.json` directly — today, a single switch for the optional session mod below. It's a local-only server (it refuses any request whose `Host`/`Origin` isn't `127.0.0.1`), and opening `ai-dash/index.html` as a static file still works — the Settings area just falls back to showing the toggle command instead of a live switch.
+**Viewed locally, `ai-dash/` can do more than display.** `node scripts/ai-dash.mjs` serves the dashboard on `127.0.0.1` and adds a Settings area (the gear icon) that reads and writes `.claude/settings.json` directly — today, a single switch for the optional session mod below — plus a **Skills and agents** viewer (book icon) listing each one's name, description, creation date and last usage, with a valid/invalid badge for skills' YAML headers and functions' format. *Last usage* comes from a local, git-ignored usage log (a `PostToolUse` hook records skill uses; `agent-team.sh claim` records agents), never from editing the files, so there are no merge conflicts between worktrees (served from your working tree by the local server only; never published, since skill text isn't part of the counts-only aggregate). It's a local-only server (it refuses any request whose `Host`/`Origin` isn't `127.0.0.1`), and opening `ai-dash/index.html` as a static file still works — the Settings area just falls back to showing the toggle command instead of a live switch.
 
 **Real usage numbers instead of mostly zeros.** Getting the `AILOG_*` variables right by hand is easy to forget. The optional `starter-hud` session mod (next section) measures them for real, straight from Claude Code, and hands them to this same pipeline — nothing about the gate or the log format changes, the zeros just stop being zeros.
 
@@ -335,7 +336,10 @@ A Claude Code **mod** (a plugin with JavaScript hooks — `starter-hud` above, o
 | Regenerate the ADR index | `node scripts/adr.mjs toc --write` |
 | Check the session mod's on/off state | `node scripts/mod.mjs status` |
 | Turn the session mod on / off | `node scripts/mod.mjs enable` / `node scripts/mod.mjs disable` |
-| Serve the dashboard locally, with Settings | `node scripts/ai-dash.mjs` |
+| Serve the dashboard locally, with Settings and Skills | `node scripts/ai-dash.mjs` |
+| List skills (name, description, created, last usage) | `node scripts/skills.mjs list` |
+| Create a skill with complete frontmatter | `node scripts/skills.mjs new <name> "<description>"` |
+| Validate every skill's YAML frontmatter | `node scripts/skills.mjs check` (also run by the gate and `doctor`) |
 | See release state | `bash .claude/skills/semver-release/scripts/bump.sh status` |
 | Cut a release | ask Claude to run the `semver-release` skill |
 | Generate a photo | ask Claude — it uses the `photo-generation` skill |

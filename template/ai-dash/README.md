@@ -38,6 +38,14 @@ page's **Settings** area (gear icon, top right) uses to read and flip the option
 row is read-only and shows the two commands to run instead
 (`node scripts/ai-dash.mjs` and `node scripts/mod.mjs enable`).
 
+`GET /api/skills` feeds the **Skills and agents** viewer (book icon): name,
+description, creation date, last usage and validity of every skill in `.claude/skills/`
+and agent in `docs/agents/`, never their bodies. Last usage
+is read from the local `.agents/log/usage.jsonl`. It is
+local-only on purpose — skill text is not part of the counts-only `data.json`, so
+under `npx serve` or a static host the viewer shows `node scripts/skills.mjs list`
+instead.
+
 The `POST` endpoint only accepts requests whose `Host` (and `Origin`, when sent) name
 that same local server, with a `X-AI-Dash: 1` header and a small JSON body — enough to
 stop another page or script from flipping the setting without you asking for it, not a

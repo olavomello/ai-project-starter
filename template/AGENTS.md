@@ -117,7 +117,7 @@ Skills that come from the account or an installed plugin, not vendored here. Use
 |---|---|
 | Any chart, graph, dashboard, KPI tile, palette choice | `dataviz` — read before the first line of chart code |
 | New or reshaped UI, visual direction, typography | `frontend-design` |
-| A procedure repeated across sessions is worth capturing | `skill-creator` — new skills land in `.claude/skills/` and are committed |
+| A procedure repeated across sessions is worth capturing | `skill-creator` — new skills land in `.claude/skills/`, committed, with valid `name` + `description` frontmatter (`node scripts/skills.mjs check`) |
 | Multi-source research feeding a decision | `deep-research` |
 
 - **Claude Code (primary):** skills load from `.claude/skills/`; `CLAUDE.md` imports this file with `@AGENTS.md`. Keep that import; instruction loading, auto memory vs. project memory, path-scoped rules, and the optional in-session status mod (an Administrator decision, on or off) are in `docs/guides/claude-code.md`.
