@@ -17,7 +17,6 @@ import { dirname, join, normalize, extname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { statusOf, enableMod, disableMod } from './mod.mjs';
 import { listSkills, usageMap, NEVER } from './skills.mjs';
-import { listFunctions } from './functions.mjs';
 
 function repoRoot() {
   try {
@@ -120,7 +119,7 @@ async function handleGetSkills(req, res) {
       agents.push({ name, description: field('Description'), status: field('Status'), creationDate: field('Creation date'), createdBy: field('Created by'), lastUsage: used.get(`agent:${name}`) || NEVER });
     }
   }
-  sendJson(res, 200, { skills: listSkills(TARGET_DIR), functions: listFunctions(TARGET_DIR), agents });
+  sendJson(res, 200, { skills: listSkills(TARGET_DIR), agents });
 }
 
 async function handlePostConfig(req, res) {

@@ -16,7 +16,6 @@ export const PROTECTED = [
   'docs/model-prices.json',
   'docs/agents/',
   'docs/adr/',
-  'docs/functions/',
 ];
 
 export function isProtected(relPath) {
