@@ -188,7 +188,8 @@ scripts/ai-report.mjs             aggregate the log into ai-dash/data.json
 scripts/adr.mjs                   create/list/link Architecture Decision Records (Node, cross-platform)
 scripts/mod.mjs                   toggle the optional starter-hud session mod (.claude/settings.json)
 scripts/skills.mjs                list, create and validate skills (YAML frontmatter); records usage for "last usage"
-scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings area's API
+scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings area's API and /api/live
+scripts/agent-live.mjs            SubagentStart/Stop hook: records which agents run; feeds the Live panel
 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
 docs/tasks.md                     fixed task taxonomy used by the log
@@ -348,7 +349,7 @@ A Claude Code **mod** (a plugin with JavaScript hooks — `starter-hud` above, o
 | Regenerate the ADR index | `node scripts/adr.mjs toc --write` |
 | Check the session mod's on/off state | `node scripts/mod.mjs status` |
 | Turn the session mod on / off | `node scripts/mod.mjs enable` / `node scripts/mod.mjs disable` |
-| Serve the dashboard locally, with Settings and Skills | `node scripts/ai-dash.mjs` |
+| Serve the dashboard locally, with Live agents, Settings and Skills | `node scripts/ai-dash.mjs` |
 | List skills (name, description, created, last usage) | `node scripts/skills.mjs list` |
 | Create a skill with complete frontmatter | `node scripts/skills.mjs new <name> "<description>"` |
 | Validate every skill's YAML frontmatter | `node scripts/skills.mjs check` (also run by the gate and `doctor`) |

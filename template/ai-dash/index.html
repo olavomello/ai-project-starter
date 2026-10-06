@@ -99,6 +99,23 @@
   .tile .foot { font-size: 11.5px; color: var(--text-3); }
   .tile svg.spark { flex: none; width: 84px; height: 26px; }  /* override the generic svg{width:100%} rule, which otherwise expands this flex item to the row width */
 
+  /* live agents (local server only) */
+  .live-card { padding: 14px 18px; }
+  .live-head { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .live-note { margin-left: auto; color: var(--text-3); font-size: 12px; }
+  .live-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-3); flex: none; }
+  .live-dot.on { background: var(--good); animation: live-pulse 1.6s ease-out infinite; }
+  @keyframes live-pulse { 0% { box-shadow: 0 0 0 0 var(--good); } 70%, 100% { box-shadow: 0 0 0 8px transparent; } }
+  @media (prefers-reduced-motion: reduce) { .live-dot.on { animation: none; } }
+  .live-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+  .live-list li { display: grid; grid-template-columns: minmax(120px, 220px) 1fr auto; gap: 12px; align-items: baseline; font-size: 13px; }
+  .live-name { font-weight: 600; }
+  .live-desc { color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .live-time { font-variant-numeric: tabular-nums; color: var(--text-2); }
+  .live-sub { margin-top: 14px; font-size: 11.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
+  .live-list.dim li { color: var(--text-2); }
+  @media (max-width: 640px) { .live-list li { grid-template-columns: 1fr auto; } .live-desc { display: none; } }
+
   .grid2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
   @media (min-width: 900px) { .grid2 { grid-template-columns: 1.3fr 1fr; } }
   .grid3 { display: grid; grid-template-columns: 1fr; gap: 16px; }
@@ -243,6 +260,7 @@
       </svg>
     </button>
   </header>
+  <section id="live" hidden></section>
   <div id="root"></div>
 </div>
 <div class="tip" id="tip"></div>
@@ -631,6 +649,64 @@ function recentTable(recs) {
     }).join('')}</tbody></table></div>
   </div>`;
 }
+
+// Live agents: polls the local server's GET api/live while the tab is visible.
+// Static hosting (Vercel, `npx serve`) has no such endpoint, so the panel stays hidden there.
+(function setupLive() {
+  const el = document.getElementById('live');
+  let state = null, fetchedAt = 0, shown = false, offline = false;
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.round(sec));
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return m ? m + 'm ' + String(s).padStart(2, '0') + 's' : s + 's';
+  }
+  function runLi(r) {
+    return '<li><span class="live-name">' + esc(r.type) + '</span><span class="live-desc">' + esc(r.description || '') +
+      '</span><span class="live-time" data-sec="' + r.seconds + '">' + fmt(r.seconds) + '</span></li>';
+  }
+  function doneLi(r) {
+    return '<li><span class="live-name">' + esc(r.type) + '</span><span class="live-desc">' + esc(r.description || '') +
+      '</span><span class="live-time">took ' + fmt(r.seconds) + '</span></li>';
+  }
+  function render() {
+    const n = state.running.length;
+    const head = '<div class="live-head"><span class="live-dot' + (n ? ' on' : '') + '"></span><b>' +
+      (n ? n + ' agent' + (n === 1 ? '' : 's') + ' running' : 'No agents running') + '</b><span class="live-note">' +
+      (offline ? 'server not reachable, retrying' : 'live, updates every 2 s') + '</span></div>';
+    const running = n ? '<ul class="live-list">' + state.running.map(runLi).join('') + '</ul>' : '';
+    const claims = state.claims.length
+      ? '<div class="live-sub">Claimed paths</div><ul class="live-list dim">' + state.claims.map((c) =>
+        '<li><span class="live-name">' + esc(c.name) + '</span><span class="live-desc">' + esc(c.globs.join(', ')) +
+        '</span><span class="live-time">' + esc(c.holder) + '</span></li>').join('') + '</ul>'
+      : '';
+    const recent = state.recent.length
+      ? '<div class="live-sub">Recently finished</div><ul class="live-list dim">' + state.recent.slice(0, 6).map(doneLi).join('') + '</ul>'
+      : '';
+    el.innerHTML = '<h2>Live</h2><div class="card live-card">' + head + running + claims + recent + '</div>';
+  }
+  async function poll() {
+    if (document.hidden) return;
+    try {
+      const r = await fetch('api/live', { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      state = await r.json(); fetchedAt = Date.now(); offline = false;
+      if (!shown) { shown = true; el.hidden = false; }
+      render();
+    } catch {
+      if (!shown) { clearInterval(timer); return; } // no live endpoint here: stay hidden
+      offline = true; render();
+    }
+  }
+  const timer = setInterval(poll, 2000);
+  setInterval(() => { // tick the elapsed times between polls
+    if (!state) return;
+    const extra = (Date.now() - fetchedAt) / 1000;
+    for (const t of el.querySelectorAll('.live-time[data-sec]')) t.textContent = fmt(Number(t.dataset.sec) + extra);
+  }, 1000);
+  document.addEventListener('visibilitychange', poll);
+  poll();
+})();
 
 function render(d) {
   document.getElementById('crumb').innerHTML = `<b>${esc(d.log_records)}</b> execution${d.log_records === 1 ? '' : 's'} logged`;
