@@ -53,6 +53,23 @@ export function runDoctor(target, { quiet }) {
     }
   }
 
+  // Claude Code only lists subagents found in .claude/agents/; scripts/agents-sync.mjs
+  // keeps those in step with the docs/agents/ roster. Informational, never fails doctor.
+  if (existsSync(join(target, 'scripts', 'agents-sync.mjs')) && isDir(agentsDir)) {
+    try {
+      const out = execFileSync(process.execPath, ['scripts/agents-sync.mjs', '--check', '--json', '--dir', '.'], { cwd: target, encoding: 'utf8' });
+      const { agents } = JSON.parse(out);
+      say(ok, `${agents.length} Claude Code subagent${agents.length === 1 ? '' : 's'} in .claude/agents/ match docs/agents/`);
+    } catch (e) {
+      let problems = [];
+      try { problems = JSON.parse(e.stdout || '{}').problems || []; } catch { /* not JSON: the script itself failed */ }
+      if (problems.length) {
+        for (const p of problems) say(warn, p);
+        say(warn, 'run: node scripts/agents-sync.mjs  (so these agents show up in Claude Code /agents)');
+      } else say(warn, `could not check .claude/agents/ (${e.message.split(/\r?\n/)[0]})`);
+    }
+  }
+
   const adrDir = join(target, 'docs', 'adr');
   if (isDir(adrDir)) {
     const adrFiles = readdirSync(adrDir).filter((f) => /^\d{4}-.*\.md$/.test(f));

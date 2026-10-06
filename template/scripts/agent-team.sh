@@ -10,6 +10,7 @@
 #   agent-team.sh cleanup <name>          remove worktree and local branch
 #   agent-team.sh claim <name>            declare intended paths (advisory)
 #   agent-team.sh release <name>
+#   agent-team.sh sync-claude             regenerate .claude/agents/ (Claude Code subagents) from docs/agents/
 #   agent-team.sh check
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
@@ -68,6 +69,7 @@ cmd_new() {
       -e "s|<YYYY-MM-DD HH:MM:SS>|$(date '+%Y-%m-%d %H:%M:%S')|" \
       "$DIR/_TEMPLATE.md" > "$DIR/$name.md"
   echo "created $DIR/$name.md — fill in SCOPE AND RULES before dispatching"
+  node scripts/agents-sync.mjs >/dev/null 2>&1 && echo "added .claude/agents/$name.md (Claude Code subagent)" || echo "warning: could not update .claude/agents/ — run: node scripts/agents-sync.mjs" >&2
 }
 
 cmd_claim() {
@@ -117,6 +119,7 @@ cmd_check() {
     [[ -n "$(field "$f" Description)" ]] || { echo "FAIL: $f — empty Description" >&2; failed=1; }
     grep -q '^## SCOPE AND RULES' "$f" || { echo "FAIL: $f — missing SCOPE AND RULES" >&2; failed=1; }
   done
+  node scripts/agents-sync.mjs --check || failed=1
   local n; n=$(ls -d "$LOCKS"/*/ 2>/dev/null | wc -l)
   (( n > 4 )) && { echo "FAIL: $n concurrent claims, limit is 4" >&2; failed=1; }
   for d in "$LOCKS"/*/; do
@@ -249,5 +252,6 @@ case "${1:-}" in
   finish) shift; cmd_finish "$@";;
   cleanup) shift; cmd_cleanup "$@";;
   check) cmd_check;;
-  *) sed -n '2,14p' "$0"; exit 2;;
+  sync-claude) node scripts/agents-sync.mjs;;
+  *) sed -n '2,15p' "$0"; exit 2;;
 esac

@@ -5,6 +5,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ## [Unreleased]
 ### Added
+- `scripts/agents-sync.mjs`: generates `.claude/agents/<name>.md` — a thin Claude Code subagent pointer (name, description, "read your roster file") — for every `Status : ON` agent in `docs/agents/`, so roster agents show up in `/agents`. `agent-team.sh new` runs it, `agent-team.sh sync-claude` runs it on demand, `agent-team.sh check` fails when the two drift, and `doctor` reports drift. Only files it generated are ever changed or removed; `.claude/agents/` is never auto-applied by `update`. Existing projects: run `node scripts/agents-sync.mjs` once after `update`.
 - `template/README.md`: a structured README for every new project (contents, getting started, gate, layout, working agreements, monitoring, contributing, license) that ends with a "Powered by AIS" footer. `init` fills the name, purpose and stack from the guided setup; `update` never auto-applies it.
 - `docs/agents/sys-init-starter.md`: a one-time bootstrap agent every new project ships with, with the highest agent hierarchy (below the Administrator). It runs the project's first prompt — identity, README, `auto_agents` / `main_merge`, gate, repo map, agent team — then asks to be removed. Documented in `AGENTS.md` section 1 and `AGENT_TEAM.md`, with a "Start the project" entry in `PROMPTS.md`; `init` prints it as the next step.
 - README and `PROMPTS.md`: on Windows run `bash scripts/*.sh` with Git Bash; the `bash` on PATH in PowerShell is the WSL stub.

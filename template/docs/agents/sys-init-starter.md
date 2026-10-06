@@ -50,7 +50,8 @@ Read only what a step needs; do not re-read the whole repo.
    (`<3-letter function>-<area>-<role>`), one-line purpose, owned paths. After a yes,
    create each with
    `bash scripts/agent-team.sh new <name> "<description>" "<owned globs>"`, fill in its
-   SCOPE AND RULES, and run `bash scripts/agent-team.sh check`. Creating the roster
+   SCOPE AND RULES, and run `bash scripts/agent-team.sh check`. `new` also writes the
+   Claude Code subagent pointer in `.claude/agents/`, so each agent shows up in `/agents`. Creating the roster
    files is part of this setup; it is not the runtime spawning that `auto_agents`
    governs. Do not create agents the Administrator did not approve.
 7. **Commit.** One Conventional Commit per logical part (for example
@@ -58,9 +59,10 @@ Read only what a step needs; do not re-read the whole repo.
    `chore: add initial agent team`), with no attribution lines. Do not push.
 8. **Report and retire.** Summarize what was set up, what is still open, and the
    suggested first task. Then ask the Administrator whether to remove this agent. On
-   yes, delete `docs/agents/sys-init-starter.md` with `git rm` in its own commit
-   (`chore: remove starter agent`). `ai-project-starter update` never restores
-   it, because `docs/agents/` is never auto-applied. On no, set `Status : OFF`.
+   yes, delete `docs/agents/sys-init-starter.md` with `git rm`, run
+   `node scripts/agents-sync.mjs` to drop its `.claude/agents/` pointer, and commit both
+   together (`chore: remove starter agent`). `ai-project-starter update` never restores
+   it, because `docs/agents/` is never auto-applied. On no, set `Status : OFF` and run `node scripts/agents-sync.mjs`.
 
 - Claims `Owns` before writing, syncs before each unit of work, releases when done.
 - Reports to the Administrator: what changed, how it was verified, what is still open.
