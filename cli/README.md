@@ -52,7 +52,7 @@ Compares your project's current files, the manifest's recorded baseline, and the
 | changed | unchanged | kept as-is (your edit becomes the new baseline) |
 | changed | changed | **conflict** — `<file>.incoming` written, original left untouched |
 
-`AGENTS.md`, `AGENT_TEAM.md`, `README.md`, `VERSION`, `CHANGELOG.md`, `docs/model-prices.json` and everything under `docs/agents/`, `.claude/agents/` and `docs/adr/` are **never** auto-applied or conflict-written — they're always project-specific. If the starter's copy changed, `update` just names the file and points at `CHANGELOG.md` for what changed there.
+`AGENTS.md`, `AGENT_TEAM.md`, `README.md`, `VERSION`, `CHANGELOG.md`, `docs/model-prices.json` and everything under `docs/agents/`, `.claude/agents/` and `docs/adr/` are **never** auto-applied or conflict-written — they're always project-specific. If the starter's copy changed, `update` names the file once and points at `CHANGELOG.md` for what changed there; the manifest remembers which starter version of each of these files it already told you about (`acknowledged`), so the same change isn't repeated on every run, and a dry run never counts as telling you.
 
 A file whose content already equals the starter's copy is simply marked in sync. `ai-dash/data.json` (rewritten by every gate run) is never tracked or reported. A file the starter dropped is removed locally only if you never touched it; a file the starter added is added. Run with `--dry-run` first to see the report without writing anything.
 

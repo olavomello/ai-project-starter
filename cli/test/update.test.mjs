@@ -119,3 +119,25 @@ test('ai-dash/data.json is runtime output: never tracked, never reported', () =>
     assert.ok(!(out.stdout + out.stderr).includes('ai-dash/data.json'), out.stdout + out.stderr);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('a changed protected file is reported once per starter change, and a dry run does not count', () => {
+  const dir = tmp();
+  const target = join(dir, 'proj');
+  try {
+    const src = fakeStarter(dir);
+    assert.equal(cli('init', target, '--source', src, '--no-prompt').status, 0);
+    const agents = join(src, 'template', 'AGENTS.md');
+    const reported = (r) => (r.stdout + r.stderr).includes('AGENTS.md');
+    const bump = (text) => writeFileSync(agents, readFileSync(agents, 'utf8') + `\n${text}\n`);
+
+    bump('change one');
+    assert.ok(reported(cli('update', target, '--source', src, '--dry-run')), 'dry run reports it');
+    assert.ok(reported(cli('update', target, '--source', src, '--dry-run')), 'a dry run does not mark it as seen');
+    assert.ok(reported(cli('update', target, '--source', src)), 'the real run reports it');
+    assert.ok(!reported(cli('update', target, '--source', src)), 'then it stays quiet');
+    assert.ok(!reported(cli('update', target, '--source', src, '--dry-run')));
+
+    bump('change two');
+    assert.ok(reported(cli('update', target, '--source', src)), 'a new starter change is reported again');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
