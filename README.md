@@ -81,7 +81,15 @@ bash ai-project-starter/init-project.sh my-project
 
 > **Windows and the bash script:** `init-project.sh` needs a real `bash`. If yours is broken, use the CLI above instead — it only needs `git` and `node`, both of which run natively on Windows. `bash .claude/skills/semver-release/scripts/check-version.sh` inside a generated project still needs bash either way, but everything else (`gate.sh`'s Node steps, `ai-log.mjs`, `ai-report.mjs`) is plain Node.
 
-### 2. Fill in section 0 of `AGENTS.md`
+### 2. Run the starter agent
+
+Every new project ships with one agent, `docs/agents/sys-init-starter.md` — the **Starter**, with the highest hierarchy among agents (below you). It runs the project's first prompt so everything else works: it fills in the identity and `README.md`, asks the two agent-policy questions (`auto_agents`, `main_merge`), sets up and runs the gate, writes the first repo map, proposes an agent team for your approval and creates it, and commits. Then it asks whether to remove itself. Open Claude Code in the project and say:
+
+```text
+Run the starter agent: read docs/agents/sys-init-starter.md and follow it end to end.
+```
+
+It skips whatever the CLI already filled in. If you would rather do it by hand, the part it automates first is section 0 of `AGENTS.md`:
 
 Name, purpose, stack, administrator, and the knobs (coverage floor, file-size limits, branch model). Agents read these instead of assuming defaults — a wrong value here becomes a wrong rule everywhere else. Skip this step if you used the CLI interactively (step 1 already did it) or used the [PROMPTS.md bootstrap prompt](#promptsmd--bootstrapping-via-an-agent-instead-of-the-cli) with an agent.
 
@@ -165,6 +173,7 @@ It grows over time: as the framework gains capabilities, useful prompts for driv
 Visual version at the top of this page ([`assets/directory-structure.svg`](assets/directory-structure.svg)); text version for copy-pasting below:
 
 ```text
+README.md                         project README (name/purpose/stack filled by init; ends with "Powered by AIS")
 AGENTS.md                         rules for all agents (tool-agnostic, ~130 lines, always loaded)
 AGENT_TEAM.md                     how agents create and coordinate other agents
 CLAUDE.md                         imports AGENTS.md for Claude Code
@@ -184,7 +193,7 @@ scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
 docs/tasks.md                     fixed task taxonomy used by the log
 docs/model-prices.json            you fill this in — cost stays blank until you do
-docs/agents/                      one committed file per agent (dev-api-tester.md, ...)
+docs/agents/                      one committed file per agent; ships with sys-init-starter.md (one-time, removed after setup)
 docs/guides/                      loaded on demand: security, efficiency, delegation, claude-code
 docs/repo-map.md, decisions.md    agent cache, committed
 docs/adr/                         Architecture Decision Records — template.md + 0001-..., 0002-..., ...

@@ -68,9 +68,11 @@ export async function init({ target, ref = 'main', source, noPrompt = false, mod
 
     section('Next steps:');
     info(`  1. cd ${target}`);
+    info('  2. Open Claude Code here and run the starter agent (it sets up the rest, then is removed):');
+    info('       "Run the starter agent: read docs/agents/sys-init-starter.md and follow it end to end."');
     info(configured
-      ? '  2. Review AGENTS.md section 0 (filled in during setup) and the rest of AGENTS.md.'
-      : '  2. Fill in AGENTS.md section 0 (name, purpose, stack, administrator, knobs).');
+      ? '     Section 0 of AGENTS.md and README.md were already filled in during setup; it will skip them.'
+      : '     Or do it by hand: fill in AGENTS.md section 0 and the README.md placeholders.');
     info('  3. bash scripts/gate.sh   (Windows: use Git Bash; or ask Claude to run it)');
     info('  4. git remote add origin <your-repo> && git push -u origin main');
   } finally {

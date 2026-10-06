@@ -41,6 +41,16 @@ A PR is **mechanical** only when every changed path is documentation, a test, or
 
 Sensitive paths, always administrator regardless of size: dependency manifests and lockfiles, `.github/`, CI and deploy config, Dockerfiles and infra, database migrations and schema, anything under an `auth`, `security`, `payment` or `billing` path, `VERSION`, `CHANGELOG.md`, `AGENTS.md`, `AGENT_TEAM.md`, `scripts/gate.sh`, `scripts/agent-team.sh`, `.claude/`.
 
+## The starter agent
+
+A new project ships with one agent, `docs/agents/sys-init-starter.md`: the **Starter**. It runs the project's first prompt and prepares the structure so everything else works. Start it from Claude Code at the project root:
+
+> Run the starter agent: read `docs/agents/sys-init-starter.md` and follow it end to end.
+
+- **Hierarchy:** the highest among agents, below the Administrator. Until its setup is finished it acts with Main's authority over `AGENTS.md` section 0, the CONFIGS block above, `docs/agents/`, `docs/repo-map.md`, `docs/decisions.md`, `README.md` and `.agents/gate.conf`. It never edits `VERSION`, creates tags, changes CI or dependencies, touches billing or usage limits, or force-pushes.
+- **What it does, in order:** fills in project identity and the README, asks `auto_agents` and `main_merge`, sets up and runs the gate, writes the first repo map and decision, proposes the agent team for the Administrator's approval and creates it, commits, and reports.
+- **Retirement:** it runs once. After reporting it asks whether to remove itself; on yes it deletes its own file in a separate commit. `docs/agents/` is never auto-applied by `ai-project-starter update`, so it does not come back. If kept, it is set to `Status : OFF`.
+
 ## When to spawn
 
 Spawn only when **all** of these hold:

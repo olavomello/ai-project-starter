@@ -38,6 +38,7 @@ DESC_X = 430
 #   children = []          -> folder, contents not expanded in this view
 #   children = [node, ...] -> folder, expanded with the listed children
 TREE = [
+    ("README.md", "Structured project README, ends with “Powered by AIS”", None),
     ("AGENTS.md", "Rules for all agents — tool-agnostic, always loaded", None),
     ("AGENT_TEAM.md", "How agents create and coordinate other agents", None),
     ("CLAUDE.md", "One line: @AGENTS.md — never edited further", None),
@@ -58,7 +59,7 @@ TREE = [
     ("docs", None, [
         ("tasks.md", "Fixed task taxonomy used by the execution log", None),
         ("model-prices.json", "You fill this in — cost stays blank until you do", None),
-        ("agents", "One committed file per agent (roster)", []),
+        ("agents", "Roster; ships with sys-init-starter, the one-time bootstrap agent", []),
         ("guides", "Loaded on demand: security, efficiency, delegation, claude-code", []),
         ("repo-map.md, decisions.md", "Committed agent cache — map + durable decisions", None),
         ("adr", "Architecture Decision Records, one file per decision", []),

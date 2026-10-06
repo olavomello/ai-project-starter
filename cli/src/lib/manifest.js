@@ -10,6 +10,7 @@ export const STARTER_REPO = 'https://github.com/olavomello/ai-project-starter.gi
 // whole subtree.
 export const PROTECTED = [
   'AGENTS.md',
+  'README.md',
   'AGENT_TEAM.md',
   'VERSION',
   'CHANGELOG.md',
