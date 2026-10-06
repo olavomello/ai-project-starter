@@ -1,0 +1,18 @@
+{
+  "name": "ai-project-starter",
+  "version": "0.1.0",
+  "description": "Bootstrap and maintain projects built on the ai-project-starter template. Run via npx github:olavomello/ai-project-starter#main <command>.",
+  "type": "module",
+  "bin": {
+    "ai-project-starter": "./cli/bin.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olavomello/ai-project-starter.git"
+  },
+  "private": true
+}
