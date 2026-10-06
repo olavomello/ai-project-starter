@@ -85,6 +85,8 @@ bash scripts/agent-team.sh new dev-api-tester "Writes and runs contract tests fo
 
 This writes `docs/agents/dev-api-tester.md` from the template, with `Status: ON` and the declared ownership. Fill in SCOPE AND RULES before dispatching it. The file is committed — the team is part of the project, not of one session.
 
+`new` also generates `.claude/agents/<name>.md`, a thin pointer with the agent's `name` and `description` that tells Claude Code's subagent to read the roster file. That is what makes the agent appear in `/agents`. Never edit the pointer: change the roster file and run `bash scripts/agent-team.sh sync-claude` (or `node scripts/agents-sync.mjs`). Agents set to `OFF`, or deleted from `docs/agents/`, lose their pointer on the next sync, and `agent-team.sh check` fails if the two drift apart. Hand-written subagents in `.claude/agents/` are never touched.
+
 Each agent file contains only what is specific to it. Project-wide rules live in `AGENTS.md` and are never copied into an agent file. An agent rule may narrow a project rule; it may never relax one.
 
 ## Isolation: every agent gets a worktree

@@ -16,6 +16,7 @@ export const PROTECTED = [
   'CHANGELOG.md',
   'docs/model-prices.json',
   'docs/agents/',
+  '.claude/agents/',
   'docs/adr/',
 ];
 

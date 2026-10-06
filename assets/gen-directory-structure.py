@@ -67,6 +67,7 @@ TREE = [
     (".claude", None, [
         ("skills/semver-release", "Release workflow: bump, changelog, tag, version gate", []),
         ("skills/photo-generation", "Photorealistic images, routed to OpenAI", []),
+        ("agents", "Generated Claude Code subagent pointers for docs/agents/", []),
         ("settings.json", "Hooks: protect VERSION/CHANGELOG, block force-push", None),
         ("hooks", "The hook scripts settings.json calls", []),
         ("rules/security.md", "Auto-loads the security guide on a matching path", None),

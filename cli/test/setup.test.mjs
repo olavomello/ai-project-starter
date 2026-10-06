@@ -69,6 +69,8 @@ test('init ships the README and the starter agent, and doctor accepts them', () 
     const out = execFileSync(process.execPath, [join(ROOT, 'cli', 'bin.js'), 'init', target, '--source', ROOT, '--no-prompt'], { encoding: 'utf8' });
     assert.ok(existsSync(join(target, 'README.md')));
     assert.ok(existsSync(join(target, 'docs', 'agents', 'sys-init-starter.md')));
+    assert.ok(existsSync(join(target, '.claude', 'agents', 'sys-init-starter.md')));
+    assert.match(out, /Claude Code subagent/);
     assert.match(out, /docs\/agents\/sys-init-starter\.md/);
     assert.match(out, /run the starter agent/i);
     assert.ok(readFileSync(join(target, 'README.md'), 'utf8').includes('Powered by'));
