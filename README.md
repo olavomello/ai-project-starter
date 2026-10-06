@@ -91,6 +91,8 @@ Name, purpose, stack, administrator, and the knobs (coverage floor, file-size li
 bash scripts/gate.sh
 ```
 
+> **Windows:** in PowerShell, `bash` resolves to the WSL stub and fails with `execvpe(/bin/bash) failed` unless you have a Linux distro installed. Use **Git Bash** instead (installed with Git for Windows): open it in the project folder and run the same command, or from PowerShell run `& "C:\Program Files\Git\bin\bash.exe" scripts/gate.sh`. The same goes for every `bash scripts/...` command in this README and for the `.claude/hooks/*.sh` hooks.
+
 It auto-detects npm, Deno, pyproject and Cargo scripts for format/lint/types/test. Steps it can't detect are **skipped**, not failed. To correct or disable a step:
 
 ```bash
