@@ -128,7 +128,7 @@ npx github:olavomello/ai-project-starter#main update --dry-run   # see what woul
 npx github:olavomello/ai-project-starter#main update             # apply it
 ```
 
-It only ever touches a file the project hasn't customized since the last sync — anything else is flagged, never silently overwritten (see the CLI's own [README](cli/README.md) for exactly how). A project created with `init-project.sh` (no manifest yet) can opt in with `cli adopt` first.
+It only ever touches a file the project hasn't customized since the last sync — anything else is flagged, never silently overwritten (see the CLI's own [README](cli/README.md) for exactly how). A project created with `init-project.sh` (no manifest yet) can opt in with `ai-project-starter adopt` first.
 
 ---
 
@@ -370,7 +370,7 @@ Both default to `ask` — Main asks once, at the start of the first plan, and re
 
 Local, per-machine overrides for the gate itself go in `.agents/gate.conf` (copy from `.agents/gate.conf.example`); this file is git-ignored on purpose.
 
-The optional session mod's on/off state is the one setting that lives outside these two files, in `.claude/settings.json` (`enabledPlugins`) — see [Session mod (optional)](#session-mod-optional). Toggling it is why `cli update` may start flagging that file as project-customized; `cli/README.md` has the details.
+The optional session mod's on/off state is the one setting that lives outside these two files, in `.claude/settings.json` (`enabledPlugins`) — see [Session mod (optional)](#session-mod-optional). Toggling it is why `ai-project-starter update` may start flagging that file as project-customized; `cli/README.md` has the details.
 
 ## Environment variables
 

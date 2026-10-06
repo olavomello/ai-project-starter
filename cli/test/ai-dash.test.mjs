@@ -68,6 +68,16 @@ function startServer(dir, port) {
   return child;
 }
 
+// Kill a spawned server and wait for it to exit, so the OS releases its cwd
+// (on Windows rmSync of that directory fails with EPERM otherwise).
+async function stop(child) {
+  if (child.exitCode === null && child.signalCode === null) {
+    const exited = new Promise((r) => child.once('exit', r));
+    child.kill();
+    await exited;
+  }
+}
+
 async function withServer(port, fn) {
   const dir = makeRepo();
   const child = startServer(dir, port);
@@ -75,7 +85,7 @@ async function withServer(port, fn) {
     await waitForServer(port);
     await fn(dir, port);
   } finally {
-    child.kill();
+    await stop(child);
     rmSync(dir, { recursive: true, force: true });
   }
 }

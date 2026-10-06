@@ -14,7 +14,7 @@ them wrong or incomplete — never left to silently drift out of date.
 
 ## Bootstrap a new project
 
-Creates a new project from the starter, interactively, the same way `cli init`
+Creates a new project from the starter, interactively, the same way `ai-project-starter init`
 does with a real terminal attached: clone the template, ask the section 0
 questions, fill in `AGENTS.md`, initialize git, and make the first commit — so the
 project is ready to work on, not just copied.
@@ -62,7 +62,7 @@ I want to start a new project from the ai-project-starter template
    or in any file you write — this is a hard rule of the starter itself
    (see AGENTS.md section 2 once it exists in the new project).
 7. Run `node <path-to-the-clone-from-step-1>/cli/bin.js doctor <project-directory>`
-   and report the result (the same structural check `cli init` runs
+   and report the result (the same structural check `ai-project-starter init` runs
    automatically at the end).
 8. Run `scripts/gate.sh` inside the new project and report the result. If it's
    not executable yet, make it so first.

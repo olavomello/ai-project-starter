@@ -65,7 +65,7 @@ Specific choices and why:
 Projects that enable the mod get real numbers in `ai-dash` instead of mostly
 zeros, and a live sense of where a task's budget has gone, without any agent
 having to remember `AILOG_*`. Turning it on changes `.claude/settings.json`
-from the template's, which means `cli update` treats that file as
+from the template's, which means `ai-project-starter update` treats that file as
 project-customized from then on (flagged, never auto-applied) — a cost shared
 with any other hand-edited file, documented in `cli/README.md` and
 `docs/guides/claude-code.md` rather than solved here.

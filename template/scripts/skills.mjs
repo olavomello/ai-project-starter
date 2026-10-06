@@ -2,7 +2,7 @@
 // Lists and validates the project's skills (.claude/skills/<name>/SKILL.md).
 // Single source of truth for "is this skill's YAML frontmatter correct and
 // complete": the gate (`check`), the ai-dash skills viewer (via
-// scripts/ai-dash.mjs's GET /api/skills) and `cli doctor` all use it.
+// scripts/ai-dash.mjs's GET /api/skills) and `ai-project-starter doctor` all use it.
 //
 // Usage:
 //   node scripts/skills.mjs list  [--dir <project>] [--json]
@@ -19,6 +19,7 @@
 import { readFileSync, readdirSync, existsSync, statSync, mkdirSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const NAME_MAX = 64;
@@ -274,4 +275,4 @@ function main() {
   if (cmd === 'check' && bad.length) process.exit(1);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

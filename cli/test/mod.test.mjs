@@ -8,6 +8,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { enableMod, disableMod, statusOf, setModEnabled } from '../../template/scripts/mod.mjs';
 
 function tmpProject() {
@@ -114,5 +116,13 @@ test('ref respects the .ai-project-starter.json manifest when present and no --r
   writeFileSync(join(dir, '.ai-project-starter.json'), JSON.stringify({ starterVersion: '0.1.0' }));
   const status = enableMod(dir);
   assert.equal(status.ref, 'v0.1.0');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('running the script directly prints status JSON (entrypoint guard works with native paths)', () => {
+  const dir = tmpProject();
+  const script = fileURLToPath(new URL('../../template/scripts/mod.mjs', import.meta.url));
+  const out = execFileSync(process.execPath, [script, 'status', '--dir', dir, '--json'], { encoding: 'utf8' });
+  assert.equal(JSON.parse(out).mod.enabled, null);
   rmSync(dir, { recursive: true, force: true });
 });
