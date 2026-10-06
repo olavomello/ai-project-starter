@@ -686,13 +686,14 @@ function recentTable(recs) {
     const d = new Date(t);
     return [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
   }
+  function nameOf(r) { return r.type === 'main' ? 'Main session' + (r.label ? ' · ' + r.label : '') : r.type; }
   function monitor(r) {
     const rows = r.activity || [];
     const body = rows.length
       ? rows.map((a) => '<div class="mon-line"><span class="mon-t">' + clock(a.t) + '</span><span class="mon-tool">' + esc(a.tool) +
         '</span><span class="mon-target">' + esc(a.target) + '</span></div>').join('')
       : '<div class="mon-empty">No tool calls recorded for this run yet.</div>';
-    return '<div class="live-mon" data-mon="' + esc(r.id) + '" role="log" aria-label="Activity of ' + esc(r.type) + '">' + body + '</div>';
+    return '<div class="live-mon" data-mon="' + esc(r.id) + '" role="log" aria-label="Activity of ' + esc(nameOf(r)) + '">' + body + '</div>';
   }
   function runLi(r, running) {
     const isOpen = open.has(r.id);
@@ -702,8 +703,8 @@ function recentTable(recs) {
       ? '<span class="live-time" data-sec="' + r.seconds + '">' + fmt(r.seconds) + '</span>'
       : '<span class="live-time">took ' + fmt(r.seconds) + '</span>';
     return '<li><button class="mon-btn' + (isOpen ? ' on' : '') + '" type="button" data-mon-toggle="' + esc(r.id) +
-      '" aria-expanded="' + (isOpen ? 'true' : 'false') + '" aria-label="' + (isOpen ? 'Hide' : 'Show') + ' activity of ' + esc(r.type) +
-      '" title="What is this agent doing?">' + ICON + '</button><span class="live-name">' + esc(r.type) + '</span><span class="live-desc">' +
+      '" aria-expanded="' + (isOpen ? 'true' : 'false') + '" aria-label="' + (isOpen ? 'Hide' : 'Show') + ' activity of ' + esc(nameOf(r)) +
+      '" title="What is this agent doing?">' + ICON + '</button><span class="live-name">' + esc(nameOf(r)) + '</span><span class="live-desc">' +
       doing + '</span>' + time + (isOpen ? monitor(r) : '') + '</li>';
   }
   function snapshot() {

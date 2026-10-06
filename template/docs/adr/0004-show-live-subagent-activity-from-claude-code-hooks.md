@@ -26,5 +26,6 @@ Claude Code already announces this: it fires a `SubagentStart` and a `SubagentSt
 - Live view works only where `scripts/ai-dash.mjs` runs; the deployed, counts-only dashboard stays static on purpose.
 - Built-in subagents (`Explore`, `Plan`, `general-purpose`) show up as well as roster agents; only roster agents get a description.
 - Existing projects need the two hooks in their `.claude/settings.json`. `ai-project-starter update` applies them only if the project never customized that file; otherwise it writes `settings.json.incoming` to merge by hand.
-- The main conversation is not an agent here (it has no `agent_id`), so it is not listed.
+- The main conversation of a session has no `agent_id`, so it is tracked separately as "Main session", labelled with the session's folder (a Claude Desktop worktree shows up by its name). Each turn is a run: `UserPromptSubmit` starts it, `Stop` and `StopFailure` end it. Claude Code does not fire `Stop` when the user interrupts, so a main session with no activity for 10 minutes counts as gone, and a new turn closes an interrupted one. Prompts and replies are not read from the payload or stored.
+- The hooks have to exist where the session runs. A session in a git worktree only has them once `.claude/settings.json` and `scripts/agent-live.mjs` are committed and the worktree's branch has that commit; uncommitted changes in the main checkout are invisible to it.
 - If Claude Code changes or renames these hook events, the panel goes quiet rather than failing; the script and the log format are the only things to adjust.
