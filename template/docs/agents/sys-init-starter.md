@@ -51,7 +51,7 @@ Read only what a step needs; do not re-read the whole repo.
    create each with
    `bash scripts/agent-team.sh new <name> "<description>" "<owned globs>"`, fill in its
    SCOPE AND RULES, and run `bash scripts/agent-team.sh check`. `new` also writes the
-   Claude Code subagent pointer in `.claude/agents/`, so each agent shows up in `/agents`. Creating the roster
+   Claude Code subagent pointer in `.claude/agents/`, so each agent shows up as `@agent-<name>`. Creating the roster
    files is part of this setup; it is not the runtime spawning that `auto_agents`
    governs. Do not create agents the Administrator did not approve.
 7. **Commit.** One Conventional Commit per logical part (for example

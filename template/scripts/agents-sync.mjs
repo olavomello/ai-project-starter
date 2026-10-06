@@ -117,7 +117,7 @@ function main(argv) {
     else console.log(`ok:   ${agents.length} Claude Code subagent${agents.length === 1 ? '' : 's'} in sync with ${ROSTER_DIR}/`);
   } else {
     for (const p of problems) console.log(`fixed: ${p}`);
-    console.log(`${agents.length} Claude Code subagent${agents.length === 1 ? '' : 's'} in ${MIRROR_DIR}/ (start a new Claude Code session, or open /agents, to load them)`);
+    console.log(`${agents.length} Claude Code subagent${agents.length === 1 ? '' : 's'} in ${MIRROR_DIR}/ (type @ in Claude Code to see them as @agent-<name>; restart the session once if .claude/agents/ is new)`);
   }
   if (flags.check && problems.length) process.exit(1);
 }

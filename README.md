@@ -194,7 +194,7 @@ ai-dash/                          static monitoring page, deployable to Vercel w
 docs/tasks.md                     fixed task taxonomy used by the log
 docs/model-prices.json            you fill this in — cost stays blank until you do
 docs/agents/                      one committed file per agent; ships with sys-init-starter.md (one-time, removed after setup)
-.claude/agents/                   generated Claude Code subagent pointers for docs/agents/ (shows them in /agents)
+.claude/agents/                   generated Claude Code subagent pointers for docs/agents/ (they show up as @agent-<name>)
 docs/guides/                      loaded on demand: security, efficiency, delegation, claude-code
 docs/repo-map.md, decisions.md    agent cache, committed
 docs/adr/                         Architecture Decision Records — template.md + 0001-..., 0002-..., ...
