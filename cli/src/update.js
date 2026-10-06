@@ -6,7 +6,7 @@
 // for you to review and merge by hand.
 import { join, dirname } from 'node:path';
 import { readFileSync, writeFileSync, rmSync as rmFile, mkdirSync } from 'node:fs';
-import { existsSync, hashFile, walk } from './lib/fsutil.js';
+import { existsSync, hashFile } from './lib/fsutil.js';
 import { resolveSource } from './lib/source.js';
 import { buildFileHashes, readManifest, writeManifest, newManifest, isProtected, MANIFEST_FILE } from './lib/manifest.js';
 import { die, info, ok, warn, section } from './lib/log.js';
@@ -22,8 +22,10 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
 
   try {
     const incoming = buildFileHashes(templateDir);
-    const localPaths = new Set(walk(target).filter((p) => p !== MANIFEST_FILE));
-    const allPaths = new Set([...Object.keys(manifest.files || {}), ...Object.keys(incoming), ...localPaths]);
+    // Only paths the manifest or the starter know about matter: a file that exists
+    // only in the project is never touched, so there's no reason to walk (and hash)
+    // the whole project tree, node_modules and all.
+    const allPaths = new Set([...Object.keys(manifest.files || {}), ...Object.keys(incoming)]);
 
     const applied = [], added = [], removed = [], conflicts = [], protectedChanged = [], upToDate = [];
     const newFiles = { ...manifest.files };

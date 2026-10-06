@@ -5,14 +5,18 @@ import {
 import { createHash } from 'node:crypto';
 import { join, relative, dirname, sep } from 'node:path';
 
-/** List every file under `dir` (relative, posix-separated), skipping .git. */
+/**
+ * List every regular file under `dir` (relative, posix-separated), skipping
+ * .git and node_modules. Symlinks and junctions are not followed or listed:
+ * on Windows a link to a directory looks like a file to readdir and can't be hashed.
+ */
 export function walk(dir, base = dir, out = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === '.git') continue;
+    if (entry.name === '.git' || entry.name === 'node_modules') continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
       walk(full, base, out);
-    } else {
+    } else if (entry.isFile()) {
       out.push(relative(base, full).split(sep).join('/'));
     }
   }
