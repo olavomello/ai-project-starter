@@ -40,6 +40,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 - `docs/guides/efficiency.md` and `docs/guides/security.md`: document the mod's usage-file handoff to `ai-log.mjs`, and the review step (`claude plugin validate <dir>`, read its `hooks:`/`calls:` lines) before installing any mod, this starter's own included.
 
 ### Changed
+- `ai-project-starter update` merges the starter's hooks into a customized `.claude/settings.json` instead of reporting a conflict. The session-mod toggle edits that file, so every project with the mod on hit the conflict whenever the starter added a hook, and the new live-agent hooks never took effect. Only the `hooks` section is merged (a hook is added unless the project already runs the same command for that event); `enabledPlugins`, marketplaces, your own hooks and everything else stay as they are. A file that isn't valid JSON still falls back to the `.incoming` conflict.
+- `ai-dash` Live panel: spacing below the card.
 - `ai-project-starter update` lists a changed protected file (`AGENTS.md`, `README.md`, `docs/agents/**`, ...) once per starter change instead of on every run. The manifest records an `acknowledged` hash per file; `--dry-run` never records it.
 - Dashboard folder renamed `dashboard/` → `ai-dash/` (script, docs and generated `data.json` all moved with it) so it doesn't collide with a `dashboard/` folder a project built on this starter might already have for its own product.
 - `scripts/ai-log.mjs` and `scripts/ai-report.mjs` resolve the log and `ai-dash/data.json` against the repo's shared root (`git rev-parse --git-common-dir`) instead of the current working directory, so every git worktree of a project writes to the same files instead of fragmenting the data.

@@ -9,7 +9,10 @@ import { readFileSync, writeFileSync, rmSync as rmFile, mkdirSync } from 'node:f
 import { existsSync, hashFile, isFile } from './lib/fsutil.js';
 import { resolveSource } from './lib/source.js';
 import { buildFileHashes, readManifest, writeManifest, newManifest, isProtected, isIgnored, MANIFEST_FILE } from './lib/manifest.js';
+import { mergeSettings } from './lib/settings-merge.js';
 import { die, info, ok, warn, section } from './lib/log.js';
+
+const SETTINGS_FILE = '.claude/settings.json';
 
 export function update({ target = '.', ref = 'main', source, dryRun = false }) {
   const manifest = readManifest(target);
@@ -27,7 +30,7 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
     // the whole project tree, node_modules and all.
     const allPaths = new Set([...Object.keys(manifest.files || {}), ...Object.keys(incoming)]);
 
-    const applied = [], added = [], removed = [], conflicts = [], protectedChanged = [], upToDate = [];
+    const applied = [], added = [], removed = [], conflicts = [], protectedChanged = [], upToDate = [], merged = [];
     const newFiles = { ...manifest.files };
     // Protected files: the starter hash a project has already been told about. A
     // changed protected file is reported once per starter change, not on every run.
@@ -91,12 +94,25 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
         // file into a false conflict at the next update.
         continue;
       }
+      // Both changed. The project's settings.json is edited by the session-mod toggle,
+      // so rather than flagging it every time, merge the starter's hooks into it.
+      if (rel === SETTINGS_FILE) {
+        const { text, added: hooks } = mergeSettings(readFileSync(join(target, rel), 'utf8'), readFileSync(join(templateDir, rel), 'utf8'));
+        if (text !== null) {
+          if (hooks.length) {
+            merged.push({ file: rel, hooks });
+            if (!dryRun) writeFileSync(join(target, rel), text);
+          } else upToDate.push(rel);
+          newFiles[rel] = newHash;
+          continue;
+        }
+      }
       // Both changed: conflict.
       conflicts.push(rel);
       if (!dryRun) writeFile(join(target, `${rel}.incoming`), join(templateDir, rel));
     }
 
-    report({ applied, added, removed, conflicts, protectedChanged, upToDate, dryRun });
+    report({ applied, added, removed, conflicts, protectedChanged, upToDate, merged, dryRun });
 
     if (!dryRun) {
       writeManifest(target, {
@@ -121,10 +137,14 @@ function writeFile(destPath, srcPath) {
   writeFileSync(destPath, readFileSync(srcPath));
 }
 
-function report({ applied, added, removed, conflicts, protectedChanged, upToDate, dryRun }) {
+function report({ applied, added, removed, conflicts, protectedChanged, upToDate, merged, dryRun }) {
   const verb = dryRun ? 'would update' : 'updated';
   if (applied.length) { section(`Auto-${verb} (untouched locally):`); applied.forEach((f) => ok(f)); }
   if (added.length) { section('New in the starter, added:'); added.forEach((f) => ok(f)); }
+  if (merged.length) {
+    section(`Your customized file got the starter's hooks ${dryRun ? '(would be added; the rest of the file is kept as is)' : 'added (the rest of the file is kept as is)'}:`);
+    for (const m of merged) { ok(m.file); m.hooks.forEach((h) => info(`    + ${h}`)); }
+  }
   if (removed.length) { section('Dropped by the starter, removed (were untouched locally):'); removed.forEach((f) => ok(f)); }
   if (conflicts.length) {
     section('Conflicts — you changed it AND the starter changed it. Left as-is:');
