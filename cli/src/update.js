@@ -29,6 +29,9 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
 
     const applied = [], added = [], removed = [], conflicts = [], protectedChanged = [], upToDate = [];
     const newFiles = { ...manifest.files };
+    // Protected files: the starter hash a project has already been told about. A
+    // changed protected file is reported once per starter change, not on every run.
+    const acknowledged = { ...manifest.acknowledged };
 
     for (const rel of allPaths) {
       const baseline = manifest.files?.[rel];
@@ -46,7 +49,10 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
       }
 
       if (isProtected(rel)) {
-        if (newHash && newHash !== baseline) protectedChanged.push(rel);
+        if (newHash && newHash !== baseline && acknowledged[rel] !== newHash) {
+          protectedChanged.push(rel);
+          acknowledged[rel] = newHash;
+        }
         continue; // never touched automatically
       }
 
@@ -99,6 +105,7 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
         starterRef,
         updatedAt: new Date().toISOString(),
         files: newFiles,
+        acknowledged,
       });
       info(`\nWrote ${MANIFEST_FILE} (now tracking v${starterVersion}).`);
     } else {
@@ -124,7 +131,7 @@ function report({ applied, added, removed, conflicts, protectedChanged, upToDate
     conflicts.forEach((f) => warn(`${f}  (incoming version: ${f}.incoming — review with \`git diff --no-index ${f} ${f}.incoming\`, then delete the .incoming file)`));
   }
   if (protectedChanged.length) {
-    section('Starter changed these, but they\'re yours to customize — review manually, check CHANGELOG.md:');
+    section('Starter changed these, but they\'re yours to customize — review manually, check CHANGELOG.md (listed once per starter change):');
     protectedChanged.forEach((f) => warn(f));
   }
   section(`Unchanged: ${upToDate.length} file(s).`);

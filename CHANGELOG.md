@@ -39,6 +39,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 - `docs/guides/efficiency.md` and `docs/guides/security.md`: document the mod's usage-file handoff to `ai-log.mjs`, and the review step (`claude plugin validate <dir>`, read its `hooks:`/`calls:` lines) before installing any mod, this starter's own included.
 
 ### Changed
+- `ai-project-starter update` lists a changed protected file (`AGENTS.md`, `README.md`, `docs/agents/**`, ...) once per starter change instead of on every run. The manifest records an `acknowledged` hash per file; `--dry-run` never records it.
 - Dashboard folder renamed `dashboard/` → `ai-dash/` (script, docs and generated `data.json` all moved with it) so it doesn't collide with a `dashboard/` folder a project built on this starter might already have for its own product.
 - `scripts/ai-log.mjs` and `scripts/ai-report.mjs` resolve the log and `ai-dash/data.json` against the repo's shared root (`git rev-parse --git-common-dir`) instead of the current working directory, so every git worktree of a project writes to the same files instead of fragmenting the data.
 - AGENTS.md section 4, `docs/guides/efficiency.md` and `ai-dash/README.md` updated to describe the automatic logging and the `AILOG_*` convention; the old "every task ends with a manual log line" instruction is gone.
