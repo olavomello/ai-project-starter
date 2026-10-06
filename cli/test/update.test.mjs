@@ -5,7 +5,7 @@
 // Run: node --test cli/test/update.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, symlinkSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, symlinkSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -53,5 +53,69 @@ test('update works on a project containing a directory link and a node_modules t
     const out = cli('update', target, '--source', ROOT, '--dry-run');
     assert.equal(out.status, 0, out.stderr);
     assert.equal(readFileSync(join(target, '.ai-project-starter.json'), 'utf8'), before);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- baseline handling ----
+import { cpSync } from 'node:fs';
+
+/** A throwaway "starter checkout": template/ copied from this repo plus a VERSION. */
+function fakeStarter(dir) {
+  const src = join(dir, 'starter');
+  cpSync(join(ROOT, 'template'), join(src, 'template'), { recursive: true });
+  writeFileSync(join(src, 'VERSION'), '9.9.9\n');
+  return src;
+}
+const manifestOf = (target) => JSON.parse(readFileSync(join(target, '.ai-project-starter.json'), 'utf8'));
+const writeManifestOf = (target, m) => writeFileSync(join(target, '.ai-project-starter.json'), JSON.stringify(m, null, 2));
+
+test('a file already identical to the starter is not a conflict, even with a stale baseline', () => {
+  const dir = tmp();
+  const target = join(dir, 'proj');
+  try {
+    const src = fakeStarter(dir);
+    assert.equal(cli('init', target, '--source', src, '--no-prompt').status, 0);
+    // Simulate a half-finished earlier update: content matches the starter, baseline is old.
+    const m = manifestOf(target);
+    m.files['scripts/agents-sync.mjs'] = 'sha256:stale';
+    writeManifestOf(target, m);
+    const out = cli('update', target, '--source', src);
+    assert.equal(out.status, 0, out.stderr);
+    assert.ok(!/Conflicts/.test(out.stdout + out.stderr), out.stdout + out.stderr);
+    assert.ok(!existsSync(join(target, 'scripts', 'agents-sync.mjs.incoming')));
+    assert.notEqual(manifestOf(target).files['scripts/agents-sync.mjs'], 'sha256:stale');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('keeping a local customization does not move the baseline (no false conflict next time)', () => {
+  const dir = tmp();
+  const target = join(dir, 'proj');
+  try {
+    const src = fakeStarter(dir);
+    assert.equal(cli('init', target, '--source', src, '--no-prompt').status, 0);
+    const before = manifestOf(target).files['scripts/gate.sh'];
+    writeFileSync(join(target, 'scripts', 'gate.sh'), readFileSync(join(target, 'scripts', 'gate.sh'), 'utf8') + '\n# local tweak\n');
+    assert.equal(cli('update', target, '--source', src).status, 0);
+    assert.equal(manifestOf(target).files['scripts/gate.sh'], before);
+    // Starter now changes the same file -> a real conflict, reported once.
+    writeFileSync(join(src, 'template', 'scripts', 'gate.sh'), readFileSync(join(src, 'template', 'scripts', 'gate.sh'), 'utf8') + '\n# starter change\n');
+    const out = cli('update', target, '--source', src, '--dry-run');
+    assert.match(out.stdout, /Conflicts/);
+    assert.match(out.stdout + out.stderr, /scripts\/gate\.sh/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('ai-dash/data.json is runtime output: never tracked, never reported', () => {
+  const dir = tmp();
+  const target = join(dir, 'proj');
+  try {
+    const src = fakeStarter(dir);
+    assert.equal(cli('init', target, '--source', src, '--no-prompt').status, 0);
+    assert.equal(manifestOf(target).files['ai-dash/data.json'], undefined);
+    writeFileSync(join(target, 'ai-dash', 'data.json'), '{"runs": 3}');
+    writeFileSync(join(src, 'template', 'ai-dash', 'data.json'), '{"runs": 0, "seed": true}');
+    const out = cli('update', target, '--source', src, '--dry-run');
+    assert.equal(out.status, 0, out.stderr);
+    assert.ok(!(out.stdout + out.stderr).includes('ai-dash/data.json'), out.stdout + out.stderr);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

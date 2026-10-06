@@ -20,13 +20,21 @@ export const PROTECTED = [
   'docs/adr/',
 ];
 
+// Runtime output the project regenerates itself (the gate rewrites it on every
+// run). Never tracked or reported by `update`, and never in the manifest.
+export const IGNORED = ['ai-dash/data.json'];
+
+export function isIgnored(relPath) {
+  return IGNORED.includes(relPath);
+}
+
 export function isProtected(relPath) {
   return PROTECTED.some((p) => (p.endsWith('/') ? relPath.startsWith(p) : relPath === p));
 }
 
 export function buildFileHashes(templateDir) {
   const map = {};
-  for (const f of walk(templateDir)) map[f] = hashFile(join(templateDir, f));
+  for (const f of walk(templateDir).filter((p) => !isIgnored(p))) map[f] = hashFile(join(templateDir, f));
   return map;
 }
 
