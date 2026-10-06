@@ -141,3 +141,73 @@ test('a changed protected file is reported once per starter change, and a dry ru
     assert.ok(reported(cli('update', target, '--source', src)), 'a new starter change is reported again');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ---- settings.json hook merge ----
+import { mergeSettings } from '../src/lib/settings-merge.js';
+
+const HOOK = (cmd) => ({ type: 'command', command: cmd });
+
+test('mergeSettings adds missing starter hooks and keeps everything else', () => {
+  const local = JSON.stringify({
+    hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [HOOK('mine.sh')] }] },
+    enabledPlugins: { 'starter-hud@x': true },
+    extraKnownMarketplaces: { x: { source: 'github' } },
+  });
+  const incoming = JSON.stringify({
+    hooks: {
+      PreToolUse: [{ matcher: 'Bash', hooks: [HOOK('mine.sh'), HOOK('block.sh')] }],
+      SubagentStart: [{ hooks: [HOOK('node live start')] }],
+    },
+  });
+  const { text, added } = mergeSettings(local, incoming);
+  const out = JSON.parse(text);
+  assert.deepEqual(added, ['PreToolUse: block.sh', 'SubagentStart: node live start']);
+  assert.deepEqual(out.hooks.PreToolUse[0].hooks.map((h) => h.command), ['mine.sh', 'block.sh']);
+  assert.equal(out.hooks.SubagentStart[0].hooks[0].command, 'node live start');
+  assert.deepEqual(out.enabledPlugins, { 'starter-hud@x': true });
+  assert.deepEqual(out.extraKnownMarketplaces, { x: { source: 'github' } });
+  assert.ok(text.endsWith('\n'));
+});
+
+test('mergeSettings is idempotent and reports invalid JSON as null', () => {
+  const incoming = JSON.stringify({ hooks: { SubagentStop: [{ hooks: [HOOK('node live stop')] }] } });
+  const once = mergeSettings('{}', incoming);
+  const twice = mergeSettings(once.text, incoming);
+  assert.deepEqual(twice.added, []);
+  assert.equal(twice.text, once.text);
+  assert.equal(mergeSettings('{ nope', incoming).text, null);
+  assert.equal(mergeSettings('[]', incoming).text, null);
+});
+
+test('update merges new starter hooks into a customized settings.json instead of conflicting', () => {
+  const dir = tmp();
+  const target = join(dir, 'proj');
+  try {
+    const src = fakeStarter(dir);
+    assert.equal(cli('init', target, '--source', src, '--no-prompt').status, 0);
+    const settingsPath = join(target, '.claude', 'settings.json');
+    const mine = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    mine.enabledPlugins = { 'starter-hud@ai-project-starter': true };   // what the mod toggle does
+    writeFileSync(settingsPath, JSON.stringify(mine, null, 2));
+    const tplPath = join(src, 'template', '.claude', 'settings.json');
+    const tpl = JSON.parse(readFileSync(tplPath, 'utf8'));
+    tpl.hooks.SessionStart = [{ hooks: [HOOK('node scripts/new-hook.mjs')] }];
+    writeFileSync(tplPath, JSON.stringify(tpl, null, 2));
+
+    const dry = cli('update', target, '--source', src, '--dry-run');
+    assert.equal(dry.status, 0, dry.stderr);
+    assert.match(dry.stdout + dry.stderr, /SessionStart: node scripts\/new-hook\.mjs/);
+    assert.ok(!JSON.parse(readFileSync(settingsPath, 'utf8')).hooks.SessionStart, 'dry run writes nothing');
+
+    const real = cli('update', target, '--source', src);
+    assert.equal(real.status, 0, real.stderr);
+    assert.ok(!/Conflicts/.test(real.stdout + real.stderr));
+    assert.ok(!existsSync(settingsPath + '.incoming'));
+    const merged = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    assert.equal(merged.hooks.SessionStart[0].hooks[0].command, 'node scripts/new-hook.mjs');
+    assert.deepEqual(merged.enabledPlugins, { 'starter-hud@ai-project-starter': true });
+
+    const again = cli('update', target, '--source', src, '--dry-run');
+    assert.ok(!/new-hook/.test(again.stdout + again.stderr), 'nothing left to merge on the next run');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
