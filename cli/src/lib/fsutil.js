@@ -55,6 +55,10 @@ export function makeExecutable(path) {
   try { chmodSync(path, 0o755); } catch { /* not fatal */ }
 }
 
+export function isFile(path) {
+  return existsSync(path) && statSync(path).isFile();
+}
+
 export function isDir(path) {
   return existsSync(path) && statSync(path).isDirectory();
 }

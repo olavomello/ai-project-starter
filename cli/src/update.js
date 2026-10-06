@@ -6,9 +6,9 @@
 // for you to review and merge by hand.
 import { join, dirname } from 'node:path';
 import { readFileSync, writeFileSync, rmSync as rmFile, mkdirSync } from 'node:fs';
-import { existsSync, hashFile } from './lib/fsutil.js';
+import { existsSync, hashFile, isFile } from './lib/fsutil.js';
 import { resolveSource } from './lib/source.js';
-import { buildFileHashes, readManifest, writeManifest, newManifest, isProtected, MANIFEST_FILE } from './lib/manifest.js';
+import { buildFileHashes, readManifest, writeManifest, newManifest, isProtected, isIgnored, MANIFEST_FILE } from './lib/manifest.js';
 import { die, info, ok, warn, section } from './lib/log.js';
 
 export function update({ target = '.', ref = 'main', source, dryRun = false }) {
@@ -34,7 +34,16 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
       const baseline = manifest.files?.[rel];
       const newHash = incoming[rel];
       const localExists = existsSync(join(target, rel));
+      if (isIgnored(rel)) { delete newFiles[rel]; continue; }
+      if (localExists && !isFile(join(target, rel))) continue; // a directory or link where the starter has a file: not ours to touch
       const localHash = localExists ? hashFile(join(target, rel)) : undefined;
+
+      // Already identical to the starter's copy (e.g. a half-finished earlier run wrote
+      // it, or it was merged by hand): nothing to do, whatever the recorded baseline says.
+      if (newHash !== undefined && localHash === newHash) {
+        if (!isProtected(rel)) { newFiles[rel] = newHash; upToDate.push(rel); }
+        continue;
+      }
 
       if (isProtected(rel)) {
         if (newHash && newHash !== baseline) protectedChanged.push(rel);
@@ -71,8 +80,9 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
         continue;
       }
       if (localHash !== baseline && newHash === baseline) {
-        // Local customization, starter unchanged — keep local, adopt its hash as new baseline.
-        newFiles[rel] = localHash;
+        // Local customization, starter unchanged — keep local. The baseline stays the
+        // starter's last-synced copy; recording the local hash instead would turn this
+        // file into a false conflict at the next update.
         continue;
       }
       // Both changed: conflict.
