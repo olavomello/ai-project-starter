@@ -25,6 +25,7 @@ Knobs (agents read these instead of assuming defaults):
 
 - **Administrator** — human owner. Final authority on `1.0.0`, MAJOR releases, budget, and scope.
 - **Main** — orchestrator. Sole owner of `VERSION`, `CHANGELOG.md` release entries, and tags.
+- **Starter** (`sys-init-starter`) — one-time bootstrap agent shipped in `docs/agents/`. Highest agent hierarchy until initial setup is done: acts with Main's authority over §0, `AGENT_TEAM.md` CONFIGS, `docs/agents/` and `README.md`, below the Administrator, then is removed. Full procedure: `AGENT_TEAM.md`.
 - **Agents** — everyone else. Never edit `VERSION`, never create tags (a `PreToolUse` hook blocks both at the tool level, not just by convention — `.claude/settings.json`).
 
 **Precedence when instructions conflict:** Administrator in-session > this file > project docs in `docs/agents/` > skills > installed plugins (ECC or any other) > model defaults.
@@ -133,6 +134,6 @@ Agents may create other agents to run work in parallel. At plan time Main asks t
 - Each agent is a committed file `docs/agents/<3-letter function>-<area>-<role>.md` (e.g. `dev-api-tester.md`) with a CONFIGS block and SCOPE AND RULES. Create it with `bash scripts/agent-team.sh new`. `docs/agents/` is the roster (committed); `.agents/` is unrelated local runtime state (worktrees, locks, log) — never agent identity. See `.agents/README.md`.
 - **Every agent works in its own git worktree — never in the main working tree.** `start` creates it, `sync` rebases it onto `main`, `finish` gates it and opens a PR, `cleanup` removes it. Force-push is blocked by a hook, not just convention.
 - **No agent merges its own work.** Main reviews every PR. If `main_merge: true` and `agent-team.sh classify` says `mechanical` (docs, tests and formatting only, no sensitive path, under 400 lines), Main merges it; everything else waits for the Administrator. Merge one PR at a time, rebasing and re-running the gate before each.
-- Only Main edits `VERSION`, tags, CI, dependencies, `AGENTS.md` or `AGENT_TEAM.md`. Sub-agents inherit every rule here, including the budget guardrails.
+- Only Main (and the Starter during bootstrap) edits `AGENTS.md` or `AGENT_TEAM.md`; only Main edits `VERSION`, tags, CI and dependencies. Sub-agents inherit every rule here, including the budget guardrails.
 
 Full charter, limits, classification list and merge protocol: `AGENT_TEAM.md`.

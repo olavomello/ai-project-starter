@@ -19,5 +19,6 @@ git branch -M main 2>/dev/null || true
 git add -A
 git commit --quiet -m "chore: initialize project from ai-project-starter v$STARTER_VERSION"
 bash .claude/skills/semver-release/scripts/check-version.sh
-echo "Project created at $TARGET (starter v$STARTER_VERSION). Fill in AGENTS.md section 0."
+echo "Project created at $TARGET (starter v$STARTER_VERSION). Next: open Claude Code there and run the starter agent"
+echo "  (read docs/agents/sys-init-starter.md and follow it end to end) — it fills in AGENTS.md section 0 and README.md, sets the agent policy and creates the agent team."
 echo "Optional: node scripts/mod.mjs enable   (turns on the in-session status mod for Claude Code)"

@@ -69,12 +69,32 @@ I want to start a new project from the ai-project-starter template
    with the `bash` on PATH: in PowerShell that is the WSL stub and fails with
    `execvpe(/bin/bash) failed`. If the script is not executable yet, make it so
    first (not needed on Windows).
-9. Tell me the next manual steps: adding a git remote and pushing, and reading
-   through the rest of AGENTS.md.
+9. Tell me the next steps: running the starter agent (`docs/agents/sys-init-starter.md`,
+   the project's first prompt, see "Start the project" below), adding a git remote
+   and pushing, and reading through the rest of AGENTS.md.
 
 If git isn't available, skip step 6 and tell me so — copy the files and let me
 init the repo myself.
 ```
+
+## Start the project (the starter agent)
+
+The first prompt of a new project. Every project ships with one agent,
+`docs/agents/sys-init-starter.md`, with the highest hierarchy among agents (below
+the Administrator). It sets the project up so everything after works: identity,
+README, agent policy, gate, repo map, the agent team — then retires. Run it in Claude
+Code at the project root, right after `init` (or after the bootstrap prompt above).
+
+### Date : 2026-10-06
+
+# Prompt
+
+```
+Run the starter agent: read docs/agents/sys-init-starter.md and follow it end to end.
+```
+
+It asks one question at a time and skips what `init` already filled in. The full
+procedure lives in the agent file, so this prompt never drifts from it.
 
 ## Turn the in-session status mod on or off
 

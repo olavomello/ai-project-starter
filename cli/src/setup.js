@@ -13,6 +13,26 @@ const KNOBS = [
 ];
 
 /**
+ * Fills the `{{NAME}}` / `{{PURPOSE}}` / `{{STACK}}` placeholders of the
+ * template's README.md. An empty answer leaves its placeholder in place (a
+ * visible to-do, same as the blank lines in AGENTS.md section 0); once none
+ * are left, the explanatory comment next to them is dropped too.
+ */
+export function fillReadme(text, { name, purpose, stack }) {
+  const values = { NAME: name, PURPOSE: purpose, STACK: stack };
+  let out = text;
+  for (const [key, value] of Object.entries(values)) {
+    if (value && value.trim()) out = out.split(`{{${key}}}`).join(value.trim());
+  }
+  if (!Object.keys(values).some((key) => out.includes(`{{${key}}}`))) {
+    const start = out.indexOf('<!-- The three {{');
+    const end = start < 0 ? -1 : out.indexOf('-->', start);
+    if (end >= 0) out = out.slice(0, start) + out.slice(end + 3).trimStart();
+  }
+  return out;
+}
+
+/**
  * Interactively fills AGENTS.md section 0 (Name, Purpose, Stack, Administrator,
  * knobs) in `target` right after the template is copied, so the initial commit
  * already has a real project identity instead of the template's blanks. Also
@@ -56,6 +76,11 @@ export async function guideAgentsSetup(target, { skip = false, projectNameHint, 
         text = text.replace(k.pattern, `$1${answers[k.key]}$3`);
       }
       writeText(agentsPath, text);
+
+      const readmePath = join(target, 'README.md');
+      if (existsSync(readmePath)) {
+        writeText(readmePath, fillReadme(readText(readmePath), { name, purpose, stack }));
+      }
     }
 
     let mod = modFlag;
