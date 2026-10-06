@@ -65,7 +65,7 @@ export function runDoctor(target, { quiet }) {
       try { problems = JSON.parse(e.stdout || '{}').problems || []; } catch { /* not JSON: the script itself failed */ }
       if (problems.length) {
         for (const p of problems) say(warn, p);
-        say(warn, 'run: node scripts/agents-sync.mjs  (so these agents show up in Claude Code /agents)');
+        say(warn, 'run: node scripts/agents-sync.mjs  (so Claude Code can use these agents; type @ to see them)');
       } else say(warn, `could not check .claude/agents/ (${e.message.split(/\r?\n/)[0]})`);
     }
   }
