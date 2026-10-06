@@ -238,3 +238,95 @@ test('the page code: a monitor button opens the agent activity and survives the 
   click({ target: { closest: () => ({ dataset: { monToggle: 'r1' } }) } });
   assert.ok(!el.innerHTML.includes('live-mon'));
 });
+
+// ---- main sessions (one run per turn) ----
+test('a session turn is a run of type main, with its folder label and its own tool calls', () => {
+  const dir = tmp();
+  try {
+    const cwd = join(dir, 'worktrees', 'init-assessment');
+    recordEvent('session-start', { session_id: 'S1', cwd }, dir, T0);
+    recordEvent('tool', { session_id: 'S1', tool_name: 'Bash', tool_input: { command: 'pnpm test' } }, dir, T0 + 1000);
+    recordEvent('tool', { session_id: 'S1', agent_id: 'sub1', agent_type: 'dev-api-builder', tool_name: 'Edit', tool_input: { file_path: 'a.ts' } }, dir, T0 + 2000); // a subagent's call, not the session's
+    const live = readLive(dir, { now: T0 + 5000 });
+    assert.equal(live.running.length, 1);
+    assert.deepEqual([live.running[0].type, live.running[0].label], ['main', 'init-assessment']);
+    assert.deepEqual(live.running[0].activity.map((a) => a.target), ['pnpm test']);
+    recordEvent('session-stop', { session_id: 'S1' }, dir, T0 + 9000);
+    const after = readLive(dir, { now: T0 + 10_000 });
+    assert.equal(after.running.length, 0);
+    assert.deepEqual([after.recent[0].type, after.recent[0].seconds], ['main', 9]);
+  } finally { done(dir); }
+});
+
+test('a new turn closes a previous one that never got its Stop (an interrupt)', () => {
+  const dir = tmp();
+  try {
+    recordEvent('session-start', { session_id: 'S1', cwd: dir }, dir, T0);
+    recordEvent('tool', { session_id: 'S1', tool_name: 'Read', tool_input: { file_path: 'x' } }, dir, T0 + 1000);
+    recordEvent('session-start', { session_id: 'S1', cwd: dir }, dir, T0 + 60_000);
+    const live = readLive(dir, { now: T0 + 61_000 });
+    assert.equal(live.running.length, 1);
+    assert.equal(live.running[0].since, T0 + 60_000);
+    assert.equal(live.recent.length, 1);
+    assert.equal(live.recent[0].seconds, 60);
+  } finally { done(dir); }
+});
+
+test('an idle main session expires after ten minutes, a busy one does not', () => {
+  const dir = tmp();
+  try {
+    recordEvent('session-start', { session_id: 'S1', cwd: dir }, dir, T0);
+    assert.equal(readLive(dir, { now: T0 + 9 * 60_000 }).running.length, 1);
+    assert.equal(readLive(dir, { now: T0 + 11 * 60_000 }).running.length, 0);
+    recordEvent('tool', { session_id: 'S1', tool_name: 'Bash', tool_input: { command: 'x' } }, dir, T0 + 10 * 60_000);
+    assert.equal(readLive(dir, { now: T0 + 11 * 60_000 }).running.length, 1, 'recent tool activity keeps it alive');
+  } finally { done(dir); }
+});
+
+test('subagent start/stop without an agent id are still ignored; session events need a session id', () => {
+  const dir = tmp();
+  try {
+    assert.equal(recordEvent('start', { session_id: 'S1' }, dir, T0), false);
+    assert.equal(recordEvent('session-start', {}, dir, T0), false);
+    assert.equal(recordEvent('tool', { tool_name: 'Edit' }, dir, T0), false);
+  } finally { done(dir); }
+});
+
+test('the hook script records session turns from UserPromptSubmit and Stop payloads', () => {
+  const dir = tmp();
+  try {
+    const run = (arg, payload) => spawnSync(process.execPath, [LIVE_MJS, arg], { input: JSON.stringify(payload), encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+    assert.equal(run('session-start', { hook_event_name: 'UserPromptSubmit', session_id: 'S9', cwd: join(dir, 'wt-one'), prompt: 'secret prompt text' }).status, 0);
+    const raw = readFileSync(join(dir, '.agents', 'log', 'live.jsonl'), 'utf8');
+    assert.ok(!raw.includes('secret prompt text'), 'the prompt is never stored');
+    const line = JSON.parse(raw.trim());
+    assert.deepEqual([line.event, line.id, line.type, line.label], ['start', 's:S9', 'main', 'wt-one']);
+    assert.equal(run('session-stop', { hook_event_name: 'Stop', session_id: 'S9', last_assistant_message: 'private answer' }).status, 0);
+    assert.ok(!readFileSync(join(dir, '.agents', 'log', 'live.jsonl'), 'utf8').includes('private answer'));
+  } finally { done(dir); }
+});
+
+test('the template wires the turn hooks', () => {
+  const settings = JSON.parse(readFileSync(join(ROOT, 'template', '.claude', 'settings.json'), 'utf8'));
+  const cmd = (event) => settings.hooks[event].flatMap((g) => g.hooks.map((h) => h.command));
+  assert.ok(cmd('UserPromptSubmit').some((c) => c.endsWith('agent-live.mjs session-start')));
+  assert.ok(cmd('Stop').some((c) => c.endsWith('agent-live.mjs session-stop')));
+  assert.ok(cmd('StopFailure').some((c) => c.endsWith('agent-live.mjs session-stop')));
+});
+
+test('the page names a main session by its folder', async () => {
+  const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
+  const start = html.indexOf('// Live agents:');
+  const code = html.slice(start, html.indexOf('})();', start) + 5);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const payload = { now: 1, claims: [], recent: [], running: [{ id: 's:S1', type: 'main', label: 'init-execution-assessment-70b48b', since: 0, seconds: 5, activity: [{ t: 1, tool: 'Bash', target: 'pnpm test' }] }] };
+  const el = { hidden: true, innerHTML: '', addEventListener() {}, querySelectorAll: () => [] };
+  vm.runInNewContext(code, {
+    document: { hidden: false, activeElement: null, getElementById: () => el, addEventListener() {} },
+    fetch: async () => ({ ok: true, json: async () => payload }),
+    esc, setInterval: () => 1, clearInterval() {}, Date, Number, String, Math, Set, Map,
+  });
+  await new Promise((r) => setTimeout(r, 50));
+  assert.ok(el.innerHTML.includes('Main session · init-execution-assessment-70b48b'));
+  assert.ok(el.innerHTML.includes('Bash pnpm test'));
+});
