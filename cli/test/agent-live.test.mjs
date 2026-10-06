@@ -149,3 +149,92 @@ test('the template wires both subagent hooks and the dashboard has the Live pane
   assert.ok(html.includes('id="live"') && html.includes("'api/live'"));
   assert.ok(existsSync(join(ROOT, 'template', 'scripts', 'agent-live.mjs')));
 });
+
+// ---- tool activity (the per-agent monitor) ----
+import vm from 'node:vm';
+import { summarizeTool, mask } from '../../template/scripts/agent-live.mjs';
+
+test('summarizeTool gives a short, project-relative, masked target', () => {
+  const bs = String.fromCharCode(92); // Windows separator
+  assert.equal(summarizeTool({ file_path: ['D:', 'work', 'proj', 'apps', 'web', 'page.tsx'].join(bs) }, 'D:/work/proj'), 'apps/web/page.tsx');
+  assert.equal(summarizeTool({ command: 'pnpm   test  --filter web' }), 'pnpm test --filter web');
+  assert.equal(summarizeTool({ pattern: 'TODO' }), 'TODO');
+  assert.equal(summarizeTool({ url: 'https://example.com/a?token=abc' }), 'example.com');
+  assert.equal(summarizeTool({}), '');
+  const long = summarizeTool({ command: 'echo ' + 'x '.repeat(200) });
+  assert.ok(long.length <= 160 && long.endsWith('\u2026'));
+});
+
+test('mask hides credentials in commands', () => {
+  const hidden = mask('curl -H "Authorization: Bearer abc.def.ghi" https://x');
+  assert.ok(!hidden.includes('abc.def.ghi') && hidden.includes('https://x'), hidden);
+  assert.ok(!mask('API_KEY=sk_live_1234567890 node run').includes('sk_live'));
+  assert.ok(!mask('echo ' + 'a'.repeat(40)).includes('aaaa'));
+  assert.equal(mask('git status'), 'git status');
+});
+
+test('tool events attach to their run as activity, newest last and capped', () => {
+  const dir = tmp();
+  try {
+    recordEvent('start', { agent_id: 'a1', agent_type: 'dev-web-builder' }, dir, T0);
+    for (let i = 0; i < 40; i++) {
+      recordEvent('tool', { agent_id: 'a1', agent_type: 'dev-web-builder', tool_name: 'Edit', tool_input: { file_path: `f${i}.ts` } }, dir, T0 + 1000 + i);
+    }
+    recordEvent('tool', { tool_name: 'Edit', tool_input: { file_path: 'main-thread.ts' } }, dir, T0 + 5000); // no agent_id: ignored
+    const live = readLive(dir, { now: T0 + 10_000 });
+    const act = live.running[0].activity;
+    assert.equal(act.length, 30);
+    assert.deepEqual([act[0].target, act[29].target], ['f10.ts', 'f39.ts']);
+    assert.ok(!JSON.stringify(live).includes('main-thread'));
+    recordEvent('stop', { agent_id: 'a1', agent_type: 'dev-web-builder' }, dir, T0 + 20_000);
+    assert.equal(readLive(dir, { now: T0 + 30_000 }).recent[0].activity.length, 8);
+  } finally { done(dir); }
+});
+
+test('the hook script records a tool call from stdin', () => {
+  const dir = tmp();
+  try {
+    const input = JSON.stringify({ hook_event_name: 'PreToolUse', agent_id: 'abc', agent_type: 'tst-app-tester', tool_name: 'Bash', tool_input: { command: 'pnpm test' }, cwd: dir });
+    const r = spawnSync(process.execPath, [LIVE_MJS, 'tool'], { input, encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: dir } });
+    assert.equal(r.status, 0, r.stderr);
+    const line = JSON.parse(readFileSync(join(dir, '.agents', 'log', 'live.jsonl'), 'utf8').trim());
+    assert.deepEqual([line.event, line.tool, line.target], ['tool', 'Bash', 'pnpm test']);
+  } finally { done(dir); }
+});
+
+test('the template runs the tool hook for every PreToolUse and keeps the existing guards', () => {
+  const settings = JSON.parse(readFileSync(join(ROOT, 'template', '.claude', 'settings.json'), 'utf8'));
+  const pre = settings.hooks.PreToolUse;
+  const all = pre.flatMap((g) => g.hooks.map((h) => ({ matcher: g.matcher, command: h.command })));
+  assert.ok(all.some((h) => h.matcher === undefined && h.command.includes('agent-live.mjs') && h.command.endsWith(' tool')));
+  assert.ok(all.some((h) => h.matcher === 'Bash' && h.command.includes('block-force-push.sh')));
+  assert.ok(all.some((h) => h.matcher === 'Edit|Write' && h.command.includes('protect-version.sh')));
+});
+
+test('the page code: a monitor button opens the agent activity and survives the next poll', async () => {
+  const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
+  const start = html.indexOf('// Live agents:');
+  const code = html.slice(start, html.indexOf('})();', start) + 5);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const payload = {
+    now: 1, claims: [], recent: [],
+    running: [{ id: 'r1', type: 'dev-web-builder', since: 0, seconds: 42, description: 'Builds the UI', activity: [{ t: 1_800_000_000_000, tool: 'Edit', target: 'apps/web/page.tsx' }] }],
+  };
+  let click;
+  const el = { hidden: true, innerHTML: '', addEventListener: (type, fn) => { if (type === 'click') click = fn; }, querySelectorAll: () => [] };
+  const ctx = {
+    document: { hidden: false, activeElement: null, getElementById: () => el, addEventListener() {} },
+    fetch: async () => ({ ok: true, json: async () => payload }),
+    esc, setInterval: () => 1, clearInterval() {}, Date, Number, String, Math, Set, Map,
+  };
+  vm.runInNewContext(code, ctx);
+  await new Promise((r) => setTimeout(r, 50));
+  assert.ok(el.innerHTML.includes('data-mon-toggle="r1"'));
+  assert.ok(el.innerHTML.includes('Edit apps/web/page.tsx'), 'collapsed row shows what it is doing now');
+  assert.ok(!el.innerHTML.includes('live-mon'), 'monitor starts closed');
+  click({ target: { closest: () => ({ dataset: { monToggle: 'r1' } }) } });
+  assert.ok(el.innerHTML.includes('live-mon') && el.innerHTML.includes('mon-tool'));
+  assert.ok(el.innerHTML.includes('aria-expanded="true"'));
+  click({ target: { closest: () => ({ dataset: { monToggle: 'r1' } }) } });
+  assert.ok(!el.innerHTML.includes('live-mon'));
+});

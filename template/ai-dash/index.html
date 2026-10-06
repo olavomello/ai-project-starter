@@ -115,6 +115,22 @@
   .live-sub { margin-top: 14px; font-size: 11.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
   .live-list.dim li { color: var(--text-2); }
   @media (max-width: 640px) { .live-list li { grid-template-columns: 1fr auto; } .live-desc { display: none; } }
+  .live-list.runs li { grid-template-columns: auto minmax(120px, 220px) 1fr auto; align-items: center; }
+  .mon-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0;
+    border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-3); cursor: pointer; }
+  .mon-btn svg { width: 14px; height: 14px; }
+  .mon-btn:hover { color: var(--text-1); border-color: var(--text-3); }
+  .mon-btn.on { color: var(--accent); border-color: var(--accent); }
+  .mon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .live-mon { grid-column: 1 / -1; margin: 2px 0 6px; padding: 8px 10px; background: #0d0d10; color: #d4d4d8;
+    border: 1px solid var(--border); border-radius: 8px; max-height: 220px; overflow: auto;
+    font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .mon-line { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; white-space: nowrap; }
+  .mon-t { color: #71717a; font-variant-numeric: tabular-nums; }
+  .mon-tool { color: #34d399; font-weight: 600; }
+  .mon-target { overflow: hidden; text-overflow: ellipsis; }
+  .mon-empty { color: #71717a; }
+  @media (max-width: 640px) { .live-list.runs li { grid-template-columns: auto 1fr auto; } }
 
   .grid2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
   @media (min-width: 900px) { .grid2 { grid-template-columns: 1.3fr 1fr; } }
@@ -652,39 +668,83 @@ function recentTable(recs) {
 
 // Live agents: polls the local server's GET api/live while the tab is visible.
 // Static hosting (Vercel, `npx serve`) has no such endpoint, so the panel stays hidden there.
+// Each run has a monitor button (console icon) that opens that agent's recent tool calls.
 (function setupLive() {
   const el = document.getElementById('live');
+  const open = new Set(); // run ids whose monitor is expanded
   let state = null, fetchedAt = 0, shown = false, offline = false;
+
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path d="M7 9l3 2.5L7 14M12 14h4"/></svg>';
 
   function fmt(sec) {
     sec = Math.max(0, Math.round(sec));
     const m = Math.floor(sec / 60), s = sec % 60;
     return m ? m + 'm ' + String(s).padStart(2, '0') + 's' : s + 's';
   }
-  function runLi(r) {
-    return '<li><span class="live-name">' + esc(r.type) + '</span><span class="live-desc">' + esc(r.description || '') +
-      '</span><span class="live-time" data-sec="' + r.seconds + '">' + fmt(r.seconds) + '</span></li>';
+  function clock(t) {
+    const d = new Date(t);
+    return [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':');
   }
-  function doneLi(r) {
-    return '<li><span class="live-name">' + esc(r.type) + '</span><span class="live-desc">' + esc(r.description || '') +
-      '</span><span class="live-time">took ' + fmt(r.seconds) + '</span></li>';
+  function monitor(r) {
+    const rows = r.activity || [];
+    const body = rows.length
+      ? rows.map((a) => '<div class="mon-line"><span class="mon-t">' + clock(a.t) + '</span><span class="mon-tool">' + esc(a.tool) +
+        '</span><span class="mon-target">' + esc(a.target) + '</span></div>').join('')
+      : '<div class="mon-empty">No tool calls recorded for this run yet.</div>';
+    return '<div class="live-mon" data-mon="' + esc(r.id) + '" role="log" aria-label="Activity of ' + esc(r.type) + '">' + body + '</div>';
+  }
+  function runLi(r, running) {
+    const isOpen = open.has(r.id);
+    const last = running && r.activity && r.activity.length ? r.activity[r.activity.length - 1] : null;
+    const doing = last ? esc(last.tool) + (last.target ? ' ' + esc(last.target) : '') : esc(r.description || '');
+    const time = running
+      ? '<span class="live-time" data-sec="' + r.seconds + '">' + fmt(r.seconds) + '</span>'
+      : '<span class="live-time">took ' + fmt(r.seconds) + '</span>';
+    return '<li><button class="mon-btn' + (isOpen ? ' on' : '') + '" type="button" data-mon-toggle="' + esc(r.id) +
+      '" aria-expanded="' + (isOpen ? 'true' : 'false') + '" aria-label="' + (isOpen ? 'Hide' : 'Show') + ' activity of ' + esc(r.type) +
+      '" title="What is this agent doing?">' + ICON + '</button><span class="live-name">' + esc(r.type) + '</span><span class="live-desc">' +
+      doing + '</span>' + time + (isOpen ? monitor(r) : '') + '</li>';
+  }
+  function snapshot() {
+    const m = new Map();
+    for (const d of el.querySelectorAll('.live-mon')) m.set(d.dataset.mon, { top: d.scrollTop, bottom: d.scrollHeight - d.scrollTop - d.clientHeight < 8 });
+    return { scroll: m, focus: document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.monToggle : null };
+  }
+  function restore(snap) {
+    for (const d of el.querySelectorAll('.live-mon')) {
+      const s = snap.scroll.get(d.dataset.mon);
+      d.scrollTop = !s || s.bottom ? d.scrollHeight : s.top; // follow the tail unless the reader scrolled up
+    }
+    if (snap.focus) {
+      for (const b of el.querySelectorAll('[data-mon-toggle]')) if (b.dataset.monToggle === snap.focus) { b.focus(); break; }
+    }
   }
   function render() {
+    const snap = snapshot();
     const n = state.running.length;
     const head = '<div class="live-head"><span class="live-dot' + (n ? ' on' : '') + '"></span><b>' +
       (n ? n + ' agent' + (n === 1 ? '' : 's') + ' running' : 'No agents running') + '</b><span class="live-note">' +
       (offline ? 'server not reachable, retrying' : 'live, updates every 2 s') + '</span></div>';
-    const running = n ? '<ul class="live-list">' + state.running.map(runLi).join('') + '</ul>' : '';
+    const running = n ? '<ul class="live-list runs">' + state.running.map((r) => runLi(r, true)).join('') + '</ul>' : '';
     const claims = state.claims.length
       ? '<div class="live-sub">Claimed paths</div><ul class="live-list dim">' + state.claims.map((c) =>
         '<li><span class="live-name">' + esc(c.name) + '</span><span class="live-desc">' + esc(c.globs.join(', ')) +
         '</span><span class="live-time">' + esc(c.holder) + '</span></li>').join('') + '</ul>'
       : '';
     const recent = state.recent.length
-      ? '<div class="live-sub">Recently finished</div><ul class="live-list dim">' + state.recent.slice(0, 6).map(doneLi).join('') + '</ul>'
+      ? '<div class="live-sub">Recently finished</div><ul class="live-list dim runs">' + state.recent.slice(0, 6).map((r) => runLi(r, false)).join('') + '</ul>'
       : '';
     el.innerHTML = '<h2>Live</h2><div class="card live-card">' + head + running + claims + recent + '</div>';
+    restore(snap);
   }
+  el.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest('[data-mon-toggle]') : null;
+    if (!btn || !state) return;
+    const id = btn.dataset.monToggle;
+    if (open.has(id)) open.delete(id); else open.add(id);
+    render();
+  });
   async function poll() {
     if (document.hidden) return;
     try {
