@@ -5,6 +5,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ## [Unreleased]
 ### Added
+- README and `PROMPTS.md`: on Windows run `bash scripts/*.sh` with Git Bash; the `bash` on PATH in PowerShell is the WSL stub.
 - `creation-date` / `created-by` in skill frontmatter (format-checked when present) and `Creation date` in the agent CONFIGS block, stamped by `scripts/skills.mjs new` and `agent-team.sh new` so the format never drifts. "Last usage" is derived, not stored: a `PostToolUse` hook (`log-skill-use.sh`), and `agent-team.sh claim` append to the local git-ignored `.agents/log/usage.jsonl`, and `list` and ai-dash read the latest entry — no commit or merge conflict behind every use.
 - `scripts/skills.mjs` (`list` / `check`): zero-dependency skill lister and frontmatter validator — `name` required, lowercase-hyphen and equal to its folder, `description` required and ≤1024 chars, plus YAML pitfalls (unquoted `: `/` #`, unclosed quotes, tabs, duplicate keys); warns when a description doesn't say when to use the skill. Run by `scripts/gate.sh` (new "skills frontmatter" step) and `ai-project-starter doctor`, so a malformed skill blocks the commit instead of silently never triggering.
 - ai-dash **Skills** viewer (book icon, local server only): name, description and validity of every skill, with filter and expandable descriptions, via `GET /api/skills` (no skill bodies). Static hosting shows the equivalent commands.

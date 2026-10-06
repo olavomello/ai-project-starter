@@ -71,7 +71,7 @@ export async function init({ target, ref = 'main', source, noPrompt = false, mod
     info(configured
       ? '  2. Review AGENTS.md section 0 (filled in during setup) and the rest of AGENTS.md.'
       : '  2. Fill in AGENTS.md section 0 (name, purpose, stack, administrator, knobs).');
-    info('  3. bash scripts/gate.sh   (or ask Claude to run it)');
+    info('  3. bash scripts/gate.sh   (Windows: use Git Bash; or ask Claude to run it)');
     info('  4. git remote add origin <your-repo> && git push -u origin main');
   } finally {
     cleanup();

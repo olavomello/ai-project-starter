@@ -64,8 +64,11 @@ I want to start a new project from the ai-project-starter template
 7. Run `node <path-to-the-clone-from-step-1>/cli/bin.js doctor <project-directory>`
    and report the result (the same structural check `ai-project-starter init` runs
    automatically at the end).
-8. Run `scripts/gate.sh` inside the new project and report the result. If it's
-   not executable yet, make it so first.
+8. Run `bash scripts/gate.sh` inside the new project and report the result. On
+   Windows, run it with Git Bash (`"C:\Program Files\Git\bin\bash.exe"`), not
+   with the `bash` on PATH: in PowerShell that is the WSL stub and fails with
+   `execvpe(/bin/bash) failed`. If the script is not executable yet, make it so
+   first (not needed on Windows).
 9. Tell me the next manual steps: adding a git remote and pushing, and reading
    through the rest of AGENTS.md.
 
