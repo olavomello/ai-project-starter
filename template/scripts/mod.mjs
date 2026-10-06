@@ -23,10 +23,24 @@ function settingsPath(dir, local) {
   return join(dir, '.claude', local ? 'settings.local.json' : 'settings.json');
 }
 
+// The mod first shipped after v0.1.0: that tag has no mods/ folder, so a marketplace pinned
+// to it can't install the plugin and nothing measures usage. Projects created from 0.1.0 or
+// older therefore track main; newer starter versions pin to their own tag.
+const LAST_VERSION_WITHOUT_MOD = [0, 1, 0];
+
+function newerThanModless(version) {
+  const parts = String(version).split(/[.-]/).slice(0, 3).map((n) => parseInt(n, 10));
+  if (parts.length < 3 || parts.some(Number.isNaN)) return false;
+  for (let i = 0; i < 3; i++) {
+    if (parts[i] !== LAST_VERSION_WITHOUT_MOD[i]) return parts[i] > LAST_VERSION_WITHOUT_MOD[i];
+  }
+  return false;
+}
+
 function starterVersionTag(dir) {
   try {
     const manifest = JSON.parse(readFileSync(join(dir, '.ai-project-starter.json'), 'utf8'));
-    if (manifest.starterVersion) return `v${manifest.starterVersion}`;
+    if (manifest.starterVersion && newerThanModless(manifest.starterVersion)) return `v${manifest.starterVersion}`;
   } catch { /* no manifest, or unreadable — fall back to main */ }
   return 'main';
 }

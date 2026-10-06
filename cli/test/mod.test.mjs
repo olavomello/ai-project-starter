@@ -111,11 +111,23 @@ test('status --json shape: enable then read back via statusOf matches the docume
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('ref respects the .ai-project-starter.json manifest when present and no --ref given', () => {
+test('ref follows the manifest version when that release contains the mod', () => {
   const dir = tmpProject();
-  writeFileSync(join(dir, '.ai-project-starter.json'), JSON.stringify({ starterVersion: '0.1.0' }));
-  const status = enableMod(dir);
-  assert.equal(status.ref, 'v0.1.0');
+  writeFileSync(join(dir, '.ai-project-starter.json'), JSON.stringify({ starterVersion: '0.2.0' }));
+  assert.equal(enableMod(dir).ref, 'v0.2.0');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('a project created from a release that predates the mod tracks main, not a tag without it', () => {
+  for (const version of ['0.1.0', '0.0.1', '0.1.0-rc1', 'local', '']) {
+    const dir = tmpProject();
+    writeFileSync(join(dir, '.ai-project-starter.json'), JSON.stringify({ starterVersion: version }));
+    assert.equal(enableMod(dir).ref, 'main', `starterVersion "${version}"`);
+    rmSync(dir, { recursive: true, force: true });
+  }
+  const dir = tmpProject();
+  writeFileSync(join(dir, '.ai-project-starter.json'), JSON.stringify({ starterVersion: '0.1.1' }));
+  assert.equal(enableMod(dir).ref, 'v0.1.1', 'a later patch release does contain the mod');
   rmSync(dir, { recursive: true, force: true });
 });
 

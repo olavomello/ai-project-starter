@@ -69,6 +69,7 @@ unattended work.
   is toggled, the file differs from the template's, so `update` treats it as
   project-specific from then on (same as any other hand-edited file) — see
   `cli/README.md`.
+- **Dashboard shows 0 tokens, no cache reads, no cost.** The mod never wrote `.agents/state/usage/`, so the gate had nothing to log. Check `node scripts/mod.mjs status`: if the marketplace `ref` is a tag without this folder (`v0.1.0` and older), run `node scripts/mod.mjs enable --ref main`, then restart the Claude Code session (or `/reload-plugins`) and accept the plugin install prompt. Once a session has run, `.agents/state/usage/<branch>.json` appears and the next gate run consumes it.
 - **Subagent usage is attributed to the parent session's branch.** A subagent that
   works in its own worktree still has its usage merged into the branch the *session*
   is running on, not the subagent's own worktree.
