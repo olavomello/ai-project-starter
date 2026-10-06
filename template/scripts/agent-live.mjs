@@ -39,6 +39,33 @@ export const SESSION_IDLE_MS = 10 * 60 * 1000; // same for a main session (Stop 
 const logFile = (dir) => join(usageRoot(dir), LIVE_LOG);
 const isSessionId = (id) => id.startsWith('s:');
 
+// Hourly counters for the activity chart. The raw log is trimmed to its newest lines;
+// what is trimmed away is rolled into this file first, so the chart keeps months of
+// history while the raw log (and anything sensitive in it) stays short.
+export const ACTIVITY_FILE = join('.agents', 'log', 'activity.json');
+const activityFile = (dir) => join(usageRoot(dir), ACTIVITY_FILE);
+const HOUR_MS = 3600 * 1000;
+const hourOf = (t) => Math.floor(t / HOUR_MS) * HOUR_MS;
+
+/** Adds events to hourly counters: `main`/`sub` tool calls (session vs subagent) and `runs` (turns + subagent runs). */
+export function tallyEvents(events, into = {}) {
+  for (const e of events) {
+    if (typeof e.t !== 'number' || !e.id) continue;
+    const key = String(hourOf(e.t));
+    const b = into[key] || (into[key] = { main: 0, sub: 0, runs: 0 });
+    if (e.event === 'tool') { if (isSessionId(e.id)) b.main++; else b.sub++; }
+    else if (e.event === 'start') b.runs++;
+  }
+  return into;
+}
+
+function readRollup(dir) {
+  try {
+    const j = JSON.parse(readFileSync(activityFile(dir), 'utf8'));
+    return j && typeof j.hours === 'object' && j.hours ? j.hours : {};
+  } catch { return {}; }
+}
+
 const SECRET_PAIR = /(token|secret|password|passwd|api[_-]?key|authorization|auth)(\s*[=:]\s*|\s+)\S+/gi;
 const BEARER = /bearer\s+\S+/gi;
 const LONG_BLOB = /[A-Za-z0-9+/_-]{32,}={0,2}/g;
@@ -97,6 +124,11 @@ export function recordEvent(kind, payload, dir = '.', now = Date.now()) {
   try {
     if (statSync(file).size > MAX_BYTES) {
       const lines = readFileSync(file, 'utf8').split('\n').filter(Boolean);
+      const dropped = [];
+      for (const l of lines.slice(0, -KEEP_LINES)) { try { dropped.push(JSON.parse(l)); } catch { /* torn line */ } }
+      const rollup = tallyEvents(dropped, readRollup(dir));
+      mkdirSync(dirname(activityFile(dir)), { recursive: true });
+      writeFileSync(activityFile(dir), JSON.stringify({ hours: rollup }));
       writeFileSync(file, `${lines.slice(-KEEP_LINES).join('\n')}\n`);
     }
   } catch { /* trimming is best effort */ }
@@ -173,6 +205,16 @@ export function readLive(dir = '.', { now = Date.now(), staleMs = STALE_MS, idle
       activity: r.tools.slice(-ACTIVITY_RECENT),
     }));
   return { now, running, recent: finished, claims: readClaims(dir) };
+}
+
+/**
+ * Hourly activity, oldest first: `[{ h, main, sub, runs }]` with `h` the UTC hour start in ms.
+ * Rolled-up history plus whatever is still in the raw log; empty hours are omitted.
+ * The browser groups these into hours, days, weeks and months in its own time zone.
+ */
+export function readActivity(dir = '.') {
+  const hours = tallyEvents(readEvents(dir), readRollup(dir));
+  return Object.keys(hours).map(Number).sort((a, b) => a - b).map((h) => ({ h, ...hours[String(h)] }));
 }
 
 async function main() {
