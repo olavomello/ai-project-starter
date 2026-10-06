@@ -43,7 +43,7 @@ inert: every hook is a no-op pass-through, and nothing is drawn.
 Three equivalent ways, all backed by `scripts/mod.mjs` in the project (see its own
 `--help` and the root `README.md`'s Configuration section):
 
-- during `cli init`'s guided setup (`--mod` / `--no-mod` flags, or the prompt);
+- during `ai-project-starter init`'s guided setup (`--mod` / `--no-mod` flags, or the prompt);
 - any time with `node scripts/mod.mjs enable` / `disable`;
 - from the ai-dash Settings area, when served locally (`node scripts/ai-dash.mjs`).
 
@@ -65,7 +65,7 @@ unattended work.
 
 ## Known limitations
 
-- **`cli update` sees a customized `.claude/settings.json`.** The first time the mod
+- **`ai-project-starter update` sees a customized `.claude/settings.json`.** The first time the mod
   is toggled, the file differs from the template's, so `update` treats it as
   project-specific from then on (same as any other hand-edited file) — see
   `cli/README.md`.

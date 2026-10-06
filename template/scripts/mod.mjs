@@ -13,6 +13,7 @@
 // targets .claude/settings.local.json (personal, git-ignored) instead.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const PLUGIN_ID = 'starter-hud@ai-project-starter';
 const MARKETPLACE_NAME = 'ai-project-starter';
@@ -159,4 +160,4 @@ function main() {
 
 // Only run as a CLI when invoked directly (not when imported by ai-dash.mjs
 // or the test suite).
-if (import.meta.url === `file://${process.argv[1]}`) main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

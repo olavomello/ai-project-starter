@@ -102,6 +102,16 @@ test('CLI check exits 0 when valid, 1 on error, and --strict fails on warnings',
   } finally { for (const d of [ok, bad, weak]) rmSync(d, { recursive: true, force: true }); }
 });
 
+// Kill a spawned server and wait for it to exit, so the OS releases its cwd
+// (on Windows rmSync of that directory fails with EPERM otherwise).
+async function stopChild(child) {
+  if (child.exitCode === null && child.signalCode === null) {
+    const exited = new Promise((r) => child.once('exit', r));
+    child.kill();
+    await exited;
+  }
+}
+
 test('GET /api/skills lists name/description (no bodies) and enforces Host', async () => {
   const dir = project({ a: skill('a', GOOD_DESC).replace('Body', 'SECRET-BODY') });
   execFileSync('git', ['init', '-q'], { cwd: dir });
@@ -127,7 +137,7 @@ test('GET /api/skills lists name/description (no bodies) and enforces Host', asy
     assert.equal(skills[0].description, GOOD_DESC);
     const bad = await fetch(`http://127.0.0.1:${port}/api/skills`, { headers: { Origin: 'http://evil.example' } });
     assert.equal(bad.status, 400);
-  } finally { child.kill(); rmSync(dir, { recursive: true, force: true }); }
+  } finally { await stopChild(child); rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ---- creation/usage dates ----

@@ -57,7 +57,7 @@ command plus supporting files, frontmatter, and loading on demand.
   Claude on its own judgment. `semver-release` should carry this flag once it's
   invokable as a slash command — check before assuming it already does.
 - **Every skill's frontmatter must be valid YAML and complete** — `node scripts/skills.mjs check`
-  enforces it (the gate and `cli doctor` run it). Required: `name` (lowercase letters,
+  enforces it (the gate and `ai-project-starter doctor` run it). Required: `name` (lowercase letters,
   digits, single hyphens; equals the folder name; ≤64 chars) and `description` (≤1024
   chars) saying what the skill does **and when to use it** ("Use when…"). The classic
   breakage is an unquoted `: ` or ` #` in the description — quote it or use `>`.
@@ -151,7 +151,7 @@ stops depending on an agent remembering to export `AILOG_*` variables.
 initiative. Three equivalent ways, all backed by the single implementation in
 `scripts/mod.mjs`:
 
-- `cli init`'s guided setup (or its `--mod`/`--no-mod` flags);
+- `ai-project-starter init`'s guided setup (or its `--mod`/`--no-mod` flags);
 - any time afterwards: `node scripts/mod.mjs enable` / `disable`, or
   `ai-project-starter mod enable` / `disable` through the CLI;
 - the **Settings** area (gear icon) in `ai-dash`, when it's served locally with

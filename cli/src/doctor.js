@@ -96,7 +96,8 @@ export function runDoctor(target, { quiet }) {
   }
 
   const hooksDir = join(target, '.claude', 'hooks');
-  if (isDir(hooksDir)) {
+  // Windows has no execute bit (stat always reports 0o666), so this check can't mean anything there.
+  if (isDir(hooksDir) && process.platform !== 'win32') {
     const hookFiles = readdirSync(hooksDir).filter((f) => f.endsWith('.sh'));
     for (const f of hookFiles) {
       const mode = statSync(join(hooksDir, f)).mode;
