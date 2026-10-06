@@ -17,7 +17,7 @@ import { dirname, join, normalize, extname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { statusOf, enableMod, disableMod } from './mod.mjs';
 import { listSkills, usageMap, NEVER } from './skills.mjs';
-import { readLive } from './agent-live.mjs';
+import { readLive, readActivity } from './agent-live.mjs';
 import { field as fieldOf } from './agents-sync.mjs';
 
 function repoRoot() {
@@ -103,6 +103,13 @@ async function handleGetLive(req, res) {
   sendJson(res, 200, { ...live, running: live.running.map(withInfo), recent: live.recent.map(withInfo) });
 }
 
+/** Hourly tool-call and run counters for the Activity chart (the page groups them by hour/day/week/month). */
+async function handleGetActivity(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  res.setHeader('cache-control', 'no-store');
+  sendJson(res, 200, { now: Date.now(), hours: readActivity(TARGET_DIR) });
+}
+
 function readBody(req, maxBytes) {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -181,6 +188,7 @@ const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
     if (url.pathname === '/api/live' && req.method === 'GET') return await handleGetLive(req, res);
+    if (url.pathname === '/api/activity' && req.method === 'GET') return await handleGetActivity(req, res);
     if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
     if (url.pathname === '/api/config' && req.method === 'POST') return await handlePostConfig(req, res);

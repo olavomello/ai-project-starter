@@ -17,6 +17,7 @@ Claude Code already announces this: it fires a `SubagentStart` and a `SubagentSt
 - A third hook, `PreToolUse` with no matcher, records each tool call a subagent makes (calls from the main thread have no `agent_id` and are skipped), so each running agent can show what it is doing. A tool line adds the tool name and a short target: a project-relative file path, the first 160 characters of a command, a search pattern, or a URL's host. Credential-looking text (`token=...`, `Bearer ...`, long opaque strings) is masked before it is written. Prompts and tool output are never stored.
 - `scripts/ai-dash.mjs` serves `GET /api/live` (same `Host`/`Origin` check as the other endpoints): running agents with elapsed time, recent finished runs, and advisory claims, each enriched with the roster description and owned paths.
 - The dashboard polls it every two seconds while the tab is visible and shows a Live panel. On a static host there is no endpoint, so the panel stays hidden; the rest of the dashboard is unchanged.
+- An Activity card charts tool calls per hour, day, week or month. The raw log is kept short on purpose, so lines trimmed from it are first rolled into hourly counters (`.agents/log/activity.json`: counts per UTC hour, no names, paths or commands); the page regroups those hours in the reader's time zone.
 - A start with no stop for 30 minutes is treated as gone, so a crashed session does not show an agent as running forever.
 
 ## Consequences

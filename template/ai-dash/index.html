@@ -132,6 +132,19 @@
   .mon-empty { color: #71717a; }
   @media (max-width: 640px) { .live-list.runs li { grid-template-columns: auto 1fr auto; } }
 
+  /* activity chart (local server only) */
+  .act-card { padding: 14px 18px; margin-bottom: 26px; }
+  .act-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .act-total { font-size: 13px; color: var(--text-2); }
+  .act-total b { color: var(--text-1); font-size: 22px; font-weight: 650; letter-spacing: -0.02em; margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .act-seg { margin-left: auto; display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .act-seg button { background: var(--surface-2); color: var(--text-2); border: 0; padding: 5px 12px; font: inherit; font-size: 12.5px; cursor: pointer; }
+  .act-seg button + button { border-left: 1px solid var(--border); }
+  .act-seg button:hover { color: var(--text-1); }
+  .act-seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .act-seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .act-empty { color: var(--text-3); font-size: 13px; margin: 14px 0 6px; }
+
   .grid2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
   @media (min-width: 900px) { .grid2 { grid-template-columns: 1.3fr 1fr; } }
   .grid3 { display: grid; grid-template-columns: 1fr; gap: 16px; }
@@ -277,6 +290,7 @@
     </button>
   </header>
   <section id="live" hidden></section>
+  <section id="activity" hidden></section>
   <div id="root"></div>
 </div>
 <div class="tip" id="tip"></div>
@@ -767,6 +781,119 @@ function recentTable(recs) {
   }, 1000);
   document.addEventListener('visibilitychange', poll);
   poll();
+})();
+
+// Activity chart: tool calls per hour / day / week / month, from the local server's GET api/activity.
+// Stacked bars: the session's own calls and the subagents' calls. Like the Live panel, it needs the
+// local server and stays hidden on static hosting.
+(function setupActivity() {
+  const el = document.getElementById('activity');
+  const RANGES = { hour: 'Hour', day: 'Day', week: 'Week', month: 'Month' };
+  const SPAN = { hour: 24, day: 14, week: 12, month: 12 };
+  const WINDOW = { hour: 'last 24 hours', day: 'last 14 days', week: 'last 12 weeks', month: 'last 12 months' };
+  const KEY = 'ai-dash-activity-range';
+  let range = 'day', rows = null, shown = false;
+  try { const saved = localStorage.getItem(KEY); if (saved && RANGES[saved]) range = saved; } catch { /* storage blocked */ }
+
+  const num = (n) => Number(n).toLocaleString();
+
+  // Bucket boundaries are local time, so "day" means the reader's day.
+  function startOf(r, t) {
+    const x = new Date(t);
+    if (r === 'hour') { x.setMinutes(0, 0, 0); return x; }
+    x.setHours(0, 0, 0, 0);
+    if (r === 'week') x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); // weeks start on Monday
+    if (r === 'month') x.setDate(1);
+    return x;
+  }
+  function step(r, d, n) {
+    const x = new Date(d);
+    if (r === 'hour') x.setHours(x.getHours() + n);
+    else if (r === 'day') x.setDate(x.getDate() + n);
+    else if (r === 'week') x.setDate(x.getDate() + 7 * n);
+    else x.setMonth(x.getMonth() + n);
+    return x;
+  }
+  function bucketize(r, hours, now) {
+    const last = startOf(r, now);
+    const buckets = [], byTime = new Map();
+    for (let i = SPAN[r] - 1; i >= 0; i--) {
+      const b = { t: step(r, last, -i).getTime(), main: 0, sub: 0, runs: 0 };
+      buckets.push(b); byTime.set(b.t, b);
+    }
+    for (const h of hours) {
+      const b = byTime.get(startOf(r, h.h).getTime());
+      if (b) { b.main += h.main || 0; b.sub += h.sub || 0; b.runs += h.runs || 0; }
+    }
+    return buckets;
+  }
+  function axisLabel(r, t) {
+    const d = new Date(t);
+    if (r === 'hour') return String(d.getHours()).padStart(2, '0') + 'h';
+    if (r === 'month') return d.toLocaleDateString(undefined, { month: 'short' });
+    return d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' });
+  }
+  function tipTitle(r, t) {
+    const d = new Date(t);
+    if (r === 'hour') return d.toLocaleString(undefined, { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    if (r === 'week') return 'Week of ' + d.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (r === 'month') return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    return d.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+  function chart(r, buckets) {
+    const W = 1040, H = 230, P = { t: 12, r: 12, b: 28, l: 46 };
+    const peak = Math.max(1, ...buckets.map((b) => b.main + b.sub));
+    const y = (v) => P.t + (1 - v / peak) * (H - P.t - P.b);
+    const slot = (W - P.l - P.r) / buckets.length, bw = Math.max(3, slot * 0.68);
+    const ticks = [0, peak / 2, peak];
+    const every = Math.ceil(buckets.length / 8);
+    const bars = buckets.map((b, i) => {
+      const x = P.l + i * slot + (slot - bw) / 2, total = b.main + b.sub;
+      const subH = (b.sub / peak) * (H - P.t - P.b), mainH = (b.main / peak) * (H - P.t - P.b);
+      const tip = '<b>' + esc(tipTitle(r, b.t)) + '</b><br>' + num(total) + ' tool call' + (total === 1 ? '' : 's') +
+        '<br>session ' + num(b.main) + ' · subagents ' + num(b.sub) + '<br>' + num(b.runs) + ' run' + (b.runs === 1 ? '' : 's');
+      return '<rect x="' + x.toFixed(1) + '" y="' + (y(0) - mainH).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + mainH.toFixed(1) + '" rx="2" fill="var(--series-1)"/>' +
+        '<rect x="' + x.toFixed(1) + '" y="' + (y(0) - mainH - subH).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + subH.toFixed(1) + '" rx="2" fill="var(--series-3)"/>' +
+        ((i % every === 0 || i === buckets.length - 1) ? '<text class="ax" x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(axisLabel(r, b.t)) + '</text>' : '') +
+        '<rect class="hit" x="' + (P.l + i * slot).toFixed(1) + '" y="' + P.t + '" width="' + slot.toFixed(1) + '" height="' + (H - P.t - P.b) + '" data-tip="' + esc(tip) + '"/>';
+    }).join('');
+    const grid = ticks.map((v) => '<line x1="' + P.l + '" x2="' + (W - P.r) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="var(--grid)" stroke-width="1"/>' +
+      '<text class="ax" x="' + (P.l - 8) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end">' + num(Math.round(v)) + '</text>').join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Tool calls per ' + r + '">' + grid + bars + '</svg>';
+  }
+  function render() {
+    const buckets = bucketize(range, rows, Date.now());
+    const calls = buckets.reduce((s, b) => s + b.main + b.sub, 0), runs = buckets.reduce((s, b) => s + b.runs, 0);
+    const seg = Object.keys(RANGES).map((k) => '<button type="button" data-range="' + k + '" aria-pressed="' + (k === range ? 'true' : 'false') + '">' + RANGES[k] + '</button>').join('');
+    const body = calls || runs
+      ? '<div class="legend"><span><i class="sw" style="background:var(--series-1)"></i>session</span><span><i class="sw" style="background:var(--series-3)"></i>subagents</span></div>' + chart(range, buckets)
+      : '<p class="act-empty">No activity in the ' + WINDOW[range] + '.</p>';
+    el.innerHTML = '<h2>Activity</h2><div class="card act-card"><div class="act-head"><div class="act-total"><b>' + num(calls) + '</b>tool calls · ' +
+      num(runs) + ' run' + (runs === 1 ? '' : 's') + ' · ' + WINDOW[range] + '</div><div class="act-seg" role="group" aria-label="Time range">' + seg + '</div></div>' + body + '</div>';
+    wireTips(el);
+  }
+  el.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest('[data-range]') : null;
+    if (!btn || !rows || !RANGES[btn.dataset.range]) return;
+    range = btn.dataset.range;
+    try { localStorage.setItem(KEY, range); } catch { /* storage blocked */ }
+    render();
+  });
+  async function load() {
+    if (document.hidden) return;
+    try {
+      const r = await fetch('api/activity', { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      rows = (await r.json()).hours || [];
+      if (!shown) { shown = true; el.hidden = false; }
+      render();
+    } catch {
+      if (!shown) clearInterval(timer); // no activity endpoint here: stay hidden
+    }
+  }
+  const timer = setInterval(load, 30000);
+  document.addEventListener('visibilitychange', load);
+  load();
 })();
 
 function render(d) {

@@ -330,3 +330,109 @@ test('the page names a main session by its folder', async () => {
   assert.ok(el.innerHTML.includes('Main session · init-execution-assessment-70b48b'));
   assert.ok(el.innerHTML.includes('Bash pnpm test'));
 });
+
+// ---- activity chart data ----
+import { tallyEvents, readActivity } from '../../template/scripts/agent-live.mjs';
+
+test('tallyEvents counts session vs subagent tool calls and runs per UTC hour', () => {
+  const H = 3600 * 1000, base = Math.floor(T0 / H) * H;
+  const out = tallyEvents([
+    { t: base + 5, id: 's:S1', event: 'tool' }, { t: base + 9, id: 's:S1', event: 'tool' },
+    { t: base + 10, id: 'a1', event: 'tool' }, { t: base + 11, id: 'a1', event: 'start' }, { t: base + 12, id: 'a1', event: 'stop' },
+    { t: base + H + 1, id: 's:S1', event: 'start' },
+  ]);
+  assert.deepEqual(out[String(base)], { main: 2, sub: 1, runs: 1 });
+  assert.deepEqual(out[String(base + H)], { main: 0, sub: 0, runs: 1 });
+});
+
+test('trimming the raw log rolls the dropped lines into hourly counters without losing any', () => {
+  const dir = tmp();
+  try {
+    mkdirSync(join(dir, '.agents', 'log'), { recursive: true });
+    const pad = 'x'.repeat(220);
+    const lines = [];
+    for (let i = 0; i < 4800; i++) lines.push(JSON.stringify({ t: T0 + i * 1000, event: 'tool', id: i % 2 ? 's:S1' : 'a1', type: 't', session: 'S1', tool: 'Edit', target: pad }));
+    writeFileSync(join(dir, '.agents', 'log', 'live.jsonl'), lines.join('\n') + '\n'); // > 1 MB
+    recordEvent('tool', { session_id: 'S1', tool_name: 'Edit', tool_input: { file_path: 'last.ts' } }, dir, T0 + 5_000_000);
+    const raw = readFileSync(join(dir, '.agents', 'log', 'live.jsonl'), 'utf8').trim().split('\n');
+    assert.ok(raw.length <= 3000 && raw.length > 100, `raw log kept ${raw.length} lines`);
+    assert.ok(existsSync(join(dir, '.agents', 'log', 'activity.json')));
+    const total = readActivity(dir).reduce((s, b) => s + b.main + b.sub, 0);
+    assert.equal(total, 4801, 'rolled-up plus raw counts equal everything that was recorded');
+  } finally { done(dir); }
+});
+
+test('GET /api/activity serves the hourly counters and enforces Host', async () => {
+  const dir = tmp();
+  const port = 4621;
+  mkdirSync(join(dir, 'ai-dash'), { recursive: true });
+  writeFileSync(join(dir, 'ai-dash', 'index.html'), 'x');
+  execFileSync('git', ['init', '-q'], { cwd: dir });
+  execFileSync('git', ['config', 'user.email', 't@e.com'], { cwd: dir });
+  execFileSync('git', ['config', 'user.name', 'T'], { cwd: dir });
+  execFileSync('git', ['add', '-A'], { cwd: dir });
+  execFileSync('git', ['commit', '-q', '-m', 'init'], { cwd: dir });
+  recordEvent('tool', { session_id: 'S1', tool_name: 'Edit', tool_input: {} }, dir, Date.now());
+  recordEvent('tool', { agent_id: 'a1', agent_type: 'x', tool_name: 'Edit', tool_input: {} }, dir, Date.now());
+  const child = spawn(process.execPath, [AI_DASH_MJS, '--port', String(port)], { cwd: dir, stdio: 'ignore' });
+  try {
+    for (let i = 0; i < 80; i++) {
+      try { if ((await get(port, '/api/config')).status) break; } catch { /* not up */ }
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    const res = await get(port, '/api/activity');
+    assert.equal(res.status, 200);
+    const body = JSON.parse(res.body);
+    assert.equal(body.hours.reduce((s, b) => s + b.main, 0), 1);
+    assert.equal(body.hours.reduce((s, b) => s + b.sub, 0), 1);
+    assert.equal((await get(port, '/api/activity', 'evil.example')).status, 400);
+  } finally { await stopChild(child); done(dir); }
+});
+
+async function runActivityPage(rows) {
+  const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
+  const start = html.indexOf('// Activity chart:');
+  const code = html.slice(start, html.indexOf('})();', start) + 5);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let click;
+  const stored = {};
+  const el = { hidden: true, innerHTML: '', addEventListener: (t, fn) => { if (t === 'click') click = fn; }, querySelectorAll: () => [] };
+  vm.runInNewContext(code, {
+    document: { hidden: false, getElementById: () => el, addEventListener() {} },
+    fetch: async () => ({ ok: true, json: async () => ({ hours: rows }) }),
+    localStorage: { getItem: (k) => stored[k] ?? null, setItem: (k, v) => { stored[k] = v; } },
+    esc, wireTips() {}, setInterval: () => 1, clearInterval() {}, Date, Number, Math, Map, String, Intl,
+  });
+  await new Promise((r) => setTimeout(r, 50));
+  const pick = (range) => click({ target: { closest: () => ({ dataset: { range } }) } });
+  const calls = () => Number((/<b>([\d,.\u00a0\u202f ]+)<\/b>tool calls/.exec(el.innerHTML) || [, 'NaN'])[1].replace(/\D/g, ''));
+  return { el, pick, calls, stored };
+}
+
+test('the Activity card filters by hour, day, week and month, and remembers the choice', async () => {
+  const H = 3600 * 1000, now = Date.now();
+  const row = (ago, main, sub, runs = 1) => ({ h: Math.floor((now - ago) / H) * H, main, sub, runs });
+  const { el, pick, calls, stored } = await runActivityPage([
+    row(1 * H, 10, 5),           // inside every range
+    row(30 * H, 7, 0),           // older than 24 hours, inside 14 days
+    row(20 * 24 * H, 100, 0),    // older than 14 days, inside 12 weeks / 12 months
+    row(400 * 24 * H, 1000, 0),  // older than a year: in none
+  ]);
+  assert.equal(el.hidden, false);
+  assert.ok(el.innerHTML.includes('data-range="hour"') && el.innerHTML.includes('data-range="month"'));
+  assert.equal(calls(), 22, 'day (14 days)');
+  pick('hour'); assert.equal(calls(), 15, 'hour (24 hours)');
+  pick('week'); assert.equal(calls(), 122, 'week (12 weeks)');
+  pick('month'); assert.equal(calls(), 122, 'month (12 months)');
+  assert.equal(stored['ai-dash-activity-range'], 'month');
+  assert.ok(el.innerHTML.includes('aria-pressed="true">Month'));
+  assert.ok(el.innerHTML.includes('data-tip='));
+});
+
+test('the Activity card shows an empty message instead of a blank chart', async () => {
+  const { el, pick } = await runActivityPage([]);
+  assert.ok(el.innerHTML.includes('No activity in the last 14 days'));
+  pick('hour');
+  assert.ok(el.innerHTML.includes('No activity in the last 24 hours'));
+  assert.ok(!el.innerHTML.includes('<svg'));
+});
