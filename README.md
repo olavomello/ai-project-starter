@@ -56,7 +56,7 @@ Two ways to do this — same result, pick based on what you have installed.
 **CLI (Node + git only — works the same on Windows, macOS, Linux):**
 
 ```bash
-npx github:olavomello/ai-project-starter#main cli init my-project
+npx github:olavomello/ai-project-starter#main init my-project
 cd my-project
 ```
 
@@ -124,8 +124,8 @@ Agents never bump `VERSION` or create tags on their own — they report a `versi
 A project created with the CLI carries a `.ai-project-starter.json` manifest. Later, pull starter improvements in without hand-copying files:
 
 ```bash
-npx github:olavomello/ai-project-starter#main cli update --dry-run   # see what would change
-npx github:olavomello/ai-project-starter#main cli update             # apply it
+npx github:olavomello/ai-project-starter#main update --dry-run   # see what would change
+npx github:olavomello/ai-project-starter#main update             # apply it
 ```
 
 It only ever touches a file the project hasn't customized since the last sync — anything else is flagged, never silently overwritten (see the CLI's own [README](cli/README.md) for exactly how). A project created with `init-project.sh` (no manifest yet) can opt in with `cli adopt` first.
@@ -144,7 +144,7 @@ It only ever touches a file the project hasn't customized since the last sync �
 | `doctor [dir]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed, and the session mod's current on/off state |
 | `mod <status\|enable\|disable> [dir]` | Turns the optional `starter-hud` session mod on or off by editing `.claude/settings.json` — the one implementation of that toggle, shared with `ai-dash`'s Settings area |
 
-Not published to npm yet — run it via `npx github:olavomello/ai-project-starter#main cli <command>` or clone and run `node ai-project-starter/cli/bin.js <command>` directly. Full command flags and the exact three-way sync rules `update` follows: [`cli/README.md`](cli/README.md).
+Not published to npm yet — run it via `npx github:olavomello/ai-project-starter#main <command>` or clone and run `node ai-project-starter/cli/bin.js <command>` directly. Full command flags and the exact three-way sync rules `update` follows: [`cli/README.md`](cli/README.md).
 
 The `template/` repo stays the source of truth either way — the CLI only wraps it. Publishing to npm needs a real `LICENSE` file first (there isn't one yet, so `cli/package.json` currently marks it `UNLICENSED` as a placeholder).
 

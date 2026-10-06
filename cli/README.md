@@ -14,7 +14,7 @@ The starter itself is, and stays, a plain git repo (`template/` copied by `init-
 Not published to npm yet. Until it is, run it straight from GitHub or from a local clone:
 
 ```bash
-npx github:olavomello/ai-project-starter#main cli init my-project
+npx github:olavomello/ai-project-starter#main init my-project
 # or, from a clone:
 node ai-project-starter/cli/bin.js init my-project
 ```
