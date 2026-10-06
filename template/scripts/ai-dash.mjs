@@ -17,6 +17,8 @@ import { dirname, join, normalize, extname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { statusOf, enableMod, disableMod } from './mod.mjs';
 import { listSkills, usageMap, NEVER } from './skills.mjs';
+import { readLive } from './agent-live.mjs';
+import { field as fieldOf } from './agents-sync.mjs';
 
 function repoRoot() {
   try {
@@ -82,6 +84,23 @@ function originOk(req, port) {
     } catch { return false; }
   }
   return true;
+}
+
+/** Agents running right now (from the SubagentStart/SubagentStop hooks) plus recent runs and claims. */
+async function handleGetLive(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  const live = readLive(TARGET_DIR);
+  const roster = new Map();
+  const agentsDir = join(TARGET_DIR, 'docs', 'agents');
+  if (existsSync(agentsDir)) {
+    for (const f of readdirSync(agentsDir).filter((x) => x.endsWith('.md') && !x.startsWith('_'))) {
+      const text = readFileSync(join(agentsDir, f), 'utf8');
+      roster.set(f.slice(0, -3), { description: fieldOf(text, 'Description'), owns: fieldOf(text, 'Owns') });
+    }
+  }
+  const withInfo = (r) => ({ ...r, ...(roster.get(r.type) || {}) });
+  res.setHeader('cache-control', 'no-store');
+  sendJson(res, 200, { ...live, running: live.running.map(withInfo), recent: live.recent.map(withInfo) });
 }
 
 function readBody(req, maxBytes) {
@@ -161,6 +180,7 @@ function serveStatic(req, res, urlPath) {
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   try {
+    if (url.pathname === '/api/live' && req.method === 'GET') return await handleGetLive(req, res);
     if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
     if (url.pathname === '/api/config' && req.method === 'POST') return await handlePostConfig(req, res);

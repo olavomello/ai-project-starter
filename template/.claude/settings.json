@@ -21,6 +21,20 @@
           { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/log-skill-use.sh" }
         ]
       }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR\"/scripts/agent-live.mjs start" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR\"/scripts/agent-live.mjs stop" }
+        ]
+      }
     ]
   }
 }
