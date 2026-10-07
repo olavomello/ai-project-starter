@@ -17,6 +17,7 @@ function parseFlags(argv) {
     const a = argv[i];
     if (a === '--dry-run') { flags.dryRun = true; continue; }
     if (a === '--force') { flags.force = true; continue; }
+    if (a === '--fix') { flags.fix = true; continue; }
     if (a === '--no-prompt') { flags.noPrompt = true; continue; }
     if (a === '--mod') { flags.mod = true; continue; }
     if (a === '--no-mod') { flags.mod = false; continue; }
@@ -54,9 +55,14 @@ Usage:
       Register an existing project so \`update\` can track it, using the
       project's current files as the baseline.
 
-  ai-project-starter doctor [<target-dir>]
+  ai-project-starter doctor [<target-dir>] [--fix] [--ref <ref>] [--source <path>]
       Structural health check: required files, valid VERSION, changelog
-      shape, each docs/agents/*.md well-formed. Exit code 1 on failure.
+      shape, each docs/agents/*.md well-formed, plus the Claude Code setup
+      the dashboard depends on (hooks, deny rules, the mod's marketplace pin
+      and install, uncommitted setup files). Exit code 1 on failure.
+      --fix repairs what is safe: adds the starter's hooks, deny rules and mod
+      pin to .claude/settings.json, regenerates .claude/agents/, and installs
+      the mod's plugin when it is enabled but missing. It never commits.
 
   ai-project-starter mod <status|enable|disable> [<target-dir>] [--local] [--ref <ref>] [--json]
       Turn the optional starter-hud session mod on or off, or report its
@@ -87,8 +93,8 @@ switch (cmd) {
     break;
   }
   case 'doctor': {
-    const { positional } = parseFlags(rest);
-    doctor({ target: positional[0] || '.' });
+    const { positional, flags } = parseFlags(rest);
+    doctor({ target: positional[0] || '.', fix: !!flags.fix, source: flags.source, ref: flags.ref });
     break;
   }
   case 'mod': {

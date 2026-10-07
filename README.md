@@ -69,6 +69,8 @@ cd my-project
 
 Either way: it clones the starter, copies `template/` into `my-project`, runs `git init`, makes the first commit, and validates it with the version gate. Pin a specific starter release instead of `main` by adding it as an argument (`... init my-project --ref v0.1.0` for the CLI, `... my-project v0.1.0` for the script).
 
+**What `init` sets up for you, with nothing to remember afterwards:** the files, a first commit that already contains the Claude Code settings (hooks for the live dashboard, deny rules for `.env` and keys), the agent pointers in `.claude/agents/`, the filled-in `README.md` and `AGENTS.md` section 0, and, if you accept the default "yes" to the session-mod question, the starter-hud plugin installed on this machine (it runs `claude plugin install` itself, or prints the two commands when `claude` isn't on PATH). The final `doctor` check tells you if any link of that chain is missing, and `ai-project-starter doctor --fix` repairs it.
+
 The CLI additionally asks a few questions right there in the terminal — name, purpose, stack, administrator, the knobs — and writes the answers into `AGENTS.md` before the first commit, so step 2 below is already done. Pass `--no-prompt` to skip that and fill it in yourself later (it's also skipped automatically when there's no terminal to prompt in, e.g. piped input or CI).
 
 If the starter repo is private, neither form above can authenticate — clone it first and run locally instead:
@@ -151,7 +153,7 @@ It only ever touches a file the project hasn't customized since the last sync �
 | `init <dir>` | Same as `init-project.sh`, without the bash requirement. Interactively fills `AGENTS.md` section 0 when run in a terminal (`--no-prompt` to skip), including whether to turn on the optional session mod (`--mod`/`--no-mod` to decide non-interactively) |
 | `update [dir]` | Pulls starter improvements into an already-created project — conservatively, see above |
 | `adopt [dir]` | Registers a project made with `init-project.sh` (or by hand) so `update` can track it |
-| `doctor [dir]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed, and the session mod's current on/off state |
+| `doctor [dir] [--fix]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed — plus the Claude Code setup the dashboard needs: live-agent hooks, `.env` deny rules, the session mod's pin and whether its plugin is installed, uncommitted setup files. `--fix` repairs what is safe and never commits |
 | `mod <status\|enable\|disable> [dir]` | Turns the optional `starter-hud` session mod on or off by editing `.claude/settings.json` — the one implementation of that toggle, shared with `ai-dash`'s Settings area |
 
 Not published to npm yet — run it via `npx github:olavomello/ai-project-starter#main <command>` or clone and run `node ai-project-starter/cli/bin.js <command>` directly. Full command flags and the exact three-way sync rules `update` follows: [`cli/README.md`](cli/README.md).

@@ -10,6 +10,8 @@ import { existsSync, hashFile, isFile } from './lib/fsutil.js';
 import { resolveSource } from './lib/source.js';
 import { buildFileHashes, readManifest, writeManifest, newManifest, isProtected, isIgnored, MANIFEST_FILE } from './lib/manifest.js';
 import { mergeSettings, fixModPin } from './lib/settings-merge.js';
+import { runDoctor } from './doctor.js';
+import { COMMIT_HINT } from './lib/setup-check.js';
 import { die, info, ok, warn, section } from './lib/log.js';
 
 const SETTINGS_FILE = '.claude/settings.json';
@@ -131,6 +133,7 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
         acknowledged,
       });
       info(`\nWrote ${MANIFEST_FILE} (now tracking v${starterVersion}).`);
+      afterUpdate(target, applied.length + added.length + merged.length);
     } else {
       info('\nDry run — nothing was written. Re-run without --dry-run to apply.');
     }
@@ -162,4 +165,14 @@ function report({ applied, added, removed, conflicts, protectedChanged, upToDate
     protectedChanged.forEach((f) => warn(f));
   }
   section(`Unchanged: ${upToDate.length} file(s).`);
+}
+
+/** The setup check after an update, so a half-applied chain is named now and not found later as an empty panel. */
+function afterUpdate(target, touched) {
+  section('Setup check (problems only):');
+  const report = {};
+  runDoctor(target, { quiet: false, onlyProblems: true, report });
+  if (!report.warnings) ok('nothing to fix');
+  else info('Run `ai-project-starter doctor --fix` to repair what can be repaired.');
+  if (touched) info(`\nCommit these changes so sessions in git worktrees (such as the desktop app's) get them:\n  ${COMMIT_HINT}`);
 }

@@ -85,7 +85,7 @@ export async function guideAgentsSetup(target, { skip = false, projectNameHint, 
 
     let mod = modFlag;
     if (mod === undefined) {
-      const answer = await ask(rl, 'Enable the in-session status mod for Claude Code? (y/N)', 'N');
+      const answer = await ask(rl, 'Enable the in-session status mod for Claude Code (measures real tokens and models)? (Y/n)', 'Y');
       mod = /^y(es)?$/i.test(answer.trim());
     }
 

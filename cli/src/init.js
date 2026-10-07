@@ -7,7 +7,9 @@ import {
 import { gitAvailable, gitInit, gitAddAll, gitCommit } from './lib/exec.js';
 import { resolveSource } from './lib/source.js';
 import { buildFileHashes, newManifest, writeManifest } from './lib/manifest.js';
-import { die, info, section, warn } from './lib/log.js';
+import { die, info, ok, section, warn } from './lib/log.js';
+import { installMod, claudeAvailable, installCommands } from './lib/claude-plugin.js';
+import { readText } from './lib/fsutil.js';
 import { runDoctor } from './doctor.js';
 import { guideAgentsSetup } from './setup.js';
 
@@ -42,11 +44,12 @@ export async function init({ target, ref = 'main', source, noPrompt = false, mod
       const modScript = join(target, 'scripts', 'mod.mjs');
       if (existsSync(modScript)) {
         try {
-          execFileSync(process.execPath, [modScript, 'enable', '--dir', target], { stdio: 'inherit' });
+          execFileSync(process.execPath, [modScript, 'enable', '--dir', target], { stdio: ['ignore', 'ignore', 'inherit'] }); // its install hints are printed once, below
         } catch {
           warn('Could not enable the session mod automatically — run `node scripts/mod.mjs enable` yourself.');
         }
       }
+      installModPlugin(target);
     }
 
     // Hashed after the guided setup (if any) so the manifest baseline reflects
@@ -77,5 +80,28 @@ export async function init({ target, ref = 'main', source, noPrompt = false, mod
     info('  4. git remote add origin <your-repo> && git push -u origin main');
   } finally {
     cleanup();
+  }
+}
+
+/**
+ * Enabling the mod only writes settings; Claude Code downloads a plugin only when it is installed.
+ * Do that here so a new project measures tokens and models from its first session, or say exactly
+ * what to run when the `claude` CLI isn't available.
+ */
+function installModPlugin(target) {
+  section('Installing the starter-hud mod for Claude Code:');
+  ok('enabled in .claude/settings.json');
+  let ref = 'main';
+  try { ref = JSON.parse(readText(join(target, '.claude', 'settings.json'))).extraKnownMarketplaces?.['ai-project-starter']?.source?.ref || 'main'; } catch { /* settings unreadable: default ref */ }
+  if (!claudeAvailable()) {
+    warn('The `claude` CLI was not found on PATH, so the plugin was not installed. Install it once with:');
+    installCommands(ref).forEach((c) => info(`  ${c}`));
+    return;
+  }
+  const result = installMod({ cwd: target, ref });
+  for (const step of result.steps) (step.ok ? ok : warn)(step.cmd + (step.ok ? '' : `  (${step.detail || 'failed'})`));
+  if (!result.ok) {
+    warn('Install it by hand, then start a new Claude Code session:');
+    result.manual.forEach((c) => info(`  ${c}`));
   }
 }
