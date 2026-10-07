@@ -87,7 +87,7 @@ automatic_log() {
   branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
   # printf, not echo: echo adds a trailing newline that `tr -c` turns into a
   # trailing underscore ("agent/dev-api-tester" -> "agent_dev-api-tester_").
-  # ai-log.mjs and the starter-hud mod must derive the identical safe name.
+  # ai-log.mjs and the ai-dash mod must derive the identical safe name.
   safe_branch="$(printf '%s' "$branch" | tr -c 'A-Za-z0-9._-' '_')"
   attempt_file="$attempt_dir/$safe_branch"
   [[ -f "$attempt_file" ]] && prior="$(cat "$attempt_file" 2>/dev/null)"

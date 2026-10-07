@@ -28,7 +28,7 @@ export type DecisionStatus = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'starter-hud': {
+    'ai-dash': {
       decisionItems: DecisionItem[];
       decisionScreen: DecisionScreen;
       decisionOffset: number;

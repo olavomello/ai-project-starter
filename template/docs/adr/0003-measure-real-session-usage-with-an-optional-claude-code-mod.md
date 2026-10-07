@@ -84,3 +84,7 @@ identical string) is now defined in three places instead of one; a change to
 it needs all three updated together. The existing `gate-attempts` files
 written under the old (echo-based) sanitizing rule become harmless orphans
 after this change — they're git-ignored and never read again.
+
+## Note: renamed
+
+The mod was later renamed from `starter-hud` to `ai-dash` (plugin id `ai-dash@ai-project-starter`). This record keeps the original name; the decision itself is unchanged.

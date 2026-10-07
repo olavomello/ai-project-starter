@@ -69,7 +69,7 @@ cd my-project
 
 Either way: it clones the starter, copies `template/` into `my-project`, runs `git init`, makes the first commit, and validates it with the version gate. Pin a specific starter release instead of `main` by adding it as an argument (`... init my-project --ref v0.1.0` for the CLI, `... my-project v0.1.0` for the script).
 
-**What `init` sets up for you, with nothing to remember afterwards:** the files, a first commit that already contains the Claude Code settings (hooks for the live dashboard, deny rules for `.env` and keys), the agent pointers in `.claude/agents/`, the filled-in `README.md` and `AGENTS.md` section 0, and, if you accept the default "yes" to the session-mod question, the starter-hud plugin installed on this machine (it runs `claude plugin install` itself, or prints the two commands when `claude` isn't on PATH). The final `doctor` check tells you if any link of that chain is missing, and `ai-project-starter doctor --fix` repairs it.
+**What `init` sets up for you, with nothing to remember afterwards:** the files, a first commit that already contains the Claude Code settings (hooks for the live dashboard, deny rules for `.env` and keys), the agent pointers in `.claude/agents/`, the filled-in `README.md` and `AGENTS.md` section 0, and, if you accept the default "yes" to the session-mod question, the ai-dash plugin installed on this machine (it runs `claude plugin install` itself, or prints the two commands when `claude` isn't on PATH). The final `doctor` check tells you if any link of that chain is missing, and `ai-project-starter doctor --fix` repairs it.
 
 The CLI additionally asks a few questions right there in the terminal — name, purpose, stack, administrator, the knobs — and writes the answers into `AGENTS.md` before the first commit, so step 2 below is already done. Pass `--no-prompt` to skip that and fill it in yourself later (it's also skipped automatically when there's no terminal to prompt in, e.g. piped input or CI).
 
@@ -154,7 +154,7 @@ It only ever touches a file the project hasn't customized since the last sync �
 | `update [dir]` | Pulls starter improvements into an already-created project — conservatively, see above |
 | `adopt [dir]` | Registers a project made with `init-project.sh` (or by hand) so `update` can track it |
 | `doctor [dir] [--fix]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed — plus the Claude Code setup the dashboard needs: live-agent hooks, `.env` deny rules, the session mod's pin and whether its plugin is installed, uncommitted setup files. `--fix` repairs what is safe and never commits |
-| `mod <status\|enable\|disable> [dir]` | Turns the optional `starter-hud` session mod on or off by editing `.claude/settings.json` — the one implementation of that toggle, shared with `ai-dash`'s Settings area |
+| `mod <status\|enable\|disable> [dir]` | Turns the optional `ai-dash` session mod on or off by editing `.claude/settings.json` — the one implementation of that toggle, shared with `ai-dash`'s Settings area |
 
 Not published to npm yet — run it via `npx github:olavomello/ai-project-starter#main <command>` or clone and run `node ai-project-starter/cli/bin.js <command>` directly. Full command flags and the exact three-way sync rules `update` follows: [`cli/README.md`](cli/README.md).
 
@@ -188,7 +188,7 @@ scripts/agent-team.sh             create agents, worktrees, PRs; classify and ch
 scripts/ai-log.mjs                record one execution (Node, cross-platform)
 scripts/ai-report.mjs             aggregate the log into ai-dash/data.json
 scripts/adr.mjs                   create/list/link Architecture Decision Records (Node, cross-platform)
-scripts/mod.mjs                   toggle the optional starter-hud session mod (.claude/settings.json)
+scripts/mod.mjs                   toggle the optional ai-dash session mod (.claude/settings.json)
 scripts/skills.mjs                list, create and validate skills (YAML frontmatter); records usage for "last usage"
 scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings area's API and /api/live
 scripts/agent-live.mjs            SubagentStart/Stop hook: records which agents run; feeds the Live panel
@@ -294,11 +294,11 @@ Both the log and `ai-dash/data.json` resolve to the repo's **shared git root**, 
 
 **Viewed locally, `ai-dash/` can do more than display.** `node scripts/ai-dash.mjs` serves the dashboard on `127.0.0.1` and adds a Settings area (the gear icon) that reads and writes `.claude/settings.json` directly — today, a single switch for the optional session mod below — plus a **Skills and agents** viewer (book icon) listing each one's name, description, creation date and last usage, with a valid/invalid badge for skills' YAML headers and functions' format. *Last usage* comes from a local, git-ignored usage log (a `PostToolUse` hook records skill uses; `agent-team.sh claim` records agents), never from editing the files, so there are no merge conflicts between worktrees (served from your working tree by the local server only; never published, since skill text isn't part of the counts-only aggregate). It's a local-only server (it refuses any request whose `Host`/`Origin` isn't `127.0.0.1`), and opening `ai-dash/index.html` as a static file still works — the Settings area just falls back to showing the toggle command instead of a live switch.
 
-**Real usage numbers instead of mostly zeros.** Getting the `AILOG_*` variables right by hand is easy to forget. The optional `starter-hud` session mod (next section) measures them for real, straight from Claude Code, and hands them to this same pipeline — nothing about the gate or the log format changes, the zeros just stop being zeros.
+**Real usage numbers instead of mostly zeros.** Getting the `AILOG_*` variables right by hand is easy to forget. The optional `ai-dash` session mod (next section) measures them for real, straight from Claude Code, and hands them to this same pipeline — nothing about the gate or the log format changes, the zeros just stop being zeros.
 
 ### Session mod (optional)
 
-An opt-in Claude Code plugin, `starter-hud` (`mods/starter-hud/`), that reads real per-turn token, cache and tool-call usage from the engine itself and draws one compact row above the prompt, an icon before each item (branch, tokens against the budget, cache ratio, last gate result, task size, live agent count). It hands the measured numbers to `ai-log.mjs` through a per-branch file, ahead of `AILOG_*` variables but behind an explicit flag, so enabling it is the only thing that changes — the log format and the dashboard it feeds stay the same. Off by default, and inert outside a git repository with `scripts/gate.sh`. Turn it on or off with `node scripts/mod.mjs enable|disable`, the CLI's `mod` command, or the dashboard's Settings switch above — all three edit the same `.claude/settings.json` key. Full details, what it reads and writes, and known limitations: [`mods/starter-hud/README.md`](mods/starter-hud/README.md); the design rationale: [ADR 0003](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md); day-to-day usage (the `/budget` command, turning it on for Claude Code specifically): `docs/guides/claude-code.md`.
+An opt-in Claude Code plugin, `ai-dash` (`mods/ai-dash/`), that reads real per-turn token, cache and tool-call usage from the engine itself and draws one compact row above the prompt, an icon before each item (branch, tokens against the budget, cache ratio, last gate result, task size, live agent count). It hands the measured numbers to `ai-log.mjs` through a per-branch file, ahead of `AILOG_*` variables but behind an explicit flag, so enabling it is the only thing that changes — the log format and the dashboard it feeds stay the same. Off by default, and inert outside a git repository with `scripts/gate.sh`. Turn it on or off with `node scripts/mod.mjs enable|disable`, the CLI's `mod` command, or the dashboard's Settings switch above — all three edit the same `.claude/settings.json` key. Full details, what it reads and writes, and known limitations: [`mods/ai-dash/README.md`](mods/ai-dash/README.md); the design rationale: [ADR 0003](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md); day-to-day usage (the `/budget` command, turning it on for Claude Code specifically): `docs/guides/claude-code.md`.
 
 ### Skills
 
@@ -324,7 +324,7 @@ A rule an agent is only *told* about can be forgotten or skipped. `.claude/setti
 
 `.mcp.json.example` is scaffolding, not a live config — the starter itself depends on no MCP server. Copy it to `.mcp.json` and fill in real servers (GitHub, a database, Playwright, …) when a project built on this starter needs one; Claude Code reads `.mcp.json` at session start and every teammate who clones the repo gets a one-time approval prompt for it.
 
-A Claude Code **mod** (a plugin with JavaScript hooks — `starter-hud` above, or any other) runs with your own permissions, and one with a `tool.check` hook can approve a call these project hooks blocked — a different trust boundary from a rule or a skill. `docs/guides/security.md` has the checklist to run (`claude plugin validate <dir>`, read its `hooks:`/`calls:` lines) before installing any mod, this starter's own included.
+A Claude Code **mod** (a plugin with JavaScript hooks — `ai-dash` above, or any other) runs with your own permissions, and one with a `tool.check` hook can approve a call these project hooks blocked — a different trust boundary from a rule or a skill. `docs/guides/security.md` has the checklist to run (`claude plugin validate <dir>`, read its `hooks:`/`calls:` lines) before installing any mod, this starter's own included.
 
 ---
 
@@ -416,6 +416,6 @@ A flag always overrides its `AILOG_*` env var when both are given to `ai-log.mjs
 - `template/` — everything copied into new projects. **Edit here**, never in a generated project.
 - `init-project.sh` — the bash bootstrap script.
 - `cli/` — the Node CLI (`init`/`update`/`adopt`/`doctor`/`mod`); wraps `template/`, doesn't replace it. See [The CLI](#the-cli) and [`cli/README.md`](cli/README.md).
-- `mods/starter-hud/` — the optional session mod's own code, loaded by projects as a plugin rather than copied. See [`mods/starter-hud/README.md`](mods/starter-hud/README.md) and [ADR 0003](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md).
-- `.claude-plugin/marketplace.json` — publishes `starter-hud` as a plugin any project built on this starter can enable.
+- `mods/ai-dash/` — the optional session mod's own code, loaded by projects as a plugin rather than copied. See [`mods/ai-dash/README.md`](mods/ai-dash/README.md) and [ADR 0003](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md).
+- `.claude-plugin/marketplace.json` — publishes `ai-dash` as a plugin any project built on this starter can enable.
 - `VERSION` / `CHANGELOG.md` at the repo root — the **starter's own** version, independent of any project it creates (which always starts at `0.0.1`).

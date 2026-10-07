@@ -2,7 +2,7 @@
 // Pending decisions: the markdown file (default docs/pending-decisions.md) that lists what waits on
 // the Administrator, read and approved from ai-dash.
 //
-// This is the same format the starter-hud mod's Pending decisions band reads. An item is a table row
+// This is the same format the ai-dash mod's Pending decisions band reads. An item is a table row
 // (the first row of each table is its header) or a bullet found outside code fences; its group is the
 // section heading above it. Approving an item removes its row from the file and queues a prompt in
 // `.agents/state/decisions-inbox.jsonl`; the mod, which watches the project from inside Claude Code,
@@ -10,7 +10,7 @@
 //
 //   node scripts/decisions.mjs list [--json]
 //
-// The parsing rules are mirrored in mods/starter-hud/hooks/lib/decisions-parse.js (a mod cannot import
+// The parsing rules are mirrored in mods/ai-dash/hooks/lib/decisions-parse.js (a mod cannot import
 // from here); cli/test/decisions.test.mjs checks both give the same answers.
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';

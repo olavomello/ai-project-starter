@@ -65,7 +65,7 @@ Usage:
       the mod's plugin when it is enabled but missing. It never commits.
 
   ai-project-starter mod <status|enable|disable> [<target-dir>] [--local] [--ref <ref>] [--json]
-      Turn the optional starter-hud session mod on or off, or report its
+      Turn the optional ai-dash session mod on or off, or report its
       state. Delegates to <target-dir>/scripts/mod.mjs — run \`update\` first
       if that script doesn't exist yet in an older project.
 

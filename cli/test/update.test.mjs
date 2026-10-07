@@ -150,7 +150,7 @@ const HOOK = (cmd) => ({ type: 'command', command: cmd });
 test('mergeSettings adds missing starter hooks and keeps everything else', () => {
   const local = JSON.stringify({
     hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [HOOK('mine.sh')] }] },
-    enabledPlugins: { 'starter-hud@x': true },
+    enabledPlugins: { 'ai-dash@x': true },
     extraKnownMarketplaces: { x: { source: 'github' } },
   });
   const incoming = JSON.stringify({
@@ -164,7 +164,7 @@ test('mergeSettings adds missing starter hooks and keeps everything else', () =>
   assert.deepEqual(added, ['PreToolUse: block.sh', 'SubagentStart: node live start']);
   assert.deepEqual(out.hooks.PreToolUse[0].hooks.map((h) => h.command), ['mine.sh', 'block.sh']);
   assert.equal(out.hooks.SubagentStart[0].hooks[0].command, 'node live start');
-  assert.deepEqual(out.enabledPlugins, { 'starter-hud@x': true });
+  assert.deepEqual(out.enabledPlugins, { 'ai-dash@x': true });
   assert.deepEqual(out.extraKnownMarketplaces, { x: { source: 'github' } });
   assert.ok(text.endsWith('\n'));
 });
@@ -187,7 +187,7 @@ test('update merges new starter hooks into a customized settings.json instead of
     assert.equal(cli('init', target, '--source', src, '--no-prompt').status, 0);
     const settingsPath = join(target, '.claude', 'settings.json');
     const mine = JSON.parse(readFileSync(settingsPath, 'utf8'));
-    mine.enabledPlugins = { 'starter-hud@ai-project-starter': true };   // what the mod toggle does
+    mine.enabledPlugins = { 'ai-dash@ai-project-starter': true };   // what the mod toggle does
     writeFileSync(settingsPath, JSON.stringify(mine, null, 2));
     const tplPath = join(src, 'template', '.claude', 'settings.json');
     const tpl = JSON.parse(readFileSync(tplPath, 'utf8'));
@@ -205,7 +205,7 @@ test('update merges new starter hooks into a customized settings.json instead of
     assert.ok(!existsSync(settingsPath + '.incoming'));
     const merged = JSON.parse(readFileSync(settingsPath, 'utf8'));
     assert.equal(merged.hooks.SessionStart[0].hooks[0].command, 'node scripts/new-hook.mjs');
-    assert.deepEqual(merged.enabledPlugins, { 'starter-hud@ai-project-starter': true });
+    assert.deepEqual(merged.enabledPlugins, { 'ai-dash@ai-project-starter': true });
 
     const again = cli('update', target, '--source', src, '--dry-run');
     assert.ok(!/new-hook/.test(again.stdout + again.stderr), 'nothing left to merge on the next run');
@@ -260,11 +260,11 @@ test('mergeSettings appends missing starter deny rules in order and keeps the pr
 import { fixModPin } from '../src/lib/settings-merge.js';
 
 const withPin = (ref, repo = 'olavomello/ai-project-starter') => JSON.stringify({
-  enabledPlugins: { 'starter-hud@ai-project-starter': true },
+  enabledPlugins: { 'ai-dash@ai-project-starter': true },
   extraKnownMarketplaces: { 'ai-project-starter': { source: { source: 'github', repo, ref } } },
 });
 
-test('a starter-hud pin to a tag that predates the mod is moved to main; other pins are left alone', () => {
+test('a ai-dash pin to a tag that predates the mod is moved to main; other pins are left alone', () => {
   for (const ref of ['v0.1.0', 'v0.0.1', 'v0.1.0-rc1']) {
     const { text, change } = fixModPin(withPin(ref));
     assert.equal(JSON.parse(text).extraKnownMarketplaces['ai-project-starter'].source.ref, 'main', ref);
@@ -273,7 +273,7 @@ test('a starter-hud pin to a tag that predates the mod is moved to main; other p
   for (const ref of ['main', 'v0.1.1', 'v0.2.0', 'v1.0.0', 'feature/x']) assert.equal(fixModPin(withPin(ref)).text, null, ref);
   assert.equal(fixModPin(withPin('v0.1.0', 'someone/else')).text, null, 'only the starter marketplace');
   assert.equal(fixModPin('{ nope').text, null);
-  assert.deepEqual(JSON.parse(fixModPin(withPin('v0.1.0')).text).enabledPlugins, { 'starter-hud@ai-project-starter': true });
+  assert.deepEqual(JSON.parse(fixModPin(withPin('v0.1.0')).text).enabledPlugins, { 'ai-dash@ai-project-starter': true });
 });
 
 test('update repairs the bad pin even when the starter did not change settings.json', () => {

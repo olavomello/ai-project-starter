@@ -6,8 +6,8 @@
   "description": "Optional Claude Code mods for projects built on ai-project-starter.",
   "plugins": [
     {
-      "name": "starter-hud",
-      "source": "./mods/starter-hud",
+      "name": "ai-dash",
+      "source": "./mods/ai-dash",
       "description": "Measures real token/tool-call usage per task and shows it in a small band above the prompt."
     }
   ]
