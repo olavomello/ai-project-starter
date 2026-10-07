@@ -49,6 +49,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 - `docs/guides/efficiency.md` and `docs/guides/security.md`: document the mod's usage-file handoff to `ai-log.mjs`, and the review step (`claude plugin validate <dir>`, read its `hooks:`/`calls:` lines) before installing any mod, this starter's own included.
 
 ### Changed
+- starter-hud band: one row instead of three lines, with a simple Unicode icon before each item (`⎇ main · ◆ tokens 92.4k · ↻ cache 92% · ✓ gate passed, first try`), colours for budget and gate state (yellow at 80% of the budget, red at the ceiling or a failed gate), and low-priority items dropped first on a narrow screen. To get it in an installed copy: `claude plugin update starter-hud@ai-project-starter`, then start a new session.
 - `ai-project-starter update` merges the starter's hooks into a customized `.claude/settings.json` instead of reporting a conflict. The session-mod toggle edits that file, so every project with the mod on hit the conflict whenever the starter added a hook, and the new live-agent hooks never took effect. Only the `hooks` section is merged (a hook is added unless the project already runs the same command for that event); `enabledPlugins`, marketplaces, your own hooks and everything else stay as they are. A file that isn't valid JSON still falls back to the `.incoming` conflict.
 - `ai-dash` Live panel: spacing below the card.
 - `ai-project-starter update` lists a changed protected file (`AGENTS.md`, `README.md`, `docs/agents/**`, ...) once per starter change instead of on every run. The manifest records an `acknowledged` hash per file; `--dry-run` never records it.
@@ -85,6 +86,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 - README: quick-start walkthrough (create, configure, gate, push, work).
 
 ### Changed
+- starter-hud band: one row instead of three lines, with a simple Unicode icon before each item (`⎇ main · ◆ tokens 92.4k · ↻ cache 92% · ✓ gate passed, first try`), colours for budget and gate state (yellow at 80% of the budget, red at the ceiling or a failed gate), and low-priority items dropped first on a narrow screen. To get it in an installed copy: `claude plugin update starter-hud@ai-project-starter`, then start a new session.
 - AGENTS.md restructured and kept under ~130 lines; detail moved out to `docs/guides/`.
 - `docs/` reorganized: `docs/agents/` holds agent definitions only; `repo-map.md` and `decisions.md` moved to `docs/`.
 - CI workflow renamed to `gate.yml` and now runs the full gate instead of the version gate alone.
