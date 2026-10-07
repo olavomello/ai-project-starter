@@ -5,6 +5,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ## [Unreleased]
 ### Added
+- starter-hud: an **▦ AI Dash** button at the far right of the band. It checks whether the project's dashboard answers on `127.0.0.1:4173` (recognising it by its `/api/config` answer), starts `node scripts/ai-dash.mjs` for the session if not, and opens it in the default browser on Windows, macOS or Linux. New calls in the mod: `$.http.fetch`, `$.process.spawn`, `$.process.run` for the opener, `$.clock.sleep`. Update an installed copy with `claude plugin update starter-hud@ai-project-starter`.
 - **One command makes the whole chain work.** `ai-project-starter doctor` now checks the Claude Code setup the dashboard depends on and names the fix for each problem: live-agent hooks present, `.env` deny rules present, the starter-hud marketplace pin, whether the plugin is actually installed (asked of the `claude` CLI), and uncommitted setup files (a session in a git worktree, such as the desktop app's, only sees committed files). `doctor --fix` repairs what is safe: merges the starter's hooks, deny rules and mod pin into `.claude/settings.json`, regenerates `.claude/agents/`, and installs the plugin when the mod is enabled but missing. It never commits.
 - `ai-project-starter init` installs the starter-hud plugin itself when the mod is enabled (`claude plugin marketplace add` + `claude plugin install --scope project`), or prints the two commands when `claude` is not on PATH. The interactive mod question now defaults to **yes**; `--no-mod` or `n` opts out, and non-interactive runs without `--mod` still leave it off.
 - `ai-project-starter update` ends with a problems-only setup check and, when it changed files, the commit command for them.
@@ -74,6 +75,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ## [0.1.0] - 2026-09-26
 ### Added
+- starter-hud: an **▦ AI Dash** button at the far right of the band. It checks whether the project's dashboard answers on `127.0.0.1:4173` (recognising it by its `/api/config` answer), starts `node scripts/ai-dash.mjs` for the session if not, and opens it in the default browser on Windows, macOS or Linux. New calls in the mod: `$.http.fetch`, `$.process.spawn`, `$.process.run` for the opener, `$.clock.sleep`. Update an installed copy with `claude plugin update starter-hud@ai-project-starter`.
 - `scripts/gate.sh`: single verification entrypoint (format, lint, types, tests, agent team, version gate) with stack auto-detection and `.agents/gate.conf` overrides.
 - Engineering baseline in AGENTS.md: commit convention, test policy, security summary, scope limits, project knobs.
 - Precedence rule placing AGENTS.md above installed plugins.

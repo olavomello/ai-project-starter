@@ -14,6 +14,13 @@ Optional Claude Code mod for projects built on [ai-project-starter](../../README
    Item order is also priority: on a narrow screen (over 100 characters) the last ones
    drop first, never the branch or tokens. Tokens turn yellow at 80% of the budget and
    red at the ceiling; the gate icon is green for a pass and red for a failure.
+   At the far right of the row, an **▦ AI Dash** button: it checks whether this project's
+   dashboard answers on `127.0.0.1:4173`, starts `node scripts/ai-dash.mjs` if not, then
+   opens it in your default browser (Windows, macOS and Linux). The server it starts lives
+   with the session and stops when the session or the mod ends; for one that outlives the
+   session, run `node scripts/ai-dash.mjs` yourself and the button just opens it. It only
+   recognises the project's own dashboard (by its `/api/config` answer), not another
+   program on that port.
 3. **Hands it to the log pipeline.** After each model request, tool call, and turn, it
    merges the delta into `.agents/state/usage/<branch>.json`. `scripts/ai-log.mjs`
    reads that file (see its precedence rules), and deletes it once logged.
