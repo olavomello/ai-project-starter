@@ -45,7 +45,7 @@ function engine(on: On) {
 test('the band counts the items, View opens the list and Approve hands one to the agent', { options: { showWhenMissing: true } }, async ($, on) => {
   const fake = engine(on)
   const band = await $.ui.mount({
-    plugin: 'starter-hud',
+    plugin: 'ai-dash',
     surface: 'terminal',
     component: 'AbovePrompt',
     // the engine fills the other props; the mod only reads hasSurvey
@@ -57,7 +57,7 @@ test('the band counts the items, View opens the list and Approve hands one to th
   expect((await band.find({ type: 'Text', text: /Pending decisions : 2/ }))?.text).toContain('2')
 
   const pane = await $.ui.mount({
-    plugin: 'starter-hud',
+    plugin: 'ai-dash',
     surface: 'terminal',
     component: 'Pane',
     props: {} as never,
@@ -95,7 +95,7 @@ test('the band counts the items, View opens the list and Approve hands one to th
 test('Close on the confirmation returns to the list, Close on the list closes the pane', async ($, on) => {
   const fake = engine(on)
   const pane = await $.ui.mount({
-    plugin: 'starter-hud',
+    plugin: 'ai-dash',
     surface: 'terminal',
     component: 'Pane',
     props: {} as never,
@@ -125,7 +125,7 @@ test('a project without the decisions file shows no Pending decisions band at al
   on('fs.exists', async () => ({ value: false }))
   on('ui.toast', async () => ({ value: undefined }))
   const band = await $.ui.mount({
-    plugin: 'starter-hud',
+    plugin: 'ai-dash',
     surface: 'terminal',
     component: 'AbovePrompt',
     props: { hasSurvey: false } as never,
@@ -155,7 +155,7 @@ test('an item approved in AI Dash reaches the session through the queue, once', 
     return { text: e.text }
   })
   const band = await $.ui.mount({
-    plugin: 'starter-hud',
+    plugin: 'ai-dash',
     surface: 'terminal',
     component: 'AbovePrompt',
     props: { hasSurvey: false } as never,

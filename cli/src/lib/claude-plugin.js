@@ -1,4 +1,4 @@
-// Talks to the `claude` CLI to install and check the optional starter-hud plugin.
+// Talks to the `claude` CLI to install and check the optional ai-dash plugin.
 //
 // Enabling the mod only writes `.claude/settings.json`; Claude Code does not
 // download a plugin because a project's settings enable it, so the plugin has to
@@ -7,9 +7,11 @@
 // touch the real Claude Code installation.
 import { spawnSync } from 'node:child_process';
 
-export const MOD_PLUGIN = 'starter-hud';
+export const MOD_PLUGIN = 'ai-dash';
 export const MARKETPLACE = 'ai-project-starter';
 export const MOD_ID = `${MOD_PLUGIN}@${MARKETPLACE}`;
+// The plugin was called starter-hud before it became ai-dash; projects and machines may still have that name.
+export const LEGACY_MOD_ID = 'starter-hud@ai-project-starter';
 export const MARKETPLACE_REPO = 'olavomello/ai-project-starter';
 
 /** Runs `claude <args>`. Never throws: `{ ok, stdout, stderr, missing }`. */
@@ -65,8 +67,25 @@ export function installMod({ cwd, ref = 'main', run = runClaude }) {
   const addOk = add.ok || /already/i.test(add.stdout + add.stderr); // re-adding an existing marketplace is fine
   steps.push({ cmd: addCmd, ok: addOk, detail: (add.stderr || add.stdout).trim().split('\n')[0] || '' });
   if (!addOk) return { ok: false, steps, manual: [addCmd, installCmd] };
+  // Pick up what the marketplace gained since it was added (a renamed or new plugin); a failure is not fatal.
+  run(['plugin', 'marketplace', 'update', MARKETPLACE], { cwd });
   const install = run(['plugin', 'install', MOD_ID, '--scope', 'project'], { cwd });
   const installOk = install.ok || /already installed/i.test(install.stdout + install.stderr);
   steps.push({ cmd: installCmd, ok: installOk, detail: (install.stderr || install.stdout).trim().split('\n')[0] || '' });
   return { ok: installOk, steps, manual: installOk ? [] : [installCmd] };
+}
+
+/** Is the old starter-hud plugin still installed for the project at `cwd`? `true` / `false`, or `null` when it can't be read. */
+export function legacyInstalled(cwd, run = runClaude) {
+  const r = run(['plugin', 'list', '--json'], { cwd });
+  if (!r.ok) return null;
+  try {
+    return JSON.parse(r.stdout.slice(r.stdout.indexOf('['))).some((p) => p.id === LEGACY_MOD_ID);
+  } catch { return null; }
+}
+
+/** Removes the old starter-hud plugin (project scope). Returns `{ ok, cmd, detail }`. */
+export function uninstallLegacy({ cwd, run = runClaude }) {
+  const r = run(['plugin', 'uninstall', LEGACY_MOD_ID, '--scope', 'project'], { cwd });
+  return { ok: r.ok, cmd: `claude plugin uninstall ${LEGACY_MOD_ID} --scope project`, detail: (r.stderr || r.stdout).trim().split('\n')[0] || '' };
 }

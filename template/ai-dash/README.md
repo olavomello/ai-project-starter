@@ -32,7 +32,7 @@ node scripts/ai-dash.mjs            # recommended — also powers the Settings a
 `scripts/ai-dash.mjs [--port 4173]` is a small, dependency-free local server bound to
 `127.0.0.1` only. It serves these same files, plus `GET`/`POST /api/config`, which the
 page's **Settings** area (gear icon, top right) uses to read and flip the optional
-`starter-hud` session mod (see `AGENTS.md` section 6 and
+`ai-dash` session mod (see `AGENTS.md` section 6 and
 `docs/guides/claude-code.md`) without you editing `.claude/settings.json` by hand.
 `npx serve` and a static host don't have that endpoint, so under those the Settings
 row is read-only and shows the two commands to run instead
@@ -45,7 +45,7 @@ row is read-only and shows the two commands to run instead
 `GET /api/decisions` and `POST /api/decisions/approve` feed the **Pending decisions** icon in the header
 (a checklist, with the number of items): it appears only where `docs/pending-decisions.md` exists, and opens a
 list grouped by section with an **Approve** button per item. Approving asks first, then removes the row from the
-file and queues its prompt in `.agents/state/decisions-inbox.jsonl`; the starter-hud mod hands the prompt to the
+file and queues its prompt in `.agents/state/decisions-inbox.jsonl`; the ai-dash mod hands the prompt to the
 open Claude Code session, once (with no session open it waits, and the viewer says how many are waiting). The
 approve endpoint has the same guard as the Settings switch: a local Host and Origin, a JSON content type, the
 `X-AI-Dash` header and a body of exactly `{ "id": "<item id>" }`. Under `npx serve` or a static host there is

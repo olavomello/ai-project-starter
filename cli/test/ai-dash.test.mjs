@@ -124,7 +124,7 @@ test('valid POST /api/config enables the mod and GET reflects it', async () => {
     assert.equal(body.mod.enabled, true);
 
     const settings = JSON.parse(readFileSync(join(dir, '.claude', 'settings.json'), 'utf8'));
-    assert.equal(settings.enabledPlugins['starter-hud@ai-project-starter'], true);
+    assert.equal(settings.enabledPlugins['ai-dash@ai-project-starter'], true);
   });
 });
 

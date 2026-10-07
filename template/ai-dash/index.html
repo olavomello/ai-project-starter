@@ -384,7 +384,7 @@ document.getElementById('theme').onclick = () => {
 };
 
 // Settings area: a gear button opens a modal. One row for now — the
-// starter-hud mod toggle — structured so later rows can be added beside it
+// ai-dash mod toggle — structured so later rows can be added beside it
 // without rework (each row owns its own control markup/logic).
 (function setupSettings() {
   const backdrop = document.getElementById('settings-backdrop');
@@ -434,7 +434,7 @@ document.getElementById('theme').onclick = () => {
         });
         if (!r.ok) throw new Error(String(r.status));
         const data = await r.json();
-        renderSwitch(data.mod.enabled === true, 'Install the plugin once (claude plugin install starter-hud@ai-project-starter --scope project), run /reload-plugins, then commit the settings file.');
+        renderSwitch(data.mod.enabled === true, 'Install the plugin once (claude plugin install ai-dash@ai-project-starter --scope project), run /reload-plugins, then commit the settings file.');
       } catch {
         sw.disabled = false;
         document.getElementById('mod-note').textContent = 'Could not reach the local server — is it still running?';
@@ -708,7 +708,7 @@ function tiles(d) {
 
 // Line chart: input vs cache-read tokens per day. Two series -> legend + direct end labels, one axis.
 function lineChart(days) {
-  // Tokens are measured by the starter-hud mod (or AILOG_TOKENS_IN). Until a record carries any, a chart of
+  // Tokens are measured by the ai-dash mod (or AILOG_TOKENS_IN). Until a record carries any, a chart of
   // zeros says nothing, so the trend falls back to what the gate always records: executions per day.
   const byExec = days.every(d => !d.tokens_in && !d.cache_read);
   const title = byExec ? 'Executions per day' : 'Tokens per day';
@@ -1061,13 +1061,13 @@ function setHtml(el, html) {
   load();
 })();
 
-// Tokens are never guessed: they come from the starter-hud session mod's usage file or from
+// Tokens are never guessed: they come from the ai-dash session mod's usage file or from
 // AILOG_TOKENS_IN. When every record is zero, say so instead of leaving the tiles unexplained.
 function noUsageNote(d) {
   if (!d.log_records || (d.totals && d.totals.tokens_in) || (d.totals && d.totals.cache_read)) return '';
   return '<div class="card" style="margin-top:12px"><p style="margin:0 0 4px"><b>No token usage has been recorded yet.</b></p>' +
     '<p class="note" style="margin:0">The gate logged ' + esc(d.log_records) + ' run' + (d.log_records === 1 ? '' : 's') +
-    ' (pass or fail), but tokens, models and cost need a source: the optional starter-hud session mod (check it with <code>node scripts/mod.mjs status</code>, ' +
+    ' (pass or fail), but tokens, models and cost need a source: the optional ai-dash session mod (check it with <code>node scripts/mod.mjs status</code>, ' +
     'and make sure Claude Code installed the plugin, which creates <code>.agents/state/usage/</code>), or <code>AILOG_TOKENS_IN</code> and friends set when running the gate. ' +
     'Cost also needs <code>docs/model-prices.json</code> filled in.</p></div>';
 }

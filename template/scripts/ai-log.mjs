@@ -13,8 +13,8 @@
 //
 // Measured fields (model, size, tokens_in, tokens_out, cache_read,
 // cache_write, tool_calls, duration) have a third source, ahead of the env
-// var: the optional starter-hud mod's per-branch usage file (see
-// mods/starter-hud/README.md at the repo root — vendored separately, not
+// var: the optional ai-dash mod's per-branch usage file (see
+// mods/ai-dash/README.md at the repo root — vendored separately, not
 // copied into this template). Precedence is flag > usage file > env var >
 // default. The usage file is deleted once its values are read, whether or
 // not it changed anything (a flag can still override a measured field); a
@@ -74,7 +74,7 @@ const USAGE_DIR = join(ROOT, '.agents/state/usage');
 const OWN_USAGE = `${sanitizeBranch(currentBranch())}.json`;
 
 /**
- * Reads and deletes the starter-hud usage files, mapped onto ai-log's field names.
+ * Reads and deletes the ai-dash usage files, mapped onto ai-log's field names.
  *
  * The mod writes one file per *session* branch, but a gate often runs on a different branch than the
  * session that did the work (an agent's worktree, main). So a gate run takes the usage of every
@@ -151,7 +151,7 @@ function parseArgs(argv) {
 
 /**
  * Resolves every field's final value: an explicit flag wins outright; next,
- * for the measured fields, the starter-hud usage file (if present); next,
+ * for the measured fields, the ai-dash usage file (if present); next,
  * the AILOG_* env var; otherwise the field is left unset (a default fills
  * it in below). This is what lets scripts/gate.sh invoke this file with no
  * flags at all, and what lets the mod's usage file improve on a bare

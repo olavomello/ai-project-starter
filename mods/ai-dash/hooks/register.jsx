@@ -1,4 +1,4 @@
-// starter-hud — optional, off by default (see mods/starter-hud/README.md).
+// ai-dash — optional, off by default (see mods/ai-dash/README.md).
 //
 // Measures real per-task usage (tokens, cache, tool calls, duration) and:
 //   1. hands it to ai-project-starter's log pipeline via a small usage file
@@ -246,7 +246,7 @@ async function askOrLogBudgetReached($, taskSize, fresh, ceiling, turnId) {
     const choice = await $.ui.ask(msg, ['Continue', 'Stop']);
     if (choice === 'Stop') { await $.turn.abort({ turnId }); }
   } catch {
-    $.ui.log(`starter-hud: Budget ${taskSize} reached (${kilo(fresh)} of ${kilo(ceiling)}) — advisory only, continuing.`);
+    $.ui.log(`ai-dash: Budget ${taskSize} reached (${kilo(fresh)} of ${kilo(ceiling)}) — advisory only, continuing.`);
   }
 }
 
@@ -262,10 +262,10 @@ async function askOrLogBudgetReached($, taskSize, fresh, ceiling, turnId) {
 
 const DEC_PANE = 'decisions';
 
-const decItems = atom({ plugin: 'starter-hud', key: 'decisionItems' }, []);
-const decScreen = atom({ plugin: 'starter-hud', key: 'decisionScreen' }, { kind: 'list' });
-const decOffset = atom({ plugin: 'starter-hud', key: 'decisionOffset' }, 0);
-const decStatus = atom({ plugin: 'starter-hud', key: 'decisionStatus' }, {
+const decItems = atom({ plugin: 'ai-dash', key: 'decisionItems' }, []);
+const decScreen = atom({ plugin: 'ai-dash', key: 'decisionScreen' }, { kind: 'list' });
+const decOffset = atom({ plugin: 'ai-dash', key: 'decisionOffset' }, 0);
+const decStatus = atom({ plugin: 'ai-dash', key: 'decisionStatus' }, {
   exists: false,
   stamp: '',
   checkedAt: 0,

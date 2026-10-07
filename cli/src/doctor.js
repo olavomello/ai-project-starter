@@ -131,11 +131,11 @@ export function runDoctor(target, { quiet, onlyProblems = false, report = {} }) 
       const out = execFileSync(process.execPath, [modScript, 'status', '--dir', target, '--json'], { encoding: 'utf8' });
       const { mod } = JSON.parse(out);
       if (mod.enabled === null) {
-        say(info, 'starter-hud mod: not configured');
+        say(info, 'ai-dash mod: not configured');
       } else {
-        say(info, `starter-hud mod: ${mod.enabled ? 'enabled' : 'disabled'} (${mod.source} settings)`);
+        say(info, `ai-dash mod: ${mod.enabled ? 'enabled' : 'disabled'} (${mod.source} settings)`);
         if (mod.enabled && !mod.ref) {
-          say(warn, 'starter-hud mod is enabled but its marketplace entry is missing — run `node scripts/mod.mjs enable` again.');
+          say(warn, 'ai-dash mod is enabled but its marketplace entry is missing — run `node scripts/mod.mjs enable` again.');
         }
       }
     } catch (e) {

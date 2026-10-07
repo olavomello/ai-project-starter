@@ -48,12 +48,13 @@ test('installMod adds the marketplace then installs at project scope', () => {
   assert.equal(r.ok, true);
   assert.deepEqual(calls, [
     ['plugin marketplace add olavomello/ai-project-starter#main', '/p'],
+    ['plugin marketplace update ai-project-starter', '/p'],
     [`plugin install ${MOD_ID} --scope project`, '/p'],
   ]);
 });
 
 test('installMod tolerates an already-added marketplace and reports a failed install with the manual commands', () => {
-  const again = installMod({ cwd: '.', run: (args) => (args[1] === 'marketplace' ? fail('Marketplace already exists') : ok()) });
+  const again = installMod({ cwd: '.', run: (args) => (args[2] === 'add' ? fail('Marketplace already exists') : ok()) });
   assert.equal(again.ok, true);
   const bad = installMod({ cwd: '.', ref: 'v1.0.0', run: (args) => (args[1] === 'install' ? fail('no such plugin') : ok()) });
   assert.equal(bad.ok, false);
@@ -189,10 +190,10 @@ test('init --mod with no claude CLI still finishes and prints the install comman
     assert.equal(r.status, 0, out);
     assert.ok(!/DeprecationWarning/.test(out), 'no Node deprecation warning');
     assert.equal((out.match(/claude plugin marketplace add/g) || []).length, 1, 'the install commands are printed once');
-    assert.match(out, /Installing the starter-hud mod/);
+    assert.match(out, /Installing the ai-dash mod/);
     assert.match(out, /`claude` CLI was not found/);
     assert.match(out, /claude plugin marketplace add olavomello\/ai-project-starter#/);
-    assert.match(out, /claude plugin install starter-hud@ai-project-starter --scope project/);
+    assert.match(out, /claude plugin install ai-dash@ai-project-starter --scope project/);
     assert.equal(settingsOf(join(dir, 'p')).enabledPlugins[MOD_ID], true);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
@@ -223,4 +224,20 @@ test('a git worktree whose branch predates the mod settings is flagged, with the
     try { git(target, 'worktree', 'remove', '--force', join(dir, 'wt-old')); } catch { /* already gone */ }
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('legacy starter-hud: renamed in settings, detected as installed, and uninstalled', async () => {
+  const { fixModPin } = await import('../src/lib/settings-merge.js');
+  const { LEGACY_MOD_ID, legacyInstalled, uninstallLegacy } = await import('../src/lib/claude-plugin.js');
+  const r = fixModPin(JSON.stringify({ enabledPlugins: { [LEGACY_MOD_ID]: true } }));
+  assert.match(r.change, /starter-hud/);
+  assert.deepEqual(JSON.parse(r.text).enabledPlugins, { [MOD_ID]: true });
+  assert.equal(fixModPin(r.text).text, null);
+  const list = (rows) => () => ({ ok: true, stdout: JSON.stringify(rows), stderr: '' });
+  assert.equal(legacyInstalled('.', list([{ id: LEGACY_MOD_ID, enabled: true }])), true);
+  assert.equal(legacyInstalled('.', list([{ id: MOD_ID, enabled: true }])), false);
+  const calls = [];
+  const u = uninstallLegacy({ cwd: '/p', run: (a) => { calls.push(a.join(' ')); return ok(); } });
+  assert.equal(u.ok, true);
+  assert.deepEqual(calls, [`plugin uninstall ${LEGACY_MOD_ID} --scope project`]);
 });

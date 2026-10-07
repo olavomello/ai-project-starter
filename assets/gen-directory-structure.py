@@ -51,7 +51,7 @@ TREE = [
         ("ai-log.mjs", "Record one execution (Node, cross-platform)", None),
         ("ai-report.mjs", "Aggregate the log into ai-dash/data.json", None),
         ("adr.mjs", "Create / list / link Architecture Decision Records", None),
-        ("mod.mjs", "Toggle the optional starter-hud session mod", None),
+        ("mod.mjs", "Toggle the optional ai-dash session mod", None),
         ("skills.mjs", "List, create and validate skills; records usage", None),
         ("ai-dash.mjs", "Local server for ai-dash/: Settings API and live agents", None),
         ("agent-live.mjs", "Subagent start/stop hook: feeds the live panel", None),

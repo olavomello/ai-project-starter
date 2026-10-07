@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks whether a newer ai-project-starter exists than the one this project was last synced with,
-// and applies the update. Used by the starter-hud mod's "Update available" button, and fine to run
+// and applies the update. Used by the ai-dash mod's "Update available" button, and fine to run
 // by hand.
 //
 //   node scripts/ais-update.mjs check [--force] [--json]   is there a newer starter? (cached 30 min)
@@ -89,15 +89,20 @@ function run(argv, cwd) {
 }
 
 /**
- * Updates the project at `dir`, then asks Claude Code to update the starter-hud plugin (best effort:
+ * Updates the project at `dir`, then asks Claude Code to update the ai-dash plugin (best effort:
  * a running session keeps the old code until it is restarted), then re-checks. Returns `{ ok, check }`.
  */
 export function applyUpdate(dir = '.', { env = process.env } = {}) {
   const r = run(updateCommand(env), dir);
   const ok = r.status === 0;
   if (ok && !env.AIS_UPDATE_CMD) {
-    const plugin = run(['claude', 'plugin', 'update', 'starter-hud@ai-project-starter'], dir);
-    if (plugin.status !== 0) console.log('(could not update the starter-hud plugin; run: claude plugin update starter-hud@ai-project-starter)');
+    // The mod used to be called starter-hud. Install the new name if it is missing (a no-op when it is there),
+    // update it, then remove the old one; each step is best effort and only the update's failure is worth saying.
+    run(['claude', 'plugin', 'marketplace', 'update', 'ai-project-starter'], dir);
+    run(['claude', 'plugin', 'install', 'ai-dash@ai-project-starter', '--scope', 'project'], dir);
+    const plugin = run(['claude', 'plugin', 'update', 'ai-dash@ai-project-starter'], dir);
+    run(['claude', 'plugin', 'uninstall', 'starter-hud@ai-project-starter', '--scope', 'project'], dir);
+    if (plugin.status !== 0) console.log('(could not update the ai-dash plugin; run: claude plugin update ai-dash@ai-project-starter)');
   }
   return { ok, check: checkUpdate(dir, { force: true }) };
 }

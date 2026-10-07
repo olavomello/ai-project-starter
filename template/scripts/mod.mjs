@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Single source of truth for turning the optional starter-hud session mod
+// Single source of truth for turning the optional ai-dash session mod
 // on or off. Both `cli/bin.js`'s `mod` command and `scripts/ai-dash.mjs`'s
 // local server call these exported functions — there is no second copy of
 // this logic anywhere (see docs/adr for the session-mod ADR).
@@ -15,7 +15,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const PLUGIN_ID = 'starter-hud@ai-project-starter';
+const PLUGIN_ID = 'ai-dash@ai-project-starter';
+const LEGACY_PLUGIN_ID = 'starter-hud@ai-project-starter'; // the mod's name before it became ai-dash
 const MARKETPLACE_NAME = 'ai-project-starter';
 const MARKETPLACE_REPO = 'olavomello/ai-project-starter';
 
@@ -73,6 +74,7 @@ export function setModEnabled(dir, enabled, { local = false, ref } = {}) {
 
   settings.enabledPlugins = settings.enabledPlugins || {};
   settings.enabledPlugins[PLUGIN_ID] = enabled;
+  delete settings.enabledPlugins[LEGACY_PLUGIN_ID]; // a project enabled under the old name moves to the new one
 
   if (enabled) {
     settings.extraKnownMarketplaces = settings.extraKnownMarketplaces || {};
@@ -103,7 +105,7 @@ export function statusOf(dir) {
     if (!existsSync(path)) continue;
     let settings;
     try { settings = readSettings(path); } catch { continue; }
-    const value = settings.enabledPlugins?.[PLUGIN_ID];
+    const value = settings.enabledPlugins?.[PLUGIN_ID] ?? settings.enabledPlugins?.[LEGACY_PLUGIN_ID];
     if (value === undefined) continue;
     const ref = settings.extraKnownMarketplaces?.[MARKETPLACE_NAME]?.source?.ref ?? null;
     return { enabled: value === true, source, ref, path };
@@ -133,9 +135,9 @@ function printStatus(dir, status, json) {
     return;
   }
   if (status.enabled === null) {
-    console.log(`starter-hud: not configured (would write ${status.path})`);
+    console.log(`ai-dash: not configured (would write ${status.path})`);
   } else {
-    console.log(`starter-hud: ${status.enabled ? 'enabled' : 'disabled'} (${status.source} settings, ${status.path})`);
+    console.log(`ai-dash: ${status.enabled ? 'enabled' : 'disabled'} (${status.source} settings, ${status.path})`);
     if (status.ref) console.log(`  marketplace ref: ${status.ref}`);
   }
 }
@@ -156,7 +158,7 @@ function main() {
         if (!flags.json) {
           console.log('Enabling the mod in settings does not download it. Install it once on this machine:');
           console.log(`  claude plugin marketplace add ${MARKETPLACE_REPO}#${status.ref || 'main'}`);
-          console.log(`  claude plugin install starter-hud@${MARKETPLACE_NAME} --scope project`);
+          console.log(`  claude plugin install ai-dash@${MARKETPLACE_NAME} --scope project`);
           console.log('(or, in the Claude desktop app: + > Plugins > Add plugin). Then run /reload-plugins, or start a new session, and commit the settings file.');
         }
       } catch (e) { die(e.message); }

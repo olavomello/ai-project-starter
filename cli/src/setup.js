@@ -36,7 +36,7 @@ export function fillReadme(text, { name, purpose, stack }) {
  * Interactively fills AGENTS.md section 0 (Name, Purpose, Stack, Administrator,
  * knobs) in `target` right after the template is copied, so the initial commit
  * already has a real project identity instead of the template's blanks. Also
- * decides whether to enable the optional starter-hud session mod — asked
+ * decides whether to enable the optional ai-dash session mod — asked
  * right after the knobs, in the same prompt, when there's a TTY to ask on.
  *
  * `modFlag` is `true`/`false` when `--mod`/`--no-mod` was passed (wins

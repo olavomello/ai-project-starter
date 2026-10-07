@@ -1,5 +1,5 @@
 // Tests for template/scripts/decisions.mjs (reading and approving pending decisions), the ai-dash endpoints
-// and page that use it, and that the starter-hud mod's own copy of the parser agrees with it.
+// and page that use it, and that the ai-dash mod's own copy of the parser agrees with it.
 // Node's built-in test runner.
 //
 // Run: node --test cli/test/decisions.test.mjs
@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseItems, removeLine, buildPrompt, readDecisions, approveDecision, hashLine } from '../../template/scripts/decisions.mjs';
-import * as modParse from '../../mods/starter-hud/hooks/lib/decisions-parse.js';
+import * as modParse from '../../mods/ai-dash/hooks/lib/decisions-parse.js';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const AI_DASH = join(ROOT, 'template', 'scripts', 'ai-dash.mjs');

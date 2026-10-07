@@ -9,14 +9,16 @@
 // `permissions.deny`: starter deny rules the project doesn't have yet are appended
 // in order, so a negation such as `Read(!.env.example)` stays after its parent rule.
 
+import { MOD_ID, LEGACY_MOD_ID } from './claude-plugin.js';
+
 const groupMatcher = (group) => (typeof group.matcher === 'string' ? group.matcher : '');
 const commandOf = (hook) => (hook && hook.type === 'command' ? `${hook.command || ''}\u0000${(hook.args || []).join('\u0000')}` : JSON.stringify(hook));
 
-// Tags up to v0.1.0 predate the starter-hud mod (their tree has no mods/ folder).
+// Tags up to v0.1.0 predate the ai-dash mod (their tree has no mods/ folder).
 const MODLESS_TAG = /^v0\.(0\.\d+|1\.0)(-.*)?$/;
 
 /**
- * The starter-hud marketplace pinned to a tag that predates the mod (which `mod enable`
+ * The ai-dash marketplace pinned to a tag that predates the mod (which `mod enable`
  * used to write) can never install it. Moves that pin to main on the parsed settings
  * object and returns a description of the change, or null when nothing needed fixing.
  */
@@ -27,15 +29,34 @@ function fixModPinIn(settings) {
   if (!MODLESS_TAG.test(pin.ref)) return null;
   const before = pin.ref;
   pin.ref = 'main';
-  return `marketplace ref: ${before} -> main (that tag has no starter-hud mod)`;
+  return `marketplace ref: ${before} -> main (that tag has no ai-dash mod)`;
+}
+
+/**
+ * The mod was called starter-hud before it became ai-dash. A project that enabled it under the old name
+ * moves to the new one, keeping the on/off value, so nothing has to be toggled again. Returns a description
+ * of the change, or null when the old key is not there.
+ */
+function renameLegacyModIn(settings) {
+  const plugins = settings && settings.enabledPlugins;
+  if (!plugins || typeof plugins !== 'object' || !(LEGACY_MOD_ID in plugins)) return null;
+  const value = plugins[LEGACY_MOD_ID];
+  if (!(MOD_ID in plugins)) plugins[MOD_ID] = value;
+  delete plugins[LEGACY_MOD_ID];
+  return `enabledPlugins: ${LEGACY_MOD_ID} -> ${MOD_ID}`;
+}
+
+/** Every repair the mod's settings can need (an old marketplace pin, the old plugin name), as descriptions. */
+function repairModIn(settings) {
+  return [fixModPinIn(settings), renameLegacyModIn(settings)].filter(Boolean);
 }
 
 /** The same fix on settings text, for a file the starter has not otherwise changed. `text` is null when nothing changed. */
 export function fixModPin(settingsText) {
   let settings;
   try { settings = JSON.parse(settingsText); } catch { return { text: null, change: null }; }
-  const change = fixModPinIn(settings);
-  return change ? { text: `${JSON.stringify(settings, null, 2)}\n`, change } : { text: null, change: null };
+  const changes = repairModIn(settings);
+  return changes.length ? { text: `${JSON.stringify(settings, null, 2)}\n`, change: changes.join('; ') } : { text: null, change: null };
 }
 
 /**
@@ -51,8 +72,7 @@ export function mergeSettings(localText, incomingText) {
   const wanted = incoming && incoming.hooks && typeof incoming.hooks === 'object' ? incoming.hooks : {};
 
   const added = [];
-  const pinFix = fixModPinIn(local);
-  if (pinFix) added.push(pinFix);
+  added.push(...repairModIn(local));
 
   local.hooks = local.hooks && typeof local.hooks === 'object' ? local.hooks : {};
   for (const [event, groups] of Object.entries(wanted)) {

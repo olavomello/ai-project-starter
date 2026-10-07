@@ -3,7 +3,7 @@
 // files in <shared root>/ai-dash/ (same recommended way to view the
 // dashboard as `npx serve ai-dash` — see ai-dash/README.md), plus two JSON
 // endpoints the page's Settings area uses to read and toggle the optional
-// starter-hud mod through scripts/mod.mjs — the one implementation of that
+// ai-dash mod through scripts/mod.mjs — the one implementation of that
 // toggle (see ADR on the session mod).
 //
 // Usage: node scripts/ai-dash.mjs [--port 4173]
@@ -150,7 +150,7 @@ async function handleGetSkills(req, res) {
 }
 
 /**
- * Stops this server, so the starter-hud mod can restart it after an update (a running process keeps
+ * Stops this server, so the ai-dash mod can restart it after an update (a running process keeps
  * the old code). Same guard as POST /api/config: a local Host and Origin, a JSON content type and the
  * X-AI-Dash header, which a web page cannot send cross-origin without a preflight.
  */
@@ -171,7 +171,7 @@ async function handleGetDecisions(req, res) {
 
 /**
  * Approves one pending decision: its row leaves the file and its prompt is queued for the open Claude Code
- * session (the starter-hud mod hands it over). Same guard as the other writes: a local Host and Origin, a JSON
+ * session (the ai-dash mod hands it over). Same guard as the other writes: a local Host and Origin, a JSON
  * content type and the X-AI-Dash header, plus a body of exactly { "id": "<item id>" }.
  */
 async function handlePostApprove(req, res) {

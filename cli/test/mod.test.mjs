@@ -1,5 +1,5 @@
 // Tests for ../../template/scripts/mod.mjs (the one implementation of the
-// starter-hud on/off toggle). Node's built-in test runner — not shipped in
+// ai-dash on/off toggle). Node's built-in test runner — not shipped in
 // the npm package (cli/package.json's "files" doesn't list "test").
 //
 // Run: node --test cli/test/mod.test.mjs
@@ -31,7 +31,7 @@ test('enable on a missing settings.json creates it with the plugin and marketpla
   assert.equal(status.enabled, true);
   assert.equal(status.source, 'project');
   const settings = JSON.parse(readFileSync(join(dir, '.claude', 'settings.json'), 'utf8'));
-  assert.equal(settings.enabledPlugins['starter-hud@ai-project-starter'], true);
+  assert.equal(settings.enabledPlugins['ai-dash@ai-project-starter'], true);
   assert.equal(settings.extraKnownMarketplaces['ai-project-starter'].source.repo, 'olavomello/ai-project-starter');
   assert.equal(settings.extraKnownMarketplaces['ai-project-starter'].source.source, 'github');
   // Default ref is "main" when there's no .ai-project-starter.json manifest.
@@ -47,7 +47,7 @@ test('enable on a settings.json with unrelated keys preserves them', () => {
   const settings = JSON.parse(readFileSync(join(dir, '.claude', 'settings.json'), 'utf8'));
   assert.deepEqual(settings.hooks, { PreToolUse: [] });
   assert.equal(settings.someOtherKey, 42);
-  assert.equal(settings.enabledPlugins['starter-hud@ai-project-starter'], true);
+  assert.equal(settings.enabledPlugins['ai-dash@ai-project-starter'], true);
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -66,7 +66,7 @@ test('enable with --local writes settings.local.json instead, and status prefers
   enableMod(dir, { local: true });
   const localPath = join(dir, '.claude', 'settings.local.json');
   const projectPath = join(dir, '.claude', 'settings.json');
-  assert.equal(JSON.parse(readFileSync(localPath, 'utf8')).enabledPlugins['starter-hud@ai-project-starter'], true);
+  assert.equal(JSON.parse(readFileSync(localPath, 'utf8')).enabledPlugins['ai-dash@ai-project-starter'], true);
   const status = statusOf(dir);
   assert.equal(status.source, 'local');
   assert.equal(status.enabled, true);
@@ -88,7 +88,7 @@ test('disable sets enabledPlugins to false but leaves the marketplace entry in p
   const status = disableMod(dir);
   assert.equal(status.enabled, false);
   const settings = JSON.parse(readFileSync(join(dir, '.claude', 'settings.json'), 'utf8'));
-  assert.equal(settings.enabledPlugins['starter-hud@ai-project-starter'], false);
+  assert.equal(settings.enabledPlugins['ai-dash@ai-project-starter'], false);
   assert.equal(settings.extraKnownMarketplaces['ai-project-starter'].source.ref, 'v1.0.0');
   rmSync(dir, { recursive: true, force: true });
 });

@@ -52,7 +52,7 @@ I want to start a new project from the ai-project-starter template
    inside the new project before the first commit, so it's included in it, and then
    install the plugin once on this machine, because enabling it in settings does not
    download it: `claude plugin marketplace add olavomello/ai-project-starter#main` and
-   `claude plugin install starter-hud@ai-project-starter --scope project` run inside the
+   `claude plugin install ai-dash@ai-project-starter --scope project` run inside the
    project (if `claude` is not on PATH, tell me those two commands instead).
 5. Run `node <path-to-the-clone-from-step-1>/cli/bin.js adopt <project-directory>
    --ref <the branch or tag you cloned>` so the project gets
@@ -103,7 +103,7 @@ procedure lives in the agent file, so this prompt never drifts from it.
 
 ## Turn the in-session status mod on or off
 
-Toggles the optional `starter-hud` session mod ([ADR](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md),
+Toggles the optional `ai-dash` session mod ([ADR](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md),
 `docs/guides/claude-code.md` once it exists in the project) the same way
 `node scripts/mod.mjs enable`/`disable` would, for an agent working in a
 project that already exists.
@@ -113,7 +113,7 @@ project that already exists.
 # Prompt
 
 ```
-Turn the optional starter-hud session mod on (or off — tell me which) for this
+Turn the optional ai-dash session mod on (or off — tell me which) for this
 project:
 
 1. Confirm `scripts/mod.mjs` exists here. If it doesn't, tell me to run
@@ -125,7 +125,7 @@ project:
 4. If the mod was just enabled, tell me it still has to be installed once on each
    machine (enabling it in settings does not download it): `claude plugin marketplace
    add olavomello/ai-project-starter#main`, then `claude plugin install
-   starter-hud@ai-project-starter --scope project`. Then tell me to run
+   ai-dash@ai-project-starter --scope project`. Then tell me to run
    `/reload-plugins` (or restart the session) and to commit the settings file so the
    rest of the team gets the same setting.
 

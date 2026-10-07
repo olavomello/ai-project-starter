@@ -148,7 +148,7 @@ one; everyone who clones the repo then gets a one-time approval prompt for it.
 ## Session mod (optional)
 
 A **mod** is a plugin whose JavaScript hooks run inside Claude Code. This starter
-publishes one, `starter-hud`, at `mods/starter-hud/` in the
+publishes one, `ai-dash`, at `mods/ai-dash/` in the
 [ai-project-starter repo itself](https://github.com/olavomello/ai-project-starter)
 (not copied into `template/` — a project built from this starter loads it from
 there as a plugin, it doesn't vendor its code).
@@ -172,10 +172,10 @@ initiative. Three equivalent ways, all backed by the single implementation in
   `node scripts/ai-dash.mjs` — read-only on static hosting.
 
 All three write the same key: `.claude/settings.json`'s
-`enabledPlugins["starter-hud@ai-project-starter"]`. Commit that file so the rest
+`enabledPlugins["ai-dash@ai-project-starter"]`. Commit that file so the rest
 of the team gets the same setting. Enabling the mod in settings does not download it:
 each person runs `claude plugin marketplace add olavomello/ai-project-starter#main` and
-`claude plugin install starter-hud@ai-project-starter --scope project` once (or uses
+`claude plugin install ai-dash@ai-project-starter --scope project` once (or uses
 **+ > Plugins > Add plugin** in the desktop app), then `/reload-plugins` or a new session.
 
 **Where it runs and where it doesn't:** the band and spinner suffix draw only in
@@ -186,4 +186,4 @@ marketplaces declared in a repo's settings) or in any non-Claude-Code agent
 (Codex and the rest). Off, missing, or on an older Claude Code (before
 v2.1.287), the mod is inert and everything behaves exactly as it does today:
 `ai-log.mjs` falls back to `AILOG_*` variables, same as always. Full detail,
-including its known limitations: `mods/starter-hud/README.md` at the repo root.
+including its known limitations: `mods/ai-dash/README.md` at the repo root.

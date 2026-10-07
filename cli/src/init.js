@@ -89,7 +89,7 @@ export async function init({ target, ref = 'main', source, noPrompt = false, mod
  * what to run when the `claude` CLI isn't available.
  */
 function installModPlugin(target) {
-  section('Installing the starter-hud mod for Claude Code:');
+  section('Installing the ai-dash mod for Claude Code:');
   ok('enabled in .claude/settings.json');
   let ref = 'main';
   try { ref = JSON.parse(readText(join(target, '.claude', 'settings.json'))).extraKnownMarketplaces?.['ai-project-starter']?.source?.ref || 'main'; } catch { /* settings unreadable: default ref */ }
