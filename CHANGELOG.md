@@ -56,6 +56,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- ai-dash Pending decisions pane: click a decision's detail line (`▸`) to read it in full, wrapped; click `▾ hide details` to fold it back.
 - ai-dash Pending decisions pane: sections with a coloured bar, a count and a rule, each decision as a spaced entry (bold title, `✓ Approve` button, dim detail, the items it blocks on its own line).
 - The Claude Code mod is renamed from `starter-hud` to `ai-dash` (plugin id `ai-dash@ai-project-starter`, folder `mods/ai-dash`, version 0.4.0). Existing projects migrate on their own: `ai-project-starter update` and `doctor --fix` rename the `enabledPlugins` key, install the new plugin and uninstall the old one; the AI Dash update button and `scripts/mod.mjs` understand both names.
 - ai-dash band: one row instead of three lines, with a simple Unicode icon before each item (`⎇ main · ◆ tokens 92.4k · ↻ cache 92% · ✓ gate passed, first try`), colours for budget and gate state (yellow at 80% of the budget, red at the ceiling or a failed gate), and low-priority items dropped first on a narrow screen. To get it in an installed copy: `claude plugin update ai-dash@ai-project-starter`, then start a new session.

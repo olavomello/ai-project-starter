@@ -32,6 +32,8 @@ declare module 'claude-code' {
       decisionItems: DecisionItem[];
       decisionScreen: DecisionScreen;
       decisionOffset: number;
+      /** Ids of the items whose detail text is shown in full. */
+      decisionExpanded: string[];
       decisionStatus: DecisionStatus;
     };
   }

@@ -166,3 +166,24 @@ test('an item approved in AI Dash reaches the session through the queue, once', 
   await band.press({ key: 'refresh' })
   expect(state.prompts).toHaveLength(1)
 })
+
+test('pressing a detail line shows it in full, and hide details folds it back', async ($, on) => {
+  const fake = engine(on)
+  const pane = await $.ui.mount({
+    plugin: 'ai-dash',
+    surface: 'terminal',
+    component: 'Pane',
+    props: {} as never,
+    requestId: 'decisions',
+  })
+  await pane.press({ key: 'pane-refresh' })
+  expect(fake.disk).toContain('Create the account')
+  const more = (await pane.findAll({ type: 'Button', text: /Create the account/ }))[0]
+  expect(more).toBeDefined()
+  const id = more!.key.replace('more:', '')
+  await pane.press({ key: `more:${id}` })
+  expect(await pane.find({ type: 'Button', text: /hide details/ })).toBeDefined()
+  expect(await pane.find({ type: 'Text', text: /Create the account/ })).toBeDefined()
+  await pane.press({ key: `less:${id}` })
+  expect(await pane.find({ type: 'Button', text: /hide details/ })).toBeUndefined()
+})
