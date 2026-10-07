@@ -176,6 +176,14 @@ test('the dashboard lists decisions and approves one only behind the write guard
     assert.equal(again.status, 409, 'approving the same item twice is refused');
     assert.equal(inboxOf(dir).length, 1);
     assert.equal(JSON.parse((await request(port, 'GET', '/api/decisions')).text).queued, 1);
+
+    // Instructions are optional and bounded; when given they reach the queued prompt.
+    const other = list.items.find((i) => i.title !== 'Admin role').id;
+    assert.equal((await post(json, JSON.stringify({ id: other, instructions: 'x'.repeat(2001) }))).status, 400, 'instructions are capped');
+    assert.equal((await post(json, JSON.stringify({ id: other, instructions: 5 }))).status, 400, 'instructions are text');
+    assert.equal((await post(json, JSON.stringify({ id: other, instructions: 'use the staging account' }))).status, 200);
+    assert.equal(inboxOf(dir).length, 2);
+    assert.ok(inboxOf(dir)[1].prompt.includes('use the staging account'));
   } finally {
     child.kill();
     await exited;
@@ -239,7 +247,7 @@ test('the modal lists items by section and asks before approving; Cancel keeps e
   assert.ok(html.includes('Needed before going live') && html.includes('Fly.io') && html.includes('Blocks: API deploy'));
   assert.ok(html.includes('data-approve="a1"') && !html.includes('data-yes'));
   page.click('data-approve', 'a1');
-  assert.ok(page.els['decisions-body'].innerHTML.includes('Send to the agent and remove from the file?'));
+  assert.ok(page.els['decisions-body'].innerHTML.includes('Approve this item?') && page.els['decisions-body'].innerHTML.includes('data-yes-note="a1"'));
   assert.ok(page.els['decisions-body'].innerHTML.includes('data-yes="a1"'));
   page.click('data-no', '1');
   assert.ok(!page.els['decisions-body'].innerHTML.includes('data-yes'));
@@ -273,4 +281,15 @@ test('a refused approval shows the server\'s reason', async () => {
   page.click('data-yes', 'a1');
   await tick();
   assert.ok(page.els['decisions-body'].innerHTML.includes('that item changed on disk'));
+});
+
+test('instructions ride along in the prompt, identically in the mod and the server, and are optional', () => {
+  const [first] = parseItems(SAMPLE);
+  const plain = buildPrompt(first, FILE, 'AI Dash');
+  assert.doesNotMatch(plain, /added instructions/);
+  const withNote = buildPrompt(first, FILE, 'AI Dash', '  use the staging account  ');
+  assert.match(withNote, /added instructions for this item/);
+  assert.ok(withNote.includes('\nuse the staging account\n'));
+  assert.equal(withNote, modParse.buildPrompt(first, FILE, 'AI Dash', '  use the staging account  '));
+  assert.ok(buildPrompt(first, FILE, 'AI Dash', 'x'.repeat(5000)).length < plain.length + 2300);
 });

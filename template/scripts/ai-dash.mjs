@@ -19,7 +19,7 @@ import { statusOf, enableMod, disableMod } from './mod.mjs';
 import { listSkills, usageMap, NEVER } from './skills.mjs';
 import { readLive, readActivity } from './agent-live.mjs';
 import { field as fieldOf } from './agents-sync.mjs';
-import { readDecisions, approveDecision } from './decisions.mjs';
+import { readDecisions, approveDecision, MAX_INSTRUCTIONS } from './decisions.mjs';
 
 function repoRoot() {
   try {
@@ -172,7 +172,8 @@ async function handleGetDecisions(req, res) {
 /**
  * Approves one pending decision: its row leaves the file and its prompt is queued for the open Claude Code
  * session (the ai-dash mod hands it over). Same guard as the other writes: a local Host and Origin, a JSON
- * content type and the X-AI-Dash header, plus a body of exactly { "id": "<item id>" }.
+ * content type and the X-AI-Dash header, plus a body of { "id": "<item id>" } and, optionally, the
+ * Administrator's "instructions" for carrying the item out.
  */
 async function handlePostApprove(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
@@ -182,10 +183,12 @@ async function handlePostApprove(req, res) {
   try { text = await readBody(req, MAX_BODY); } catch { return sendJson(res, 400, { error: 'body too large' }); }
   let parsed;
   try { parsed = JSON.parse(text); } catch { return sendJson(res, 400, { error: 'invalid JSON' }); }
-  if (!parsed || Object.keys(parsed).length !== 1 || typeof parsed.id !== 'string' || !/^[0-9a-z]{1,12}$/.test(parsed.id)) {
-    return sendJson(res, 400, { error: 'expected exactly { "id": "<item id>" }' });
-  }
-  const result = approveDecision(TARGET_DIR, parsed.id);
+  const keys = parsed && typeof parsed === 'object' ? Object.keys(parsed) : [];
+  const fine = keys.every((k) => k === 'id' || k === 'instructions')
+    && typeof parsed.id === 'string' && /^[0-9a-z]{1,12}$/.test(parsed.id)
+    && (parsed.instructions === undefined || (typeof parsed.instructions === 'string' && parsed.instructions.length <= MAX_INSTRUCTIONS));
+  if (!fine) return sendJson(res, 400, { error: 'expected { "id": "<item id>", "instructions"?: "<text, up to 2000 characters>" }' });
+  const result = approveDecision(TARGET_DIR, parsed.id, { instructions: parsed.instructions || '' });
   sendJson(res, result.ok ? 200 : 409, result);
 }
 
