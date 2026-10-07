@@ -214,7 +214,7 @@ test('the template runs the tool hook for every PreToolUse and keeps the existin
 test('the page code: a monitor button opens the agent activity and survives the next poll', async () => {
   const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
   const start = html.indexOf('// Live agents:');
-  const code = html.slice(start, html.indexOf('})();', start) + 5);
+  const code = html.slice(html.indexOf('function setHtml('), html.indexOf('// Live agents:')) + html.slice(start, html.indexOf('})();', start) + 5);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const payload = {
     now: 1, claims: [], recent: [],
@@ -317,7 +317,7 @@ test('the template wires the turn hooks', () => {
 test('the page names a main session by its folder', async () => {
   const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
   const start = html.indexOf('// Live agents:');
-  const code = html.slice(start, html.indexOf('})();', start) + 5);
+  const code = html.slice(html.indexOf('function setHtml('), html.indexOf('// Live agents:')) + html.slice(start, html.indexOf('})();', start) + 5);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const payload = { now: 1, claims: [], recent: [], running: [{ id: 's:S1', type: 'main', label: 'init-execution-assessment-70b48b', since: 0, seconds: 5, activity: [{ t: 1, tool: 'Bash', target: 'pnpm test' }] }] };
   const el = { hidden: true, innerHTML: '', addEventListener() {}, querySelectorAll: () => [] };
@@ -392,7 +392,7 @@ test('GET /api/activity serves the hourly counters and enforces Host', async () 
 async function runActivityPage(rows) {
   const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
   const start = html.indexOf('// Activity chart:');
-  const code = html.slice(start, html.indexOf('})();', start) + 5);
+  const code = html.slice(html.indexOf('function setHtml('), html.indexOf('// Live agents:')) + html.slice(start, html.indexOf('})();', start) + 5);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let click;
   const stored = {};
