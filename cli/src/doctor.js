@@ -3,6 +3,8 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { readText, isDir } from './lib/fsutil.js';
 import { readManifest } from './lib/manifest.js';
+import { resolveSource } from './lib/source.js';
+import { checkSetup, fixSetup } from './lib/setup-check.js';
 import { info, ok, warn, section } from './lib/log.js';
 
 const REQUIRED_FILES = [
@@ -11,15 +13,37 @@ const REQUIRED_FILES = [
 ];
 const SEMVER = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$/;
 
-export function doctor({ target = '.' }) {
+export function doctor({ target = '.', fix = false, source, ref = 'main' }) {
+  if (fix) runFix(target, { source, ref });
   const failed = runDoctor(target, { quiet: false });
   process.exit(failed ? 1 : 0);
 }
 
+/** `doctor --fix`: repair what is safe to repair (see fixSetup), then the normal checks run. */
+function runFix(target, { source, ref }) {
+  section('Fixing what can be fixed:');
+  let templateSettingsText;
+  try {
+    const { templateDir, cleanup } = resolveSource({ source, ref });
+    try { templateSettingsText = readText(join(templateDir, '.claude', 'settings.json')); } finally { cleanup(); }
+  } catch (e) {
+    warn(`could not fetch the starter's settings (${e.message}); repairs that need them are skipped`);
+  }
+  const results = fixSetup(target, { templateSettingsText, ref });
+  if (!results.length) ok('nothing to fix');
+  for (const r of results) (r.ok ? ok : warn)(r.msg);
+  info('');
+}
+
 /** Returns true if any check failed. Used by both `doctor` and `init`'s summary. */
-export function runDoctor(target, { quiet }) {
+export function runDoctor(target, { quiet, onlyProblems = false, report = {} }) {
   let failed = false;
-  const say = (fn, msg) => { if (!quiet) fn(msg); };
+  report.warnings = 0;
+  const say = (fn, msg) => {
+    if (fn === warn) report.warnings++;
+    if (quiet || (onlyProblems && fn !== warn)) return;
+    fn(msg);
+  };
 
   for (const rel of REQUIRED_FILES) {
     if (existsSync(join(target, rel))) say(ok, rel);
@@ -91,6 +115,13 @@ export function runDoctor(target, { quiet }) {
     } catch (e) {
       failed = true; say(warn, `.claude/settings.json: invalid JSON (${e.message})`);
     }
+  }
+
+  // The chain a project depends on to measure and show agent activity: hooks, deny rules, the
+  // mod's pin and install, committed files. Warnings only; each one names its fix.
+  for (const f of checkSetup(target)) {
+    say(f.level === 'warn' ? warn : f.level === 'ok' ? ok : info, f.msg);
+    if (f.fix) say(info, `    fix: ${f.fix}`);
   }
 
   // Session-mod state — informational only; never fails doctor on its own.

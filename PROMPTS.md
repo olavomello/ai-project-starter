@@ -43,13 +43,17 @@ I want to start a new project from the ai-project-starter template
    - Branch model (default: trunk (`main`))
    - Release cadence (default: on demand)
    - Task token budget S / M / L (default: off)
-   - Enable the in-session status mod for Claude Code? — y/N (default: no)
+   - Enable the in-session status mod for Claude Code (measures real tokens and models)? — Y/n (default: yes)
 3. Write my answers into section 0 of the new project's `AGENTS.md` (the `- Name:`
    / `- Purpose (one line):` / `- Stack:` / `- Administrator:` lines, and the
    `Knobs` table below them, now including the task-token-budget row) — do not
    touch anything else in the file.
-4. If I answered yes to the mod question, run `node scripts/mod.mjs enable`
-   inside the new project before the first commit, so it's included in it.
+4. If I answered yes to the mod question (or blank), run `node scripts/mod.mjs enable`
+   inside the new project before the first commit, so it's included in it, and then
+   install the plugin once on this machine, because enabling it in settings does not
+   download it: `claude plugin marketplace add olavomello/ai-project-starter#main` and
+   `claude plugin install starter-hud@ai-project-starter --scope project` run inside the
+   project (if `claude` is not on PATH, tell me those two commands instead).
 5. Run `node <path-to-the-clone-from-step-1>/cli/bin.js adopt <project-directory>
    --ref <the branch or tag you cloned>` so the project gets
    `.ai-project-starter.json` — the manifest `ai-project-starter update` needs to
@@ -63,7 +67,8 @@ I want to start a new project from the ai-project-starter template
    (see AGENTS.md section 2 once it exists in the new project).
 7. Run `node <path-to-the-clone-from-step-1>/cli/bin.js doctor <project-directory>`
    and report the result (the same structural check `ai-project-starter init` runs
-   automatically at the end).
+   automatically at the end). It also checks the Claude Code setup (hooks, the mod's pin
+   and install, uncommitted setup files); add `--fix` to repair what it can.
 8. Run `bash scripts/gate.sh` inside the new project and report the result. On
    Windows, run it with Git Bash (`"C:\Program Files\Git\bin\bash.exe"`), not
    with the `bash` on PATH: in PowerShell that is the WSL stub and fails with

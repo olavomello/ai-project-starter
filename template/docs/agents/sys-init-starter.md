@@ -54,10 +54,18 @@ Read only what a step needs; do not re-read the whole repo.
    Claude Code subagent pointer in `.claude/agents/`, so each agent shows up as `@agent-<name>`. Creating the roster
    files is part of this setup; it is not the runtime spawning that `auto_agents`
    governs. Do not create agents the Administrator did not approve.
-7. **Commit.** One Conventional Commit per logical part (for example
+7. **Setup check.** Run `npx github:olavomello/ai-project-starter#main doctor --fix` in the
+   project. It checks the chain the dashboard depends on (live-agent hooks, deny rules, the
+   mod's marketplace pin and whether the plugin is installed, uncommitted setup files) and
+   repairs what is safe. Report anything it still warns about, with the fix it names; do not
+   skip a warning. If `claude` is not on PATH, give the Administrator the two install
+   commands it prints.
+8. **Commit.** One Conventional Commit per logical part (for example
    `chore: set up project identity and agent policy`, then
-   `chore: add initial agent team`), with no attribution lines. Do not push.
-8. **Report and retire.** Summarize what was set up, what is still open, and the
+   `chore: add initial agent team`), with no attribution lines. Include the setup files
+   (`.claude/settings.json`, `.claude/agents/`, `scripts/`, `docs/agents/`): a session in a git
+   worktree, such as the desktop app's, only sees committed files. Do not push.
+9. **Report and retire.** Summarize what was set up, what is still open, and the
    suggested first task. Then ask the Administrator whether to remove this agent. On
    yes, delete `docs/agents/sys-init-starter.md` with `git rm`, run
    `node scripts/agents-sync.mjs` to drop its `.claude/agents/` pointer, and commit both
