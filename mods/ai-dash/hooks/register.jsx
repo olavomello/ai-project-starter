@@ -532,16 +532,18 @@ function registerDecisions(on, options) {
           </Box>
           <Text bold>Confirm approval?</Text>
           <Text dimColor>The agent receives this item to execute it, then it leaves the list. Instructions are optional.</Text>
-          <Input
-            key="confirm-note"
-            label="Instructions"
-            placeholder="what to do, how, what to avoid (optional)"
-            value={note}
-            submitLabel={'21b5'}
-            autoFocus
-            onInput={(text) => update($, decNote, () => text)}
-            onSubmit={(text) => (text.trim() === '' ? decApprove($, file, item.id) : decApprove($, file, item.id, text.trim()))}
-          />
+          <Text dimColor>Instructions for the agent (optional)</Text>
+          <Box borderStyle="round" borderColor="suggestion" paddingX={1} minHeight={5}>
+            <Input
+              key="confirm-note"
+              placeholder="what to do, how, what to avoid"
+              value={note}
+              submitLabel=" "
+              autoFocus
+              onInput={(text) => update($, decNote, () => text)}
+              onSubmit={(text) => (text.trim() === '' ? decApprove($, file, item.id) : decApprove($, file, item.id, text.trim()))}
+            />
+          </Box>
           <Box gap={2}>
             <Button key="confirm-yes" label={'\u2713 Approve only'} hotkey="y" variant="primary" onPress={() => decApprove($, file, item.id)} />
             <Button
