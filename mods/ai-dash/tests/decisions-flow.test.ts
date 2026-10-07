@@ -201,7 +201,7 @@ test('Approve with instructions hands the agent the item and the Administrator\'
 
   // With instructions: typed in the field, sent with the second button.
   await pane.press({ key: approveKeyFor(fake.disk, 'Fly.io') })
-  await pane.input({ key: 'confirm-note', text: 'Use region gru and the free tier', kind: 'change' })
+  await pane.post({ text: 'Use region gru and the free tier' }, { in: 'confirm-note' })
   await pane.press({ key: 'confirm-note-yes' })
   expect(fake.prompts).toHaveLength(1)
   expect(fake.prompts[0]).toContain('Item: Fly.io')

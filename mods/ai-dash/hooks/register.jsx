@@ -282,6 +282,8 @@ const DEC_ACCENTS = ['suggestion', 'warning', 'permission', 'success'];
 const decAccent = (group) => DEC_ACCENTS[group % DEC_ACCENTS.length] || 'suggestion';
 
 const DEC_LIST = { kind: 'list' };
+/** The number shown before an item: the table's own id column when it has one, else its place in the list. */
+const decNumber = (list, item) => (item.num !== '' ? item.num : String(list.findIndex((one) => one.id === item.id) + 1));
 const decConfirming = (id) => ({ kind: 'confirm', id });
 const decAsk = ($, id) => Promise.all([update($, decNote, () => ''), update($, decScreen, () => decConfirming(id))]);
 
@@ -488,8 +490,17 @@ function registerDecisions(on, options) {
     return { text: 'Pending decisions opened.' };
   });
 
+  // The multi-line Instructions editor (editor.jsx) posts its text here after every edit.
+  on('ui.message', async ($, e) => {
+    const data = e.data;
+    if (e.element === 'confirm-note' && data && typeof data === 'object' && typeof data.text === 'string') {
+      await update($, decNote, () => data.text.slice(0, 4000));
+    }
+    return {};
+  });
+
   on('ui.render', { component: 'Pane', requestId: DEC_PANE }, async ($, e) => {
-    const { Box, Text, Button, Input } = $.ui.resolve(e);
+    const { Box, Text, Button, Client } = $.ui.resolve(e);
     const list = await read($, decItems);
     const known = await read($, decStatus);
     const current = await read($, decScreen);
@@ -526,22 +537,21 @@ function registerDecisions(on, options) {
         <Box flexDirection="column" gap={1}>
           {header('Confirm approval', back, false)}
           <Box flexDirection="column" borderStyle="round" borderColor={decAccent(item.group)} paddingX={1}>
-            <Text bold>{`${list.indexOf(item) + 1} - ${item.title}`}</Text>
-            {item.detail !== '' && <Text dimColor>{`${item.detailLabel} - ${item.detail}`}</Text>}
+            <Text bold>{`${decNumber(list, item)} - ${item.title}`}</Text>
+            {item.detail !== '' && <Text>{`${item.detailLabel} - ${item.detail}`}</Text>}
             {item.blocks !== '' && <Text color={decAccent(item.group)}>{`${item.blocksLabel} - ${item.blocks}`}</Text>}
           </Box>
           <Text bold>Confirm approval?</Text>
           <Text dimColor>The agent receives this item to execute it, then it leaves the list. Instructions are optional.</Text>
-          <Text dimColor>Instructions for the agent (optional)</Text>
-          <Box borderStyle="round" borderColor="suggestion" paddingX={1} minHeight={5}>
-            <Input
+          <Text bold>Instructions for the agent (optional)</Text>
+          <Text dimColor>Click the box to type. Enter adds a line, Esc leaves it. Write a whole prompt if you need to.</Text>
+          <Box borderStyle="round" borderColor="suggestion" paddingX={1} flexGrow={1}>
+            <Client
               key="confirm-note"
-              placeholder="what to do, how, what to avoid"
-              value={note}
-              submitLabel=" "
-              autoFocus
-              onInput={(text) => update($, decNote, () => text)}
-              onSubmit={(text) => (text.trim() === '' ? decApprove($, file, item.id) : decApprove($, file, item.id, text.trim()))}
+              module="./editor.jsx"
+              props={{ value: note, rows: Math.max(8, ((e.viewport && e.viewport.rows) || 24) - 18), placeholder: 'what to do, how, what to avoid' }}
+              width="100%"
+              height={Math.max(8, ((e.viewport && e.viewport.rows) || 24) - 18)}
             />
           </Box>
           <Box gap={2}>
@@ -590,7 +600,7 @@ function registerDecisions(on, options) {
                 <Box justifyContent="space-between" gap={2}>
                   <Box flexGrow={1} flexShrink={1}>
                     <Text bold color={decAccent(entry.item.group)} wrap="truncate-end">
-                      {`${list.findIndex((one) => one.id === entry.item.id) + 1} - ${entry.item.title}`}
+                      {`${decNumber(list, entry.item)} - ${entry.item.title}`}
                     </Text>
                   </Box>
                   <Button

@@ -4,6 +4,8 @@
 export type DecisionItem = {
   /** Stable id of the source line. */
   id: string;
+  /** The number in the table's own id column (`#`, `ID`), or '' when the table has none. */
+  num: string;
   /** The section heading above the item. */
   section: string;
   /** Index of the section, used to colour the item. */

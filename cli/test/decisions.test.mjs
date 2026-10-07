@@ -300,3 +300,12 @@ test("each item carries its table's own column names, identically in the mod and
   assert.deepEqual(items.map((i) => [i.detailLabel, i.blocksLabel]), [['Question', 'Blocks'], ['What is needed', 'Blocks'], ['Details', 'Blocks']]);
   assert.deepEqual(items, modParse.parseItems(md));
 });
+
+test('a leading id column is the item number, not its title, and the labels shift with it', () => {
+  const nlc = String.fromCharCode(10);
+  const md = ['## Decisions to take', '', '| # | Item | Question | Blocks |', '|---|---|---|---|', '| 9 | Mobile app | Native or PWA? | Native app |', '', '## Other', '', '| Item | What | Blocks |', '|---|---|---|', '| Fly.io | Account | Deploy |', ''].join(nlc);
+  const [a, b] = parseItems(md);
+  assert.deepEqual([a.num, a.title, a.detail, a.blocks, a.detailLabel, a.blocksLabel], ['9', 'Mobile app', 'Native or PWA?', 'Native app', 'Question', 'Blocks']);
+  assert.deepEqual([b.num, b.title], ['', 'Fly.io']);
+  assert.deepEqual(parseItems(md), modParse.parseItems(md));
+});

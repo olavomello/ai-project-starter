@@ -54,6 +54,8 @@ function isRow(line) {
 }
 
 /** @returns {{id:string, section:string, group:number, title:string, detail:string, blocks:string, raw:string}[]} */
+const ID_HEADER = /^(#|id|n[ºo°.]?|no\.?|num(ber)?|n[úu]mero)$/i;
+
 export function parseItems(markdown) {
   const items = [];
   let section = '';
@@ -85,18 +87,23 @@ export function parseItems(markdown) {
         continue;
       }
       if (SEPARATOR.test(line.trim())) continue;
-      const cells = splitRow(line);
+      const all = splitRow(line);
+      // A leading id column ("#", "ID", "No", or digits) is the item's number; the title is the next cell.
+      const lead = ID_HEADER.test(header[0] || '') || /^\d+$/.test(all[0] || '') ? 1 : 0;
+      const cells = all.slice(lead);
+      const labels = header.slice(lead);
       const title = cells[0] || '';
       if (title === '') continue;
       items.push({
         id: hashLine(line),
+        num: lead ? all[0] || '' : '',
         section,
         group: Math.max(group, 0),
         title,
         detail: cells[1] || '',
         blocks: cells.length > 2 ? cells[cells.length - 1] || '' : '',
-        detailLabel: header[1] || 'Details',
-        blocksLabel: header.length > 2 ? header[header.length - 1] || 'Blocks' : 'Blocks',
+        detailLabel: labels[1] || 'Details',
+        blocksLabel: labels.length > 2 ? labels[labels.length - 1] || 'Blocks' : 'Blocks',
         raw: line,
       });
       continue;
@@ -109,6 +116,7 @@ export function parseItems(markdown) {
       if (title === '') continue;
       items.push({
         id: hashLine(line),
+        num: '',
         section,
         group: Math.max(group, 0),
         title,
