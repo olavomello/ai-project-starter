@@ -526,7 +526,7 @@ function registerDecisions(on, options) {
         <Box flexDirection="column" gap={1}>
           {header('Confirm approval', back, false)}
           <Box flexDirection="column" borderStyle="round" borderColor={decAccent(item.group)} paddingX={1}>
-            <Text bold>{item.title}</Text>
+            <Text bold>{`${list.indexOf(item) + 1} - ${item.title}`}</Text>
             {item.detail !== '' && <Text dimColor>{item.detail}</Text>}
             {item.blocks !== '' && <Text color={decAccent(item.group)}>Blocks · {item.blocks}</Text>}
           </Box>
@@ -588,9 +588,9 @@ function registerDecisions(on, options) {
             ) : (
               <Box key={entry.item.id} flexDirection="column" marginBottom={1}>
                 <Box justifyContent="space-between" gap={2}>
-                  <Box flexGrow={1} flexShrink={1} gap={1}>
-                    <Text color={decAccent(entry.item.group)}>{'●'}</Text>
+                  <Box flexGrow={1} flexShrink={1}>
                     <Text bold wrap="truncate-end">
+                      <Text color={decAccent(entry.item.group)}>{`${list.findIndex((one) => one.id === entry.item.id) + 1} - `}</Text>
                       {entry.item.title}
                     </Text>
                   </Box>

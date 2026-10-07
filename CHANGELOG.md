@@ -57,6 +57,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- ai-dash Pending decisions pane: items are numbered on the title line (`1 - Title`) instead of a bullet, numbering runs across sections.
 - ai-dash approval screen: the instructions field is a larger bordered box and no longer draws a second "approve with instructions" chip beside it.
 - ai-dash Pending decisions pane: click a decision's detail line (`▸`) to read it in full, wrapped; click `▾ hide details` to fold it back.
 - ai-dash Pending decisions pane: sections with a coloured bar, a count and a rule, each decision as a spaced entry (bold title, `✓ Approve` button, dim detail, the items it blocks on its own line).
