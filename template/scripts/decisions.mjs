@@ -64,18 +64,19 @@ export function parseItems(markdown) {
   let group = -1;
   let inFence = false;
   let inTable = false;
+  let header = [];
   for (const line of markdown.split('\n')) {
     if (FENCE.test(line)) { inFence = !inFence; inTable = false; continue; }
     if (inFence) continue;
     const heading = HEADING.exec(line);
     if (heading) { section = cleanText(heading[1] || ''); group += 1; inTable = false; continue; }
     if (isRow(line)) {
-      if (!inTable) { inTable = true; continue; } // the header row of a new table
+      if (!inTable) { inTable = true; header = splitRow(line); continue; } // the header row of a new table
       if (SEPARATOR.test(line.trim())) continue;
       const cells = splitRow(line);
       const title = cells[0] || '';
       if (title === '') continue;
-      items.push({ id: hashLine(line), section, group: Math.max(group, 0), title, detail: cells[1] || '', blocks: cells.length > 2 ? cells[cells.length - 1] || '' : '', raw: line });
+      items.push({ id: hashLine(line), section, group: Math.max(group, 0), title, detail: cells[1] || '', blocks: cells.length > 2 ? cells[cells.length - 1] || '' : '', detailLabel: header[1] || 'Details', blocksLabel: header.length > 2 ? header[header.length - 1] || 'Blocks' : 'Blocks', raw: line });
       continue;
     }
     inTable = false;
@@ -83,7 +84,7 @@ export function parseItems(markdown) {
     if (bullet) {
       const title = cleanText(bullet[1] || '');
       if (title === '') continue;
-      items.push({ id: hashLine(line), section, group: Math.max(group, 0), title, detail: '', blocks: '', raw: line });
+      items.push({ id: hashLine(line), section, group: Math.max(group, 0), title, detail: '', blocks: '', detailLabel: 'Details', blocksLabel: 'Blocks', raw: line });
     }
   }
   return items;

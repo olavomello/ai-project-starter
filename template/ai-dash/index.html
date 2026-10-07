@@ -483,8 +483,8 @@ document.getElementById('theme').onclick = () => {
     const confirming = confirmId === it.id;
     return '<div class="dec-item' + (confirming ? ' confirming' : '') + '">' +
       '<div class="dec-main"><div class="dec-title">' + esc(it.title) + '</div>' +
-      (it.detail ? '<div class="dec-detail">' + esc(it.detail) + '</div>' : '') +
-      (it.blocks ? '<div class="dec-blocks">Blocks: ' + esc(it.blocks) + '</div>' : '') + '</div>' +
+      (it.detail ? '<div class="dec-detail">' + esc((it.detailLabel || 'Details') + ' - ' + it.detail) + '</div>' : '') +
+      (it.blocks ? '<div class="dec-blocks">' + esc((it.blocksLabel || 'Blocks') + ' - ' + it.blocks) + '</div>' : '') + '</div>' +
       (confirming
         ? '<div class="dec-confirm"><div class="dec-ask">Approve this item? It leaves the file and the agent receives it. Add instructions only if the agent needs them.</div>' +
           '<textarea class="dec-note" id="dec-note" rows="3" maxlength="2000" placeholder="Instructions for the agent (optional): what to do, how, what to avoid">' + esc(note) + '</textarea>' +
