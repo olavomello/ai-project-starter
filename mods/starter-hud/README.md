@@ -2,6 +2,10 @@
 
 Optional Claude Code mod for projects built on [ai-project-starter](../../README.md). Off by default.
 
+## Changing the mod: bump its version
+
+Claude Code caches an installed plugin by the `version` in `.claude-plugin/plugin.json` and decides whether `claude plugin update` has anything to fetch by comparing versions. A mod change that keeps the same version is never delivered: installed copies keep running the old code and `update` reports "already latest". Bump `version` (SemVer, 0.x while the mod is young) in every commit that changes anything under `mods/starter-hud/`.
+
 ## What it does
 
 1. **Measures real usage.** Hooks `turn.step` to read the model's actual token usage
