@@ -265,6 +265,10 @@ const DEC_PANE = 'decisions';
 const decItems = atom({ plugin: 'ai-dash', key: 'decisionItems' }, []);
 const decScreen = atom({ plugin: 'ai-dash', key: 'decisionScreen' }, { kind: 'list' });
 const decOffset = atom({ plugin: 'ai-dash', key: 'decisionOffset' }, 0);
+const decExpanded = atom({ plugin: 'ai-dash', key: 'decisionExpanded' }, []);
+
+/** One line of `text` that fits `room` columns, ending in an ellipsis when it was cut. */
+const decClip = (text, room) => (text.length <= room ? text : `${text.slice(0, Math.max(room - 1, 1))}…`);
 const decStatus = atom({ plugin: 'ai-dash', key: 'decisionStatus' }, {
   exists: false,
   stamp: '',
@@ -487,6 +491,9 @@ function registerDecisions(on, options) {
     const known = await read($, decStatus);
     const current = await read($, decScreen);
     const start = await read($, decOffset);
+    const expanded = await read($, decExpanded);
+    const cols = (e.viewport && e.viewport.cols) || 80;
+    const toggle = (id) => update($, decExpanded, (ids) => (ids.includes(id) ? ids.filter((one) => one !== id) : [...ids, id]));
     const close = () => $.ui.close({ id: DEC_PANE });
 
     const header = (title, onClose, withRefresh) => (
@@ -571,11 +578,23 @@ function registerDecisions(on, options) {
                     onPress={() => update($, decScreen, () => decConfirming(entry.item.id))}
                   />
                 </Box>
-                {entry.item.detail !== '' && (
-                  <Text dimColor wrap="truncate-end">
-                    {'  '}
-                    {entry.item.detail}
-                  </Text>
+                {entry.item.detail !== '' && expanded.includes(entry.item.id) && (
+                  <Box flexDirection="column">
+                    <Button key={`less:${entry.item.id}`} label={'▾ hide details'} plain dimColor onPress={() => toggle(entry.item.id)} />
+                    <Text>
+                      {'  '}
+                      {entry.item.detail}
+                    </Text>
+                  </Box>
+                )}
+                {entry.item.detail !== '' && !expanded.includes(entry.item.id) && (
+                  <Button
+                    key={`more:${entry.item.id}`}
+                    label={`▸ ${decClip(entry.item.detail, cols - 6)}`}
+                    plain
+                    dimColor
+                    onPress={() => toggle(entry.item.id)}
+                  />
                 )}
                 {entry.item.blocks !== '' && (
                   <Text color={decAccent(entry.item.group)} wrap="truncate-end">
