@@ -255,3 +255,44 @@ test('mergeSettings appends missing starter deny rules in order and keeps the pr
   assert.deepEqual(mergeSettings(text, incoming).added, [], 'idempotent');
   assert.deepEqual(JSON.parse(mergeSettings('{}', incoming).text).permissions.deny, ['Read(.env)', 'Read(.env.*)', 'Read(!.env.example)']);
 });
+
+// ---- marketplace pin repair ----
+import { fixModPin } from '../src/lib/settings-merge.js';
+
+const withPin = (ref, repo = 'olavomello/ai-project-starter') => JSON.stringify({
+  enabledPlugins: { 'starter-hud@ai-project-starter': true },
+  extraKnownMarketplaces: { 'ai-project-starter': { source: { source: 'github', repo, ref } } },
+});
+
+test('a starter-hud pin to a tag that predates the mod is moved to main; other pins are left alone', () => {
+  for (const ref of ['v0.1.0', 'v0.0.1', 'v0.1.0-rc1']) {
+    const { text, change } = fixModPin(withPin(ref));
+    assert.equal(JSON.parse(text).extraKnownMarketplaces['ai-project-starter'].source.ref, 'main', ref);
+    assert.match(change, /v0\.[01]\.[01].* -> main/);
+  }
+  for (const ref of ['main', 'v0.1.1', 'v0.2.0', 'v1.0.0', 'feature/x']) assert.equal(fixModPin(withPin(ref)).text, null, ref);
+  assert.equal(fixModPin(withPin('v0.1.0', 'someone/else')).text, null, 'only the starter marketplace');
+  assert.equal(fixModPin('{ nope').text, null);
+  assert.deepEqual(JSON.parse(fixModPin(withPin('v0.1.0')).text).enabledPlugins, { 'starter-hud@ai-project-starter': true });
+});
+
+test('update repairs the bad pin even when the starter did not change settings.json', () => {
+  const dir = tmp();
+  const target = join(dir, 'proj');
+  try {
+    const src = fakeStarter(dir);
+    assert.equal(cli('init', target, '--source', src, '--no-prompt').status, 0);
+    const settingsPath = join(target, '.claude', 'settings.json');
+    const mine = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    Object.assign(mine, JSON.parse(withPin('v0.1.0')));            // what the old `mod enable` wrote
+    writeFileSync(settingsPath, JSON.stringify(mine, null, 2));
+    const dry = cli('update', target, '--source', src, '--dry-run');
+    assert.match(dry.stdout + dry.stderr, /marketplace ref: v0\.1\.0 -> main/);
+    assert.equal(JSON.parse(readFileSync(settingsPath, 'utf8')).extraKnownMarketplaces['ai-project-starter'].source.ref, 'v0.1.0', 'dry run writes nothing');
+    assert.equal(cli('update', target, '--source', src).status, 0);
+    const fixed = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    assert.equal(fixed.extraKnownMarketplaces['ai-project-starter'].source.ref, 'main');
+    assert.deepEqual(fixed.hooks, mine.hooks, 'the project\'s hooks are untouched');
+    assert.ok(!/marketplace ref/.test(cli('update', target, '--source', src, '--dry-run').stdout), 'nothing left to repair');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

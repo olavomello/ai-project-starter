@@ -48,9 +48,8 @@ Three equivalent ways, all backed by `scripts/mod.mjs` in the project (see its o
 - from the ai-dash Settings area, when served locally (`node scripts/ai-dash.mjs`).
 
 All three write the same key, `.claude/settings.json`'s
-`enabledPlugins["starter-hud@ai-project-starter"]`. After enabling, run
-`/reload-plugins` or restart the session, and commit the settings file so the rest of
-the team gets it too.
+`enabledPlugins["starter-hud@ai-project-starter"]`. Enabling it in settings does **not**
+download it: each person installs it once on their machine with `claude plugin marketplace add olavomello/ai-project-starter#main` and `claude plugin install starter-hud@ai-project-starter --scope project` (or, in the Claude desktop app, **+ > Plugins > Add plugin**). Then run `/reload-plugins` or restart the session, and commit the settings file so the rest of the team gets the setting too.
 
 ## `/budget`
 
@@ -69,7 +68,7 @@ unattended work.
   is toggled, the file differs from the template's, so `update` treats it as
   project-specific from then on (same as any other hand-edited file) — see
   `cli/README.md`.
-- **Dashboard shows 0 tokens, no cache reads, no cost.** The mod never wrote `.agents/state/usage/`, so the gate had nothing to log. Check `node scripts/mod.mjs status`: if the marketplace `ref` is a tag without this folder (`v0.1.0` and older), run `node scripts/mod.mjs enable --ref main`, then restart the Claude Code session (or `/reload-plugins`) and accept the plugin install prompt. Once a session has run, `.agents/state/usage/<branch>.json` appears and the next gate run consumes it.
+- **Dashboard shows 0 tokens, no cache reads, no cost.** The mod never wrote `.agents/state/usage/`, so the gate had nothing to log. Two things can cause it. (1) The plugin was never installed on this machine: `claude plugin list` has no `starter-hud`. Install it with `claude plugin marketplace add olavomello/ai-project-starter#main` and `claude plugin install starter-hud@ai-project-starter --scope project` (or, in the Claude desktop app, **+ > Plugins > Add plugin**). (2) The marketplace `ref` in `.claude/settings.json` is a tag that predates the mod (`v0.1.0` and older have no `mods/` folder): `ai-project-starter update` moves it to `main`, or run `node scripts/mod.mjs enable --ref main`. Then restart the Claude Code session (or `/reload-plugins`). Once a session has run, `.agents/state/usage/<branch>.json` appears and the next gate run consumes it.
 - **Subagent usage is attributed to the parent session's branch.** A subagent that
   works in its own worktree still has its usage merged into the branch the *session*
   is running on, not the subagent's own worktree.

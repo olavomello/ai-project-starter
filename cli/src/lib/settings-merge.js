@@ -12,11 +12,37 @@
 const groupMatcher = (group) => (typeof group.matcher === 'string' ? group.matcher : '');
 const commandOf = (hook) => (hook && hook.type === 'command' ? `${hook.command || ''}\u0000${(hook.args || []).join('\u0000')}` : JSON.stringify(hook));
 
+// Tags up to v0.1.0 predate the starter-hud mod (their tree has no mods/ folder).
+const MODLESS_TAG = /^v0\.(0\.\d+|1\.0)(-.*)?$/;
+
+/**
+ * The starter-hud marketplace pinned to a tag that predates the mod (which `mod enable`
+ * used to write) can never install it. Moves that pin to main on the parsed settings
+ * object and returns a description of the change, or null when nothing needed fixing.
+ */
+function fixModPinIn(settings) {
+  const entry = settings && settings.extraKnownMarketplaces && settings.extraKnownMarketplaces['ai-project-starter'];
+  const pin = entry && entry.source;
+  if (!pin || typeof pin.ref !== 'string' || !String(pin.repo || '').endsWith('ai-project-starter')) return null;
+  if (!MODLESS_TAG.test(pin.ref)) return null;
+  const before = pin.ref;
+  pin.ref = 'main';
+  return `marketplace ref: ${before} -> main (that tag has no starter-hud mod)`;
+}
+
+/** The same fix on settings text, for a file the starter has not otherwise changed. `text` is null when nothing changed. */
+export function fixModPin(settingsText) {
+  let settings;
+  try { settings = JSON.parse(settingsText); } catch { return { text: null, change: null }; }
+  const change = fixModPinIn(settings);
+  return change ? { text: `${JSON.stringify(settings, null, 2)}\n`, change } : { text: null, change: null };
+}
+
 /**
  * Returns `{ text, added }`: the merged file text (2-space JSON, trailing
- * newline) and the list of "Event: command" entries that were added. `text`
- * is null when either side isn't valid JSON, so the caller can fall back to
- * the plain conflict handling.
+ * newline) and the list of entries that were added or changed ("Event: command",
+ * "deny: rule", the marketplace pin fix). `text` is null when either side isn't
+ * valid JSON, so the caller can fall back to the plain conflict handling.
  */
 export function mergeSettings(localText, incomingText) {
   let local, incoming;
@@ -25,6 +51,9 @@ export function mergeSettings(localText, incomingText) {
   const wanted = incoming && incoming.hooks && typeof incoming.hooks === 'object' ? incoming.hooks : {};
 
   const added = [];
+  const pinFix = fixModPinIn(local);
+  if (pinFix) added.push(pinFix);
+
   local.hooks = local.hooks && typeof local.hooks === 'object' ? local.hooks : {};
   for (const [event, groups] of Object.entries(wanted)) {
     if (!Array.isArray(groups)) continue;
@@ -50,5 +79,5 @@ export function mergeSettings(localText, incomingText) {
     }
     local.permissions.deny = deny;
   }
-  return { text: JSON.stringify(local, null, 2) + '\n', added };
+  return { text: `${JSON.stringify(local, null, 2)}\n`, added };
 }
