@@ -34,6 +34,8 @@ declare module 'claude-code' {
       decisionOffset: number;
       /** Ids of the items whose detail text is shown in full. */
       decisionExpanded: string[];
+      /** The instructions typed on the confirmation screen, for the item being approved. */
+      decisionNote: string;
       decisionStatus: DecisionStatus;
     };
   }

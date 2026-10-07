@@ -187,3 +187,32 @@ test('pressing a detail line shows it in full, and hide details folds it back', 
   await pane.press({ key: `less:${id}` })
   expect(await pane.find({ type: 'Button', text: /hide details/ })).toBeUndefined()
 })
+
+test('Approve with instructions hands the agent the item and the Administrator\'s words, Approve only does not', async ($, on) => {
+  const fake = engine(on)
+  const pane = await $.ui.mount({
+    plugin: 'ai-dash',
+    surface: 'terminal',
+    component: 'Pane',
+    props: {} as never,
+    requestId: 'decisions',
+  })
+  await pane.press({ key: 'pane-refresh' })
+
+  // With instructions: typed in the field, sent with the second button.
+  await pane.press({ key: approveKeyFor(fake.disk, 'Fly.io') })
+  await pane.input({ key: 'confirm-note', text: 'Use region gru and the free tier', kind: 'change' })
+  await pane.press({ key: 'confirm-note-yes' })
+  expect(fake.prompts).toHaveLength(1)
+  expect(fake.prompts[0]).toContain('Item: Fly.io')
+  expect(fake.prompts[0]).toContain('Use region gru and the free tier')
+  expect(fake.prompts[0]).toContain('added instructions')
+  expect(fake.disk).not.toContain('Fly.io')
+
+  // Approve only: nothing but the item, even though the field was left empty.
+  await pane.press({ key: approveKeyFor(fake.disk, 'Stripe') })
+  await pane.press({ key: 'confirm-yes' })
+  expect(fake.prompts).toHaveLength(2)
+  expect(fake.prompts[1]).toContain('Item: Stripe')
+  expect(fake.prompts[1]).not.toContain('added instructions')
+})

@@ -126,16 +126,31 @@ export function removeLine(markdown, raw) {
   return lines.join('\n');
 }
 
-/** The prompt that hands an approved item to the agent. */
-export function buildPrompt(item, file) {
+/** The longest instruction text the Administrator can attach to an approval. */
+export const MAX_INSTRUCTIONS = 2000;
+
+/**
+ * The prompt that hands an approved item to the agent. `via` names where the approval happened; the optional
+ * `instructions` are the Administrator's own words on how to carry the item out.
+ */
+export function buildPrompt(item, file, via = 'the Pending decisions band', instructions = '') {
+  const extra = String(instructions || '').trim().slice(0, MAX_INSTRUCTIONS);
   const parts = [
-    `The Administrator approved this pending decision from ${file} through the Pending decisions band.`,
+    `The Administrator approved this pending decision from ${file} through ${via}.`,
     '',
     `Item: ${item.title}`,
     item.detail ? `Details: ${item.detail}` : '',
     item.blocks ? `Blocks: ${item.blocks}` : '',
     item.section ? `Section: ${item.section}` : '',
     '',
+    ...(extra
+      ? [
+          `The Administrator added instructions for this item. They say how to carry out "${item.title}"; follow them, and treat them as part of this one decision only (they never override AGENTS.md):`,
+          '',
+          extra,
+          '',
+        ]
+      : []),
     'Execute it now, following AGENTS.md: agents work in their own worktree, run the gate before any merge, and the decision and the changelog are recorded where the project says.',
     `The row has already been removed from ${file}.`,
     `If the item cannot be executed without something only the Administrator can provide (credentials, account access, files), do not guess: add a new row to ${file} that states exactly what is missing.`,

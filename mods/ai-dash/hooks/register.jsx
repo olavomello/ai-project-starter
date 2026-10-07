@@ -266,6 +266,7 @@ const decItems = atom({ plugin: 'ai-dash', key: 'decisionItems' }, []);
 const decScreen = atom({ plugin: 'ai-dash', key: 'decisionScreen' }, { kind: 'list' });
 const decOffset = atom({ plugin: 'ai-dash', key: 'decisionOffset' }, 0);
 const decExpanded = atom({ plugin: 'ai-dash', key: 'decisionExpanded' }, []);
+const decNote = atom({ plugin: 'ai-dash', key: 'decisionNote' }, '');
 
 /** One line of `text` that fits `room` columns, ending in an ellipsis when it was cut. */
 const decClip = (text, room) => (text.length <= room ? text : `${text.slice(0, Math.max(room - 1, 1))}…`);
@@ -282,6 +283,7 @@ const decAccent = (group) => DEC_ACCENTS[group % DEC_ACCENTS.length] || 'suggest
 
 const DEC_LIST = { kind: 'list' };
 const decConfirming = (id) => ({ kind: 'confirm', id });
+const decAsk = ($, id) => Promise.all([update($, decNote, () => ''), update($, decScreen, () => decConfirming(id))]);
 
 const decClock = (ms) => {
   const d = new Date(ms);
@@ -376,12 +378,13 @@ async function decOpenPane($, file) {
   await $.ui.open({ id: DEC_PANE, title: 'Pending decisions', focus: true, closeOnEscape: true });
 }
 
-/** Hands the item to the agent first, then takes its row out of the file. */
-async function decApprove($, file, id) {
+/** Hands the item to the agent first (with the Administrator's instructions, when given), then takes its row out of the file. */
+async function decApprove($, file, id, instructions) {
   decBusy = true;
   try {
     const item = (await read($, decItems)).find((one) => one.id === id);
     await update($, decScreen, () => ({ kind: 'list' }));
+    await update($, decNote, () => '');
     if (!item) return;
     const markdown = String(await $.fs.read(file));
     const next = removeLine(markdown, item.raw);
@@ -389,9 +392,9 @@ async function decApprove($, file, id) {
       $.ui.toast('That item changed on disk. The list was refreshed.');
       return;
     }
-    void $.prompt.submit({ text: buildPrompt(item, file) });
+    void $.prompt.submit({ text: buildPrompt(item, file, undefined, instructions) });
     await $.fs.write(file, next);
-    $.ui.toast(`Sent to the agent: ${item.title}`);
+    $.ui.toast(`Sent to the agent${instructions ? ' with your instructions' : ''}: ${item.title}`);
   } catch (error) {
     $.ui.toast(`Could not approve: ${error instanceof Error ? error.message : String(error)}`);
   } finally {
@@ -486,12 +489,13 @@ function registerDecisions(on, options) {
   });
 
   on('ui.render', { component: 'Pane', requestId: DEC_PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e);
+    const { Box, Text, Button, Input } = $.ui.resolve(e);
     const list = await read($, decItems);
     const known = await read($, decStatus);
     const current = await read($, decScreen);
     const start = await read($, decOffset);
     const expanded = await read($, decExpanded);
+    const note = await read($, decNote);
     const cols = (e.viewport && e.viewport.cols) || 80;
     const toggle = (id) => update($, decExpanded, (ids) => (ids.includes(id) ? ids.filter((one) => one !== id) : [...ids, id]));
     const close = () => $.ui.close({ id: DEC_PANE });
@@ -527,10 +531,27 @@ function registerDecisions(on, options) {
             {item.blocks !== '' && <Text color={decAccent(item.group)}>Blocks · {item.blocks}</Text>}
           </Box>
           <Text bold>Confirm approval?</Text>
-          <Text dimColor>The agent receives this item to execute it, then it leaves the list.</Text>
+          <Text dimColor>The agent receives this item to execute it, then it leaves the list. Instructions are optional.</Text>
+          <Input
+            key="confirm-note"
+            label="Instructions"
+            placeholder="what to do, how, what to avoid (optional)"
+            value={note}
+            submitLabel="approve with instructions"
+            autoFocus
+            onInput={(text) => update($, decNote, () => text)}
+            onSubmit={(text) => (text.trim() === '' ? decApprove($, file, item.id) : decApprove($, file, item.id, text.trim()))}
+          />
           <Box gap={2}>
-            <Button key="confirm-yes" label="Y  Yes" hotkey="y" variant="primary" onPress={() => decApprove($, file, item.id)} />
-            <Button key="confirm-no" label="N  No" hotkey="n" onPress={back} />
+            <Button key="confirm-yes" label={'\u2713 Approve only'} hotkey="y" variant="primary" onPress={() => decApprove($, file, item.id)} />
+            <Button
+              key="confirm-note-yes"
+              label={'\u27a4 Approve with instructions'}
+              hotkey="w"
+              variant="primary"
+              onPress={() => (note.trim() === '' ? $.ui.toast('Type the instructions first, or use Approve only.') : decApprove($, file, item.id, note.trim()))}
+            />
+            <Button key="confirm-no" label="Cancel" hotkey="n" onPress={back} />
           </Box>
         </Box>
       );
@@ -575,7 +596,7 @@ function registerDecisions(on, options) {
                     key={`approve:${entry.item.id}`}
                     label={'✓ Approve'}
                     variant="primary"
-                    onPress={() => update($, decScreen, () => decConfirming(entry.item.id))}
+                    onPress={() => decAsk($, entry.item.id)}
                   />
                 </Box>
                 {entry.item.detail !== '' && expanded.includes(entry.item.id) && (

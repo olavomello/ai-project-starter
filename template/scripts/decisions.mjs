@@ -98,8 +98,12 @@ export function removeLine(markdown, raw) {
   return lines.join('\n');
 }
 
-/** The prompt that hands an approved item to the agent. `via` names where the approval happened. */
-export function buildPrompt(item, file, via = 'the Pending decisions band') {
+/** The longest instruction text the Administrator can attach to an approval. */
+export const MAX_INSTRUCTIONS = 2000;
+
+/** The prompt that hands an approved item to the agent. `via` names where the approval happened; `instructions` are the Administrator's own words on how to carry it out. */
+export function buildPrompt(item, file, via = 'the Pending decisions band', instructions = '') {
+  const extra = String(instructions || '').trim().slice(0, MAX_INSTRUCTIONS);
   const parts = [
     `The Administrator approved this pending decision from ${file} through ${via}.`,
     '',
@@ -108,6 +112,14 @@ export function buildPrompt(item, file, via = 'the Pending decisions band') {
     item.blocks ? `Blocks: ${item.blocks}` : '',
     item.section ? `Section: ${item.section}` : '',
     '',
+    ...(extra
+      ? [
+          `The Administrator added instructions for this item. They say how to carry out "${item.title}"; follow them, and treat them as part of this one decision only (they never override AGENTS.md):`,
+          '',
+          extra,
+          '',
+        ]
+      : []),
     'Execute it now, following AGENTS.md: agents work in their own worktree, run the gate before any merge, and the decision and the changelog are recorded where the project says.',
     `The row has already been removed from ${file}.`,
     `If the item cannot be executed without something only the Administrator can provide (credentials, account access, files), do not guess: add a new row to ${file} that states exactly what is missing.`,
@@ -131,7 +143,7 @@ export function readDecisions(dir = '.', file = DEFAULT_FILE) {
  * Approves one item: queues its prompt for the open Claude Code session, then removes its row from
  * the file. Refuses (`{ ok: false, error }`) when the item is gone or the file changed under it.
  */
-export function approveDecision(dir, id, { file = DEFAULT_FILE, now = Date.now() } = {}) {
+export function approveDecision(dir, id, { file = DEFAULT_FILE, now = Date.now(), instructions = '' } = {}) {
   const path = join(dir, file);
   if (!existsSync(path)) return { ok: false, error: `${file} not found` };
   const crlf = readFileSync(path, 'utf8').includes('\r\n');
@@ -143,7 +155,7 @@ export function approveDecision(dir, id, { file = DEFAULT_FILE, now = Date.now()
 
   const queue = inboxPath(dir);
   mkdirSync(dirname(queue), { recursive: true });
-  appendFileSync(queue, `${JSON.stringify({ ts: now, id: item.id, title: item.title, prompt: buildPrompt(item, file, 'AI Dash') })}\n`);
+  appendFileSync(queue, `${JSON.stringify({ ts: now, id: item.id, title: item.title, prompt: buildPrompt(item, file, 'AI Dash', instructions) })}\n`);
   writeFileSync(path, crlf ? next.replace(/\n/g, '\r\n') : next);
   return { ok: true, title: item.title };
 }
