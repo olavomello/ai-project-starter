@@ -216,3 +216,18 @@ test('Approve with instructions hands the agent the item and the Administrator\'
   expect(fake.prompts[1]).toContain('Item: Stripe')
   expect(fake.prompts[1]).not.toContain('added instructions')
 })
+
+test('each item is one line: its number, a dash and its title, with the detail and blocks beneath', async ($, on) => {
+  engine(on)
+  const pane = await $.ui.mount({
+    plugin: 'ai-dash',
+    surface: 'terminal',
+    component: 'Pane',
+    props: {} as never,
+    requestId: 'decisions',
+  })
+  await pane.press({ key: 'pane-refresh' })
+  expect(await pane.find({ type: 'Text', text: /^1 - Fly\.io$/ })).toBeDefined()
+  expect(await pane.find({ type: 'Text', text: /^2 - Stripe$/ })).toBeDefined()
+  expect((await pane.find({ type: 'Text', text: /^Blocks - API deploy$/ }))).toBeDefined()
+})

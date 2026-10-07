@@ -589,9 +589,8 @@ function registerDecisions(on, options) {
               <Box key={entry.item.id} flexDirection="column" marginBottom={1}>
                 <Box justifyContent="space-between" gap={2}>
                   <Box flexGrow={1} flexShrink={1}>
-                    <Text bold wrap="truncate-end">
-                      <Text color={decAccent(entry.item.group)}>{`${list.findIndex((one) => one.id === entry.item.id) + 1} - `}</Text>
-                      {entry.item.title}
+                    <Text bold color={decAccent(entry.item.group)} wrap="truncate-end">
+                      {`${list.findIndex((one) => one.id === entry.item.id) + 1} - ${entry.item.title}`}
                     </Text>
                   </Box>
                   <Button
@@ -621,8 +620,7 @@ function registerDecisions(on, options) {
                 )}
                 {entry.item.blocks !== '' && (
                   <Text color={decAccent(entry.item.group)} wrap="truncate-end">
-                    {'  ↳ blocks · '}
-                    {entry.item.blocks}
+                    {`Blocks - ${entry.item.blocks}`}
                   </Text>
                 )}
               </Box>
