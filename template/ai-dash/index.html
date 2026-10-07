@@ -675,17 +675,22 @@ function agentTable(d) {
   </div>`;
 }
 
+// `other` is what the gate logs when nothing set AILOG_TASK_TYPE. While every record is `other`, a Task
+// column (and a task-type breakdown) tells nothing, so they stay hidden until a real task type shows up.
+const hasTaskTypes = rows => (rows || []).some(r => (r.task_type || 'other') !== 'other');
+
 function recentTable(recs) {
   if (!recs || !recs.length) return '';
+  const showTask = hasTaskTypes(recs);
   return `<div class="card">
     <h2 style="margin-top:0">Recent executions</h2>
-    <div class="table-scroll"><table><thead><tr><th>Task</th><th>Agent</th><th>Model</th><th>Gate</th><th class="n">Tokens</th><th class="n">When</th></tr></thead>
+    <div class="table-scroll"><table><thead><tr>${showTask ? '<th>Task</th>' : ''}<th>Agent</th><th>Model</th><th>Gate</th><th class="n">Tokens</th><th class="n">When</th></tr></thead>
     <tbody>${recs.map(r => {
       const cls = r.gate === 'pass' ? 'ok' : r.gate === 'fail' ? 'bad' : 'warn';
       const when = r.ts ? new Date(r.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
       return `<tr>
-        <td class="name">${esc(r.task_type)}</td>
-        <td>${esc(r.agent)}</td>
+        ${showTask ? `<td class="name">${esc(r.task_type)}</td>` : ''}
+        <td${showTask ? '' : ' class="name"'}>${esc(r.agent)}</td>
         <td>${esc(r.model)}</td>
         <td><span class="badge ${cls}"><i class="pt"></i>${esc(r.gate)}</span></td>
         <td class="n">${fmt((r.tokens_in || 0) + (r.tokens_out || 0))}</td>
@@ -941,7 +946,7 @@ function render(d) {
     noUsageNote(d) +
     '<h2>Trend</h2>' + lineChart(d.by_day) +
     '<h2>Breakdown</h2><div class="grid3">' +
-      shareBar(d.by_task, 'task_type', 'Tokens by task type') +
+      (hasTaskTypes(d.by_task) ? shareBar(d.by_task, 'task_type', 'Tokens by task type') : '') +
       shareBar(d.by_model, 'model', 'Tokens by model') +
     '</div>' +
     '<h2>Activity</h2><div class="grid2">' +

@@ -36,7 +36,7 @@
 // same root, under the sanitized branch name (see the comment in
 // scripts/gate.sh for the exact sanitizing rule — ai-log.mjs, gate.sh and
 // the mod must all derive the identical name).
-import { appendFileSync, mkdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, readdirSync, existsSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
@@ -70,27 +70,46 @@ function sanitizeBranch(branch) {
 const ROOT = repoRoot();
 const LOG = join(ROOT, '.agents/log/executions.jsonl');
 const TASKS_DOC = join(ROOT, 'docs/tasks.md');
-const USAGE_FILE = join(ROOT, '.agents/state/usage', `${sanitizeBranch(currentBranch())}.json`);
+const USAGE_DIR = join(ROOT, '.agents/state/usage');
+const OWN_USAGE = `${sanitizeBranch(currentBranch())}.json`;
 
-/** Reads and deletes the starter-hud usage file, mapped onto ai-log's field names. */
-function readUsageFile() {
-  if (!existsSync(USAGE_FILE)) return {};
-  let out = {};
-  try {
-    const u = JSON.parse(readFileSync(USAGE_FILE, 'utf8'));
-    out = {
-      tokens_in: (u.uncached_in || 0) + (u.cache_read || 0) + (u.cache_write || 0),
-      tokens_out: u.out || 0,
-      cache_read: u.cache_read || 0,
-      cache_write: u.cache_write || 0,
-      tool_calls: u.tool_calls || 0,
-      duration: u.duration_s || 0,
-      model: u.model || undefined,
-      size: u.size || undefined,
-    };
-  } catch { out = {}; /* malformed — ignored silently */ }
-  try { rmSync(USAGE_FILE); } catch { /* best-effort */ }
-  return out;
+/**
+ * Reads and deletes the starter-hud usage files, mapped onto ai-log's field names.
+ *
+ * The mod writes one file per *session* branch, but a gate often runs on a different branch than the
+ * session that did the work (an agent's worktree, main). So a gate run takes the usage of every
+ * branch measured since the last run: totals are summed, and the model comes from this branch's own
+ * file when it has one, otherwise from the file that measured the most tokens. Size is only taken
+ * from this branch's file, since a task size belongs to one session.
+ */
+function readUsageFiles() {
+  if (!existsSync(USAGE_DIR)) return {};
+  const parsed = [];
+  for (const name of readdirSync(USAGE_DIR).filter((f) => f.endsWith('.json'))) {
+    const path = join(USAGE_DIR, name);
+    try {
+      const u = JSON.parse(readFileSync(path, 'utf8'));
+      if (u && typeof u === 'object') parsed.push({ name, u });
+    } catch { /* malformed — ignored silently */ }
+    try { rmSync(path); } catch { /* best-effort */ }
+  }
+  if (!parsed.length) return {};
+  const num = (u, k) => Number(u[k]) || 0;
+  const sum = (k) => parsed.reduce((n, { u }) => n + num(u, k), 0);
+  const measured = ({ u }) => num(u, 'uncached_in') + num(u, 'cache_read') + num(u, 'cache_write') + num(u, 'out');
+  const own = parsed.find((x) => x.name === OWN_USAGE);
+  const biggest = [...parsed].sort((x, y) => measured(y) - measured(x));
+  const model = (own && own.u.model) || (biggest.find((x) => x.u.model) || { u: {} }).u.model;
+  return {
+    tokens_in: sum('uncached_in') + sum('cache_read') + sum('cache_write'),
+    tokens_out: sum('out'),
+    cache_read: sum('cache_read'),
+    cache_write: sum('cache_write'),
+    tool_calls: sum('tool_calls'),
+    duration: sum('duration_s'),
+    model: model || undefined,
+    size: (own && own.u.size) || undefined,
+  };
 }
 
 const ENUMS = {
@@ -163,7 +182,7 @@ function taxonomy() {
   return list.length ? list : null;
 }
 
-const a = resolveFields(parseArgs(process.argv.slice(2)), readUsageFile());
+const a = resolveFields(parseArgs(process.argv.slice(2)), readUsageFiles());
 if (!a.task_type) die('--task-type (or AILOG_TASK_TYPE) is required (see docs/tasks.md)');
 
 const types = taxonomy();

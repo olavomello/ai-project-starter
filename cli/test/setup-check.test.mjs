@@ -196,3 +196,31 @@ test('init --mod with no claude CLI still finishes and prints the install comman
     assert.equal(settingsOf(join(dir, 'p')).enabledPlugins[MOD_ID], true);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('a git worktree whose branch predates the mod settings is flagged, with the fix', () => {
+  const { dir, target } = project();
+  try {
+    git(target, 'config', 'user.email', 't@e.com');
+    git(target, 'config', 'user.name', 'T');
+    const wt = join(dir, 'wt-old');
+    git(target, 'worktree', 'add', '-q', '-b', 'claude/old-branch', wt); // cut before the mod is enabled
+    const s = settingsOf(target);
+    s.enabledPlugins = { [MOD_ID]: true };
+    s.extraKnownMarketplaces = { 'ai-project-starter': { source: { source: 'github', repo: 'olavomello/ai-project-starter', ref: 'main' } } };
+    writeSettings(target, s);
+    git(target, 'add', '-A');
+    git(target, 'commit', '-q', '-m', 'enable the mod');
+    const installed = () => ok(JSON.stringify([{ id: MOD_ID, enabled: true }]));
+    const warns = checkSetup(target, { run: installed }).filter((f) => f.level === 'warn');
+    assert.equal(warns.length, 1, warns.map((w) => w.msg).join(' | '));
+    assert.match(warns[0].msg, /not enabled in 1 git worktree \(wt-old\)/);
+    assert.match(warns[0].fix, /git merge main/);
+    git(wt, 'config', 'user.email', 't@e.com');
+    git(wt, 'config', 'user.name', 'T');
+    git(wt, 'merge', '-q', 'main'); // the worktree branch catches up
+    assert.equal(checkSetup(target, { run: installed }).filter((f) => f.level === 'warn').length, 0);
+  } finally {
+    try { git(target, 'worktree', 'remove', '--force', join(dir, 'wt-old')); } catch { /* already gone */ }
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

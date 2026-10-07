@@ -1,7 +1,7 @@
 // The "does the whole chain work" checks behind `doctor`, and the repairs behind
 // `doctor --fix`. Each failure that used to surface as a mystery (an empty Live
 // panel, zero tokens, a worktree without hooks) is named here with its fix.
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { mergeSettings } from './settings-merge.js';
@@ -21,6 +21,25 @@ const MODLESS_TAG = /^v0\.(0\.\d+|1\.0)(-.*)?$/;
 const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; } };
 const runsHook = (settings, event, fragment) =>
   (settings.hooks?.[event] || []).some((g) => (g.hooks || []).some((h) => String(h.command || '').includes(fragment)));
+
+/** Names of the other git worktrees of `target` whose .claude/settings.json does not enable the mod. */
+function worktreesWithoutMod(target) {
+  let out;
+  try {
+    out = execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd: target, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch { return []; }
+  const norm = (x) => String(x).replace(/\\/g, '/').replace(/\/$/, '').toLowerCase();
+  const here = norm(resolve(target));
+  const behind = [];
+  for (const line of out.split('\n')) {
+    if (!line.startsWith('worktree ')) continue;
+    const path = line.slice('worktree '.length).trim();
+    if (norm(path) === here) continue;
+    const settings = readJson(join(path, '.claude', 'settings.json'));
+    if (!settings || settings.enabledPlugins?.[MOD_ID] !== true) behind.push(path.replace(/\\/g, '/').split('/').pop());
+  }
+  return behind;
+}
 
 export const COMMIT_HINT = 'git add -A && git commit -m "chore: sync ai-project-starter"';
 
@@ -57,6 +76,10 @@ export function checkSetup(target, { run = runClaude } = {}) {
     else if (installed === false) {
       found.push({ level: 'warn', msg: 'starter-hud is enabled in settings but not installed on this machine, so no tokens or models are measured (settings alone do not download a plugin)', fix: `ai-project-starter doctor --fix   (or: ${installCommands(ref).join(' && ')})` });
     } else found.push({ level: 'info', msg: 'could not ask the claude CLI whether starter-hud is installed (is `claude` on PATH?)' });
+    const behind = worktreesWithoutMod(target);
+    if (behind.length) {
+      found.push({ level: 'warn', msg: `starter-hud is not enabled in ${behind.length} git worktree${behind.length === 1 ? '' : 's'} (${behind.slice(0, 3).join(', ')}${behind.length > 3 ? ', ...' : ''}): a session there runs without the mod, so its tokens and model are never measured`, fix: 'commit .claude/settings.json, then merge this branch into each worktree branch (git merge main)' });
+    }
     if (installed === true && existsSync(join(target, '.agents', 'log', 'executions.jsonl')) && !existsSync(join(target, '.agents', 'state', 'usage'))) {
       found.push({ level: 'info', msg: 'starter-hud is installed but has not measured a session yet: start a new Claude Code session in this folder' });
     }

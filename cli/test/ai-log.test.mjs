@@ -132,3 +132,63 @@ test('with neither a usage file nor env vars, measured fields default to 0 (bare
   assert.equal(rec.agent, 'main');
   rmSync(dir, { recursive: true, force: true });
 });
+
+// ---- usage measured on other branches ----
+function usageDir(dir) {
+  const d = join(dir, '.agents', 'state', 'usage');
+  mkdirSync(d, { recursive: true });
+  return d;
+}
+const usage = (o) => JSON.stringify({ uncached_in: 0, cache_read: 0, cache_write: 0, out: 0, tool_calls: 0, duration_s: 0, ...o });
+
+test('a gate run on another branch still takes the usage a session measured (the mod writes per session branch)', () => {
+  const dir = makeRepo();
+  try {
+    const other = join(usageDir(dir), 'claude_init-work.json');
+    writeFileSync(other, usage({ uncached_in: 100, cache_read: 900, out: 50, tool_calls: 10, duration_s: 60, model: 'claude-sonnet-5-5' }));
+    runAiLog(dir, ['--task-type', 'other', '--gate', 'pass']);
+    const rec = lastRecord(dir);
+    assert.equal(rec.tokens_in, 1000);
+    assert.equal(rec.cache_read, 900);
+    assert.equal(rec.tokens_out, 50);
+    assert.equal(rec.tool_calls, 10);
+    assert.equal(rec.model, 'claude-sonnet-5-5');
+    assert.ok(!existsSync(other), 'consumed once, so it is not counted twice');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('usage from several branches is summed; the model comes from this branch first, else the biggest session', () => {
+  const dir = makeRepo();
+  try {
+    const d = usageDir(dir);
+    writeFileSync(join(d, 'agent_dev-a.json'), usage({ uncached_in: 10, cache_read: 90, out: 5, tool_calls: 2, model: 'small-model' }));
+    writeFileSync(join(d, 'claude_big.json'), usage({ uncached_in: 100, cache_read: 9000, out: 500, tool_calls: 40, model: 'big-model', size: 'L' }));
+    runAiLog(dir, ['--task-type', 'other', '--gate', 'pass']);
+    let rec = lastRecord(dir);
+    assert.equal(rec.tokens_in, 10 + 90 + 100 + 9000);
+    assert.equal(rec.tool_calls, 42);
+    assert.equal(rec.model, 'big-model', 'the session that measured the most');
+    assert.equal(rec.size, null, 'a task size belongs to one session, so another branch\'s is not borrowed');
+
+    writeFileSync(join(d, 'agent_dev-a.json'), usage({ uncached_in: 10, model: 'small-model' }));
+    writeFileSync(usagePathFor(dir), usage({ uncached_in: 5, model: 'own-model', size: 'S' }));
+    writeFileSync(join(d, 'claude_big.json'), usage({ uncached_in: 100000, model: 'big-model' }));
+    runAiLog(dir, ['--task-type', 'other', '--gate', 'pass']);
+    rec = lastRecord(dir);
+    assert.equal(rec.model, 'own-model', 'this branch\'s own file wins for the model');
+    assert.equal(rec.size, 'S');
+    assert.equal(rec.tokens_in, 100015);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('malformed usage files on other branches are skipped and removed, valid ones still count', () => {
+  const dir = makeRepo();
+  try {
+    const d = usageDir(dir);
+    writeFileSync(join(d, 'broken.json'), '{ not json');
+    writeFileSync(join(d, 'good.json'), usage({ uncached_in: 7, model: 'm' }));
+    runAiLog(dir, ['--task-type', 'other', '--gate', 'pass']);
+    assert.equal(lastRecord(dir).tokens_in, 7);
+    assert.ok(!existsSync(join(d, 'broken.json')) && !existsSync(join(d, 'good.json')));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

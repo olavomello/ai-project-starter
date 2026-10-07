@@ -4,7 +4,7 @@ Optional Claude Code mod for projects built on [ai-project-starter](../../README
 
 ## Changing the mod: bump its version
 
-Claude Code caches an installed plugin by the `version` in `.claude-plugin/plugin.json` and decides whether `claude plugin update` has anything to fetch by comparing versions. A mod change that keeps the same version is never delivered: installed copies keep running the old code and `update` reports "already latest". Bump `version` (SemVer, 0.x while the mod is young) in every commit that changes anything under `mods/starter-hud/`.
+Claude Code caches an installed plugin by the `version` in `.claude-plugin/plugin.json` and decides whether `claude plugin update` has anything to fetch by comparing versions. A mod change that keeps the same version is never delivered: installed copies keep running the old code and `update` reports "already latest". Bump `version` (SemVer, 0.x while the mod is young) in every commit that changes the mod's code (`hooks/`, `plugin.json`); a README-only change does not need one.
 
 ## What it does
 
@@ -34,7 +34,7 @@ Claude Code caches an installed plugin by the `version` in `.claude-plugin/plugi
    new code, then the check runs again and the button goes away. Commit the changed files
    afterwards; a new mod version loads in the next session.
 3. **Hands it to the log pipeline.** After each model request, tool call, and turn, it
-   merges the delta into `.agents/state/usage/<branch>.json`. `scripts/ai-log.mjs`
+   merges the delta into `.agents/state/usage/<branch>.json` (one file per session branch; the next gate run on *any* branch consumes all of them). `scripts/ai-log.mjs`
    reads that file (see its precedence rules), and deletes it once logged.
 
 It never makes a model call, a network request, or submits a prompt, and never
