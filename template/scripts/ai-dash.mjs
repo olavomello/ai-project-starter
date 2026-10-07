@@ -148,6 +148,19 @@ async function handleGetSkills(req, res) {
   sendJson(res, 200, { skills: listSkills(TARGET_DIR), agents });
 }
 
+/**
+ * Stops this server, so the starter-hud mod can restart it after an update (a running process keeps
+ * the old code). Same guard as POST /api/config: a local Host and Origin, a JSON content type and the
+ * X-AI-Dash header, which a web page cannot send cross-origin without a preflight.
+ */
+async function handlePostShutdown(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
+  if (req.headers['x-ai-dash'] !== '1') return sendJson(res, 400, { error: 'missing X-AI-Dash header' });
+  sendJson(res, 200, { stopping: true });
+  setTimeout(() => process.exit(0), 50);
+}
+
 async function handlePostConfig(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
   if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
@@ -192,6 +205,8 @@ const server = createServer(async (req, res) => {
     if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
     if (url.pathname === '/api/config' && req.method === 'POST') return await handlePostConfig(req, res);
+    if (url.pathname === '/api/shutdown' && req.method === 'POST') return await handlePostShutdown(req, res);
+    if (url.pathname === '/api/shutdown') return send(res, 405, 'method not allowed', 'text/plain');
     if (url.pathname === '/api/config') return send(res, 405, 'method not allowed', 'text/plain');
     if (req.method !== 'GET') return send(res, 405, 'method not allowed', 'text/plain');
     serveStatic(req, res, url.pathname);

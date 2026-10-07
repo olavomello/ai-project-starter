@@ -22,6 +22,7 @@ import { zeroCounters, addUsage, freshTokens, cacheRatio } from './lib/usage.js'
 import { parseBudgetKnob, ceilingFor } from './lib/knobs.js';
 import { formatBandSegments, gateStatusText, spinnerSuffix, kilo, SEPARATOR } from './lib/band.js';
 import { DASH_LABEL, dashUrl, dashProbeUrl, isAiDash, openCommands, startArgv } from './lib/dash.js';
+import { UPDATE_LABEL, UPDATING_LABEL, CHECK_EVERY_MS, checkArgv, applyArgv, shutdownInit, parseCheck, updateView, updatedToast } from './lib/update.js';
 
 const MAX_AGENTS = 4;
 // Band icon colours by tone; a tone with no colour draws dim like the text.
@@ -78,6 +79,77 @@ async function openDash($, root) {
     if (!(await openBrowser($, dashUrl()))) $.ui.toast(`AI Dash is running: open ${dashUrl()}`);
   } catch {
     $.ui.toast('AI Dash: could not start or open the dashboard');
+  }
+}
+
+// ---- the "Update available" button ----
+
+/** Polls `condition()` every `ms` up to `tries` times; true as soon as it holds. */
+async function waitFor($, condition, tries, ms) {
+  for (let i = 0; i < tries; i++) {
+    if (await condition()) return true;
+    await $.clock.sleep(ms);
+  }
+  return condition();
+}
+
+/** Stops a running dashboard (a running process keeps the old code) and starts it again. */
+async function restartDash($, root) {
+  try { await $.http.fetch(`${dashUrl()}api/shutdown`, shutdownInit()); } catch { /* it may drop the connection as it exits */ }
+  await waitFor($, async () => !(await dashRunning($)), 12, 250);
+  startDash($, root);
+  return waitFor($, () => dashRunning($), 24, 250);
+}
+
+/** Asks the project's scripts/ais-update.mjs whether a newer starter exists; null when it cannot tell. */
+async function checkForUpdate($, root, force) {
+  try {
+    if (!(await fileExists($, join(root, 'scripts', 'ais-update.mjs')))) return null;
+    const r = await $.process.run(checkArgv(force), { cwd: root, timeoutMs: 45000 });
+    return parseCheck(r.stdout);
+  } catch {
+    return null;
+  }
+}
+
+/** Runs the update and, if the dashboard was running, restarts it on the new code. True on success. */
+async function applyStarterUpdate($, root) {
+  const dashWasRunning = await dashRunning($);
+  $.ui.toast('AIS: updating…');
+  try {
+    const r = await $.process.run(applyArgv(), { cwd: root, timeoutMs: 600000 });
+    if (r.exitCode !== 0) {
+      $.ui.toast('AIS update failed. Run it to see why: node scripts/ais-update.mjs apply');
+      return false;
+    }
+    const restarted = dashWasRunning ? await restartDash($, root) : false;
+    $.ui.toast(updatedToast(restarted));
+    return true;
+  } catch {
+    $.ui.toast('AIS update could not run: node scripts/ais-update.mjs apply');
+    return false;
+  }
+}
+
+/** Re-reads the update check into `state` and redraws the band; `force` skips the script's 30 minute cache. */
+async function refreshUpdate($, root, state, force) {
+  if (!root) return;
+  state.lastCheck = await $.clock.now();
+  const info = await checkForUpdate($, root, force);
+  if (info) state.info = info;
+  $.ui.invalidate('ui.render');
+}
+
+/** The button's handler: update, restart the dashboard if it ran, then re-check so the button clears. */
+async function runUpdate($, root, state) {
+  if (state.updating || !root) return;
+  state.updating = true;
+  $.ui.invalidate('ui.render');
+  try {
+    if (await applyStarterUpdate($, root)) await refreshUpdate($, root, state, true);
+  } finally {
+    state.updating = false;
+    $.ui.invalidate('ui.render');
   }
 }
 
@@ -190,6 +262,7 @@ export const register = (on, options) => {
   const modelTotals = new Map();
   let toolCalls = 0;
   let gateText = null;       // last known gate status line, or null
+  const updateState = { info: null, updating: false, lastCheck: 0 }; // the update button: last check, busy flag
   let warned80 = false;
   let warned100 = false;
 
@@ -207,6 +280,7 @@ export const register = (on, options) => {
       agent = agentNameFromBranch(branch);
       budgetKnob = await readBudgetKnob($, e.cwd);
       inert = false;
+      void refreshUpdate($, root, updateState, false);
 
       await $.command.register({
         name: 'budget',
@@ -326,6 +400,7 @@ export const register = (on, options) => {
     try {
       const seconds = Math.round((e.durationMs || 0) / 1000);
       await mergeUsageDelta($, root, safeBranch, { duration_s: seconds });
+      if (!updateState.updating && (await $.clock.now()) - updateState.lastCheck > CHECK_EVERY_MS) void refreshUpdate($, root, updateState, false);
     } catch { /* fail open */ }
     return result;
   });
@@ -355,11 +430,15 @@ export const register = (on, options) => {
         row.push(color ? <Text key={s.key + 'i'} color={color}>{s.icon}</Text> : <Text key={s.key + 'i'} dimColor>{s.icon}</Text>);
         row.push(<Text key={s.key + 't'} dimColor>{' ' + s.text}</Text>);
       });
+      const buttons = [<Button key="aidash" label={DASH_LABEL} onPress={() => openDash($, root)} />];
+      const view = updateView(updateState.info, updateState.updating);
+      if (view === 'available') buttons.push(<Box key="updatebox" marginLeft={2}><Button key="update" label={UPDATE_LABEL} onPress={() => runUpdate($, root, updateState)} /></Box>);
+      if (view === 'updating') buttons.push(<Box key="updatingbox" marginLeft={2}><Text dimColor>{UPDATING_LABEL}</Text></Box>);
       return (
         <Box flexDirection="column">
           <Box justifyContent="space-between">
             <Box>{row}</Box>
-            <Button key="aidash" label={DASH_LABEL} onPress={() => openDash($, root)} />
+            <Box>{buttons}</Box>
           </Box>
           {rest}
         </Box>
