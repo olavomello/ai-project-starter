@@ -56,6 +56,7 @@ TREE = [
         ("ai-dash.mjs", "Local server for ai-dash/: Settings API and live agents", None),
         ("agent-live.mjs", "Subagent start/stop hook: feeds the live panel", None),
         ("ais-update.mjs", "Checks for a newer starter and applies the update", None),
+        ("decisions.mjs", "Pending decisions: read and approve from AI Dash", None),
     ]),
     ("ai-dash", "Static monitoring dashboard — zero-config Vercel deploy", []),
     ("docs", None, [

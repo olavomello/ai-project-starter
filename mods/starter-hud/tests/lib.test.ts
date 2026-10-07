@@ -105,7 +105,7 @@ test('formatBandSegments: a narrow budget drops the low-priority segments first,
     cacheRatioVal: 0.78, gateText: 'gate passed, first try', agentsCount: 2, maxAgents: 4,
   };
   expect(formatBandSegments(p).map((x) => x.key)).toEqual(['branch', 'tokens', 'cache', 'gate', 'size']); // default width 100
-  expect(formatBandSegments(p, { maxWidth: 90 }).map((x) => x.key)).toEqual(['branch', 'tokens', 'cache', 'gate']);
+  expect(formatBandSegments(p, { maxWidth: 80 }).map((x) => x.key)).toEqual(['branch', 'tokens', 'cache', 'gate']);
   expect(formatBandSegments(p, { maxWidth: 60 }).map((x) => x.key)).toEqual(['branch', 'tokens', 'cache']);
   expect(formatBandSegments(p, { maxWidth: 1 }).map((x) => x.key)).toEqual(['branch', 'tokens']);
 });

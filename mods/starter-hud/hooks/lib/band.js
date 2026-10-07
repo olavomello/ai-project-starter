@@ -12,7 +12,7 @@ export const ICONS = {
   size: '▣', // task size
   agents: '◎', // live agents
 };
-export const SEPARATOR = '  ·  ';
+export const SEPARATOR = '  '; // the row draws its items with gap={2}; the width estimate below counts it
 
 /** 49200 -> "49.2k", 60000 -> "60k", 1_250_000 -> "1.3M", 500 -> "500". */
 export function kilo(n) {

@@ -208,6 +208,25 @@
     font-size: 11px; padding: 2px 8px; cursor: pointer; margin-left: 6px; }
   .copy-btn:hover { color: var(--text-1); border-color: var(--text-3); }
   .settings-note { font-size: 11.5px; color: var(--text-3); margin-top: 8px; }
+  /* pending decisions (local server only) */
+  button.gear { position: relative; }
+  .dec-count { position: absolute; top: -6px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px;
+    background: var(--warning); color: #111; font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center; }
+  .dec-count[hidden] { display: none; }
+  .dec-notice { margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--text-2); font-size: 12.5px; }
+  .dec-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 10px 0; border-top: 1px solid var(--border); }
+  .dec-main { min-width: 0; }
+  .dec-title { font-weight: 600; }
+  .dec-detail { color: var(--text-2); font-size: 12.5px; margin-top: 2px; }
+  .dec-blocks { color: var(--text-3); font-size: 12px; margin-top: 2px; }
+  .dec-actions { display: flex; align-items: center; gap: 8px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+  .dec-ask { color: var(--text-2); font-size: 12px; }
+  .dec-actions .btn { background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; font: inherit; font-size: 12.5px; cursor: pointer; }
+  .dec-actions .btn:hover { border-color: var(--text-3); }
+  .dec-actions .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .dec-actions .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 640px) { .dec-item { flex-direction: column; } .dec-actions { justify-content: flex-start; } }
+
   .modal-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, black 45%, transparent);
     display: none; align-items: flex-start; justify-content: center; padding-top: 10vh; z-index: 20; }
   .modal-backdrop.open { display: flex; }
@@ -268,6 +287,12 @@
     <div class="crumb" id="crumb"></div>
     <div class="spacer"></div>
     <div class="meta" id="meta"><span class="orb" id="orb"></span><span id="meta-text">loading</span></div>
+    <button class="gear" id="decisions-btn" type="button" title="Pending decisions" aria-label="Open pending decisions" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      <span class="dec-count" id="decisions-count" hidden></span>
+    </button>
     <button class="gear" id="skills-btn" type="button" title="Skills" aria-label="Open skills viewer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M9 8h6M9 12h6"/>
@@ -311,6 +336,17 @@
         <div id="mod-control">…</div>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="decisions-backdrop">
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="decisions-title">
+    <div class="modal-top">
+      <h2 id="decisions-title">Pending decisions</h2>
+      <button class="close" id="decisions-close" type="button" aria-label="Close pending decisions">&times;</button>
+    </div>
+    <p class="modal-sub" id="decisions-sub">The decisions waiting on you.</p>
+    <div class="skills-list" id="decisions-body"></div>
   </div>
 </div>
 
@@ -417,6 +453,105 @@ document.getElementById('theme').onclick = () => {
       staticFallback();
     }
   }
+})();
+
+// Pending decisions: reads docs/pending-decisions.md through the local server (GET api/decisions) and approves an
+// item with a confirmation (POST api/decisions/approve). Approving removes the row from the file and queues its
+// prompt for the open Claude Code session; with no session open it waits in the queue. The header icon appears
+// only where the server has the file; on static hosting there is no endpoint, so it stays hidden.
+(function setupDecisions() {
+  const btn = document.getElementById('decisions-btn');
+  const count = document.getElementById('decisions-count');
+  const backdrop = document.getElementById('decisions-backdrop');
+  const body = document.getElementById('decisions-body');
+  const sub = document.getElementById('decisions-sub');
+  let data = null, confirmId = null, notice = '', timer = null;
+
+  const open = () => { backdrop.classList.add('open'); load(); };
+  const close = () => { backdrop.classList.remove('open'); confirmId = null; notice = ''; };
+  btn.onclick = open;
+  document.getElementById('decisions-close').onclick = close;
+  backdrop.onclick = (e) => { if (e.target === backdrop) close(); };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && backdrop.classList.contains('open')) close(); });
+
+  function item(it) {
+    const confirming = confirmId === it.id;
+    return '<div class="dec-item">' +
+      '<div class="dec-main"><div class="dec-title">' + esc(it.title) + '</div>' +
+      (it.detail ? '<div class="dec-detail">' + esc(it.detail) + '</div>' : '') +
+      (it.blocks ? '<div class="dec-blocks">Blocks: ' + esc(it.blocks) + '</div>' : '') + '</div>' +
+      '<div class="dec-actions">' + (confirming
+        ? '<span class="dec-ask">Send to the agent and remove from the file?</span>' +
+          '<button class="btn primary" type="button" data-yes="' + esc(it.id) + '">Yes, approve</button>' +
+          '<button class="btn" type="button" data-no="1">Cancel</button>'
+        : '<button class="btn primary" type="button" data-approve="' + esc(it.id) + '">Approve</button>') + '</div></div>';
+  }
+  function render() {
+    const top = body.scrollTop;
+    if (!data || !data.exists) {
+      body.innerHTML = '<div class="settings-static">No pending decisions file in this project.</div>';
+      return;
+    }
+    sub.textContent = 'Read from ' + data.file + '. Approve removes the row and sends the item to the open Claude Code session; with none open, it waits in a queue.';
+    const groups = [];
+    for (const it of data.items) {
+      let g = groups.find((x) => x.group === it.group && x.section === it.section);
+      if (!g) { g = { group: it.group, section: it.section, items: [] }; groups.push(g); }
+      g.items.push(it);
+    }
+    body.innerHTML =
+      (notice ? '<div class="dec-notice">' + esc(notice) + '</div>' : '') +
+      (data.queued ? '<div class="dec-notice">' + data.queued + ' approved item' + (data.queued === 1 ? '' : 's') + ' waiting for a Claude Code session to pick ' + (data.queued === 1 ? 'it' : 'them') + ' up.</div>' : '') +
+      (data.items.length
+        ? groups.map((g) => '<h3 class="s-head">' + esc(g.section || 'Pending') + ' <span class="badge">' + g.items.length + '</span></h3>' + g.items.map(item).join('')).join('')
+        : '<div class="settings-static">All clear. Nothing waits on you.</div>');
+    body.scrollTop = top;
+  }
+  function paint() {
+    if (!data || !data.exists) { btn.hidden = true; return; }
+    btn.hidden = false;
+    count.textContent = data.items.length ? String(data.items.length) : '';
+    count.hidden = !data.items.length;
+    btn.title = 'Pending decisions' + (data.items.length ? ': ' + data.items.length : '');
+    if (backdrop.classList.contains('open')) render();
+  }
+  async function load() {
+    try {
+      const r = await fetch('api/decisions', { cache: 'no-store' });
+      if (!r.ok) throw new Error(String(r.status));
+      data = await r.json();
+      paint();
+    } catch {
+      if (!data) { btn.hidden = true; clearInterval(timer); } // no decisions endpoint here: stay hidden
+    }
+  }
+  async function approve(id) {
+    const it = data && data.items.find((x) => x.id === id);
+    confirmId = null;
+    try {
+      const r = await fetch('api/decisions/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-AI-Dash': '1' },
+        body: JSON.stringify({ id }),
+      });
+      const out = await r.json().catch(() => ({}));
+      notice = r.ok ? 'Approved: ' + (it ? it.title : out.title || id) : (out.error || 'Could not approve (' + r.status + ')');
+    } catch {
+      notice = 'Could not reach the server.';
+    }
+    await load();
+    render();
+  }
+  body.addEventListener('click', (e) => {
+    const t = e.target && e.target.closest ? e.target : null;
+    const hit = (sel) => (t ? t.closest(sel) : null);
+    const ask = hit('[data-approve]'), yes = hit('[data-yes]'), no = hit('[data-no]');
+    if (ask) { confirmId = ask.dataset.approve; notice = ''; render(); }
+    else if (yes) approve(yes.dataset.yes);
+    else if (no) { confirmId = null; render(); }
+  });
+  timer = setInterval(() => { if (!document.hidden) load(); }, 5000);
+  load();
 })();
 
 // Skills viewer: lists name + description of every skill, from the local

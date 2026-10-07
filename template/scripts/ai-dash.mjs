@@ -19,6 +19,7 @@ import { statusOf, enableMod, disableMod } from './mod.mjs';
 import { listSkills, usageMap, NEVER } from './skills.mjs';
 import { readLive, readActivity } from './agent-live.mjs';
 import { field as fieldOf } from './agents-sync.mjs';
+import { readDecisions, approveDecision } from './decisions.mjs';
 
 function repoRoot() {
   try {
@@ -161,6 +162,33 @@ async function handlePostShutdown(req, res) {
   setTimeout(() => process.exit(0), 50);
 }
 
+/** The pending decisions in docs/pending-decisions.md, read-only, for the dashboard's decisions viewer. */
+async function handleGetDecisions(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  res.setHeader('cache-control', 'no-store');
+  sendJson(res, 200, readDecisions(TARGET_DIR));
+}
+
+/**
+ * Approves one pending decision: its row leaves the file and its prompt is queued for the open Claude Code
+ * session (the starter-hud mod hands it over). Same guard as the other writes: a local Host and Origin, a JSON
+ * content type and the X-AI-Dash header, plus a body of exactly { "id": "<item id>" }.
+ */
+async function handlePostApprove(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
+  if (req.headers['x-ai-dash'] !== '1') return sendJson(res, 400, { error: 'missing X-AI-Dash header' });
+  let text;
+  try { text = await readBody(req, MAX_BODY); } catch { return sendJson(res, 400, { error: 'body too large' }); }
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { return sendJson(res, 400, { error: 'invalid JSON' }); }
+  if (!parsed || Object.keys(parsed).length !== 1 || typeof parsed.id !== 'string' || !/^[0-9a-z]{1,12}$/.test(parsed.id)) {
+    return sendJson(res, 400, { error: 'expected exactly { "id": "<item id>" }' });
+  }
+  const result = approveDecision(TARGET_DIR, parsed.id);
+  sendJson(res, result.ok ? 200 : 409, result);
+}
+
 async function handlePostConfig(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
   if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
@@ -204,6 +232,9 @@ const server = createServer(async (req, res) => {
     if (url.pathname === '/api/activity' && req.method === 'GET') return await handleGetActivity(req, res);
     if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
+    if (url.pathname === '/api/decisions' && req.method === 'GET') return await handleGetDecisions(req, res);
+    if (url.pathname === '/api/decisions/approve' && req.method === 'POST') return await handlePostApprove(req, res);
+    if (url.pathname === '/api/decisions/approve') return send(res, 405, 'method not allowed', 'text/plain');
     if (url.pathname === '/api/config' && req.method === 'POST') return await handlePostConfig(req, res);
     if (url.pathname === '/api/shutdown' && req.method === 'POST') return await handlePostShutdown(req, res);
     if (url.pathname === '/api/shutdown') return send(res, 405, 'method not allowed', 'text/plain');

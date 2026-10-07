@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1058"
-     viewBox="0 0 900 1058" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1085"
+     viewBox="0 0 900 1085" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
   <defs>
     <linearGradient id="hdr" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#1c2030"/>
       <stop offset="1" stop-color="#171a23"/>
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="900" height="1058" rx="12" fill="#11131a"/>
-  <rect x="0" y="0" width="900" height="1058" rx="12" fill="none" stroke="#2a2e3d" stroke-width="1"/>
+  <rect x="0" y="0" width="900" height="1085" rx="12" fill="#11131a"/>
+  <rect x="0" y="0" width="900" height="1085" rx="12" fill="none" stroke="#2a2e3d" stroke-width="1"/>
 
   <path d="M0,12 a12,12 0 0 1 12,-12 h876 a12,12 0 0 1 12,12 v52 h-900 z" fill="url(#hdr)"/>
   <line x1="0" y1="64" x2="900" y2="64" stroke="#2a2e3d" stroke-width="1"/>
@@ -18,8 +18,8 @@
   <text x="204" y="46" fill="#8b93a7" font-size="12.5">— Directory Explorer</text>
   <text x="872" y="46" fill="#8b93a7" font-size="11.5" text-anchor="end">what a new project gets</text>
 
-  <line x1="416" y1="70" x2="416" y2="1032" stroke="#2a2e3d" stroke-width="1"/>
-<rect x="1" y="91" width="898" height="27" fill="#191c27"/><rect x="1" y="145" width="898" height="27" fill="#191c27"/><rect x="1" y="199" width="898" height="27" fill="#191c27"/><rect x="1" y="253" width="898" height="27" fill="#191c27"/><rect x="1" y="307" width="898" height="27" fill="#191c27"/><rect x="1" y="361" width="898" height="27" fill="#191c27"/><rect x="1" y="415" width="898" height="27" fill="#191c27"/><rect x="1" y="469" width="898" height="27" fill="#191c27"/><rect x="1" y="523" width="898" height="27" fill="#191c27"/><rect x="1" y="577" width="898" height="27" fill="#191c27"/><rect x="1" y="631" width="898" height="27" fill="#191c27"/><rect x="1" y="685" width="898" height="27" fill="#191c27"/><rect x="1" y="739" width="898" height="27" fill="#191c27"/><rect x="1" y="793" width="898" height="27" fill="#191c27"/><rect x="1" y="847" width="898" height="27" fill="#191c27"/><rect x="1" y="901" width="898" height="27" fill="#191c27"/><rect x="1" y="955" width="898" height="27" fill="#191c27"/><rect x="1" y="1009" width="898" height="27" fill="#191c27"/><line x1="45" y1="293.5" x2="45" y2="536.5" stroke="#323749" stroke-width="1"/><line x1="45" y1="617.5" x2="45" y2="752.5" stroke="#323749" stroke-width="1"/><line x1="45" y1="806.5" x2="45" y2="941.5" stroke="#323749" stroke-width="1"/>
+  <line x1="416" y1="70" x2="416" y2="1059" stroke="#2a2e3d" stroke-width="1"/>
+<rect x="1" y="91" width="898" height="27" fill="#191c27"/><rect x="1" y="145" width="898" height="27" fill="#191c27"/><rect x="1" y="199" width="898" height="27" fill="#191c27"/><rect x="1" y="253" width="898" height="27" fill="#191c27"/><rect x="1" y="307" width="898" height="27" fill="#191c27"/><rect x="1" y="361" width="898" height="27" fill="#191c27"/><rect x="1" y="415" width="898" height="27" fill="#191c27"/><rect x="1" y="469" width="898" height="27" fill="#191c27"/><rect x="1" y="523" width="898" height="27" fill="#191c27"/><rect x="1" y="577" width="898" height="27" fill="#191c27"/><rect x="1" y="631" width="898" height="27" fill="#191c27"/><rect x="1" y="685" width="898" height="27" fill="#191c27"/><rect x="1" y="739" width="898" height="27" fill="#191c27"/><rect x="1" y="793" width="898" height="27" fill="#191c27"/><rect x="1" y="847" width="898" height="27" fill="#191c27"/><rect x="1" y="901" width="898" height="27" fill="#191c27"/><rect x="1" y="955" width="898" height="27" fill="#191c27"/><rect x="1" y="1009" width="898" height="27" fill="#191c27"/><line x1="45" y1="293.5" x2="45" y2="563.5" stroke="#323749" stroke-width="1"/><line x1="45" y1="644.5" x2="45" y2="779.5" stroke="#323749" stroke-width="1"/><line x1="45" y1="833.5" x2="45" y2="968.5" stroke="#323749" stroke-width="1"/>
     <path d="M44,70.0 h7 l4,4 v11 h-11 z"
           fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
     <path d="M51,70.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="68" y="81.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">README.md</text><text x="430" y="81.5" fill="#8b93a7" font-size="12.5">Structured project README, ends with “Powered by AIS”</text>
@@ -73,46 +73,49 @@
     <path d="M66,529.0 h7 l4,4 v11 h-11 z"
           fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
     <path d="M73,529.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="540.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">ais-update.mjs</text><text x="430" y="540.5" fill="#8b93a7" font-size="12.5">Checks for a newer starter and applies the update</text>
-    <path d="M44,560.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="68" y="567.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">ai-dash/</text><text x="430" y="567.5" fill="#8b93a7" font-size="12.5">Static monitoring dashboard — zero-config Vercel deploy</text><path d="M29,587.5 L35,587.5 L32,593.5 Z" fill="#8b93a7"/>
-    <path d="M44,587.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="68" y="594.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">docs/</text>
-    <path d="M66,610.0 h7 l4,4 v11 h-11 z"
+    <path d="M66,556.0 h7 l4,4 v11 h-11 z"
           fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M73,610.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="621.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">tasks.md</text><text x="430" y="621.5" fill="#8b93a7" font-size="12.5">Fixed task taxonomy used by the execution log</text>
+    <path d="M73,556.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="567.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">decisions.mjs</text><text x="430" y="567.5" fill="#8b93a7" font-size="12.5">Pending decisions: read and approve from AI Dash</text>
+    <path d="M44,587.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="68" y="594.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">ai-dash/</text><text x="430" y="594.5" fill="#8b93a7" font-size="12.5">Static monitoring dashboard — zero-config Vercel deploy</text><path d="M29,614.5 L35,614.5 L32,620.5 Z" fill="#8b93a7"/>
+    <path d="M44,614.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="68" y="621.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">docs/</text>
     <path d="M66,637.0 h7 l4,4 v11 h-11 z"
           fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M73,637.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="648.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">model-prices.json</text><text x="430" y="648.5" fill="#8b93a7" font-size="12.5">You fill this in — cost stays blank until you do</text>
-    <path d="M66,668.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="675.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">agents/</text><text x="430" y="675.5" fill="#8b93a7" font-size="12.5">Roster; ships with sys-init-starter, the one-time bootstrap agent</text>
+    <path d="M73,637.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="648.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">tasks.md</text><text x="430" y="648.5" fill="#8b93a7" font-size="12.5">Fixed task taxonomy used by the execution log</text>
+    <path d="M66,664.0 h7 l4,4 v11 h-11 z"
+          fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
+    <path d="M73,664.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="675.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">model-prices.json</text><text x="430" y="675.5" fill="#8b93a7" font-size="12.5">You fill this in — cost stays blank until you do</text>
     <path d="M66,695.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="702.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">guides/</text><text x="430" y="702.5" fill="#8b93a7" font-size="12.5">Loaded on demand: security, efficiency, delegation, claude-code</text>
-    <path d="M66,718.0 h7 l4,4 v11 h-11 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="702.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">agents/</text><text x="430" y="702.5" fill="#8b93a7" font-size="12.5">Roster; ships with sys-init-starter, the one-time bootstrap agent</text>
+    <path d="M66,722.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="729.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">guides/</text><text x="430" y="729.5" fill="#8b93a7" font-size="12.5">Loaded on demand: security, efficiency, delegation, claude-code</text>
+    <path d="M66,745.0 h7 l4,4 v11 h-11 z"
           fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M73,718.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="729.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">repo-map.md, decisions.md</text><text x="430" y="729.5" fill="#8b93a7" font-size="12.5">Committed agent cache — map + durable decisions</text>
-    <path d="M66,749.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="756.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">adr/</text><text x="430" y="756.5" fill="#8b93a7" font-size="12.5">Architecture Decision Records, one file per decision</text><path d="M29,776.5 L35,776.5 L32,782.5 Z" fill="#8b93a7"/>
-    <path d="M44,776.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="68" y="783.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">.claude/</text>
-    <path d="M66,803.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="810.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">skills/semver-release/</text><text x="430" y="810.5" fill="#8b93a7" font-size="12.5">Release workflow: bump, changelog, tag, version gate</text>
+    <path d="M73,745.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="756.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">repo-map.md, decisions.md</text><text x="430" y="756.5" fill="#8b93a7" font-size="12.5">Committed agent cache — map + durable decisions</text>
+    <path d="M66,776.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="783.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">adr/</text><text x="430" y="783.5" fill="#8b93a7" font-size="12.5">Architecture Decision Records, one file per decision</text><path d="M29,803.5 L35,803.5 L32,809.5 Z" fill="#8b93a7"/>
+    <path d="M44,803.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="68" y="810.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">.claude/</text>
     <path d="M66,830.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="837.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">skills/photo-generation/</text><text x="430" y="837.5" fill="#8b93a7" font-size="12.5">Photorealistic images, routed to OpenAI</text>
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="837.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">skills/semver-release/</text><text x="430" y="837.5" fill="#8b93a7" font-size="12.5">Release workflow: bump, changelog, tag, version gate</text>
     <path d="M66,857.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="864.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">agents/</text><text x="430" y="864.5" fill="#8b93a7" font-size="12.5">Generated Claude Code subagent pointers for docs/agents/</text>
-    <path d="M66,880.0 h7 l4,4 v11 h-11 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="864.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">skills/photo-generation/</text><text x="430" y="864.5" fill="#8b93a7" font-size="12.5">Photorealistic images, routed to OpenAI</text>
+    <path d="M66,884.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="891.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">agents/</text><text x="430" y="891.5" fill="#8b93a7" font-size="12.5">Generated Claude Code subagent pointers for docs/agents/</text>
+    <path d="M66,907.0 h7 l4,4 v11 h-11 z"
           fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M73,880.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="891.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">settings.json</text><text x="430" y="891.5" fill="#8b93a7" font-size="12.5">Hooks: protect VERSION/CHANGELOG, block force-push</text>
-    <path d="M66,911.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="918.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">hooks/</text><text x="430" y="918.5" fill="#8b93a7" font-size="12.5">The hook scripts settings.json calls</text>
-    <path d="M66,934.0 h7 l4,4 v11 h-11 z"
+    <path d="M73,907.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="918.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">settings.json</text><text x="430" y="918.5" fill="#8b93a7" font-size="12.5">Hooks: protect VERSION/CHANGELOG, block force-push</text>
+    <path d="M66,938.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="90" y="945.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">hooks/</text><text x="430" y="945.5" fill="#8b93a7" font-size="12.5">The hook scripts settings.json calls</text>
+    <path d="M66,961.0 h7 l4,4 v11 h-11 z"
           fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M73,934.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="945.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">rules/security.md</text><text x="430" y="945.5" fill="#8b93a7" font-size="12.5">Auto-loads the security guide on a matching path</text>
-    <path d="M44,965.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
-          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="68" y="972.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">.agents/</text><text x="430" y="972.5" fill="#8b93a7" font-size="12.5">Local runtime state (git-ignored): worktrees, locks, log</text>
-    <path d="M44,988.0 h7 l4,4 v11 h-11 z"
-          fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M51,988.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="68" y="999.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">.github/workflows/gate.yml</text><text x="430" y="999.5" fill="#8b93a7" font-size="12.5">CI: runs the gate on every push / PR</text>
+    <path d="M73,961.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="90" y="972.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">rules/security.md</text><text x="430" y="972.5" fill="#8b93a7" font-size="12.5">Auto-loads the security guide on a matching path</text>
+    <path d="M44,992.0 a2,2 0 0 1 2,-2 h4 l2,2 h5 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-13 a2,2 0 0 1 -2,-2 z"
+          fill="#6ea8ff" stroke="#3f6fc9" stroke-width="0.75"/><text x="68" y="999.5" fill="#e7e9ee" font-size="13" font-weight="600" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">.agents/</text><text x="430" y="999.5" fill="#8b93a7" font-size="12.5">Local runtime state (git-ignored): worktrees, locks, log</text>
     <path d="M44,1015.0 h7 l4,4 v11 h-11 z"
           fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M51,1015.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="68" y="1026.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">.mcp.json.example</text><text x="430" y="1026.5" fill="#8b93a7" font-size="12.5">Scaffolding for project-scoped MCP servers</text></svg>
+    <path d="M51,1015.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="68" y="1026.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">.github/workflows/gate.yml</text><text x="430" y="1026.5" fill="#8b93a7" font-size="12.5">CI: runs the gate on every push / PR</text>
+    <path d="M44,1042.0 h7 l4,4 v11 h-11 z"
+          fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/>
+    <path d="M51,1042.0 v4 h4" fill="none" stroke="#9aa5b8" stroke-width="1.1" stroke-linejoin="round"/><text x="68" y="1053.5" fill="#e7e9ee" font-size="13" font-weight="400" font-family="'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace">.mcp.json.example</text><text x="430" y="1053.5" fill="#8b93a7" font-size="12.5">Scaffolding for project-scoped MCP servers</text></svg>
