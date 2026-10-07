@@ -11,6 +11,9 @@ export type DecisionItem = {
   title: string;
   detail: string;
   blocks: string;
+  /** The table's own column names for `detail` and `blocks` ("Question", "What is needed", "Blocks"). */
+  detailLabel: string;
+  blocksLabel: string;
   /** The exact markdown line, used to take the item out of the file. */
   raw: string;
 };

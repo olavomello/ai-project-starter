@@ -60,6 +60,7 @@ export function parseItems(markdown) {
   let group = -1;
   let inFence = false;
   let inTable = false;
+  let header = [];
 
   for (const line of markdown.split('\n')) {
     if (FENCE.test(line)) {
@@ -80,6 +81,7 @@ export function parseItems(markdown) {
     if (isRow(line)) {
       if (!inTable) {
         inTable = true; // the header row of a new table
+        header = splitRow(line);
         continue;
       }
       if (SEPARATOR.test(line.trim())) continue;
@@ -93,6 +95,8 @@ export function parseItems(markdown) {
         title,
         detail: cells[1] || '',
         blocks: cells.length > 2 ? cells[cells.length - 1] || '' : '',
+        detailLabel: header[1] || 'Details',
+        blocksLabel: header.length > 2 ? header[header.length - 1] || 'Blocks' : 'Blocks',
         raw: line,
       });
       continue;
@@ -110,6 +114,8 @@ export function parseItems(markdown) {
         title,
         detail: '',
         blocks: '',
+        detailLabel: 'Details',
+        blocksLabel: 'Blocks',
         raw: line,
       });
     }

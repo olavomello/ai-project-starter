@@ -244,7 +244,7 @@ test('the modal lists items by section and asks before approving; Cancel keeps e
   await tick();
   const html = page.els['decisions-body'].innerHTML;
   assert.ok(page.isOpen());
-  assert.ok(html.includes('Needed before going live') && html.includes('Fly.io') && html.includes('Blocks: API deploy'));
+  assert.ok(html.includes('Needed before going live') && html.includes('Fly.io') && html.includes('Blocks - API deploy'));
   assert.ok(html.includes('data-approve="a1"') && !html.includes('data-yes'));
   page.click('data-approve', 'a1');
   assert.ok(page.els['decisions-body'].innerHTML.includes('Approve this item?') && page.els['decisions-body'].innerHTML.includes('data-yes-note="a1"'));
@@ -292,4 +292,11 @@ test('instructions ride along in the prompt, identically in the mod and the serv
   assert.ok(withNote.includes('\nuse the staging account\n'));
   assert.equal(withNote, modParse.buildPrompt(first, FILE, 'AI Dash', '  use the staging account  '));
   assert.ok(buildPrompt(first, FILE, 'AI Dash', 'x'.repeat(5000)).length < plain.length + 2300);
+});
+
+test("each item carries its table's own column names, identically in the mod and the server", () => {
+  const md = ['## Decisions to take', '', '| Item | Question | Blocks |', '|---|---|---|', '| Admin role | Who is an admin? | Admin screens |', '', '## Needed', '', '| Item | What is needed | Blocks |', '|---|---|---|', '| Fly.io | Create the account | API deploy |', '', '- a bullet', ''].join(String.fromCharCode(10));
+  const items = parseItems(md);
+  assert.deepEqual(items.map((i) => [i.detailLabel, i.blocksLabel]), [['Question', 'Blocks'], ['What is needed', 'Blocks'], ['Details', 'Blocks']]);
+  assert.deepEqual(items, modParse.parseItems(md));
 });

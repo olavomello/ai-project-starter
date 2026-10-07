@@ -527,8 +527,8 @@ function registerDecisions(on, options) {
           {header('Confirm approval', back, false)}
           <Box flexDirection="column" borderStyle="round" borderColor={decAccent(item.group)} paddingX={1}>
             <Text bold>{`${list.indexOf(item) + 1} - ${item.title}`}</Text>
-            {item.detail !== '' && <Text dimColor>{item.detail}</Text>}
-            {item.blocks !== '' && <Text color={decAccent(item.group)}>Blocks · {item.blocks}</Text>}
+            {item.detail !== '' && <Text dimColor>{`${item.detailLabel} - ${item.detail}`}</Text>}
+            {item.blocks !== '' && <Text color={decAccent(item.group)}>{`${item.blocksLabel} - ${item.blocks}`}</Text>}
           </Box>
           <Text bold>Confirm approval?</Text>
           <Text dimColor>The agent receives this item to execute it, then it leaves the list. Instructions are optional.</Text>
@@ -605,14 +605,14 @@ function registerDecisions(on, options) {
                     <Button key={`less:${entry.item.id}`} label={'▾ hide details'} plain dimColor onPress={() => toggle(entry.item.id)} />
                     <Text>
                       {'  '}
-                      {entry.item.detail}
+                      {`${entry.item.detailLabel} - ${entry.item.detail}`}
                     </Text>
                   </Box>
                 )}
                 {entry.item.detail !== '' && !expanded.includes(entry.item.id) && (
                   <Button
                     key={`more:${entry.item.id}`}
-                    label={`▸ ${decClip(entry.item.detail, cols - 6)}`}
+                    label={`▸ ${decClip(`${entry.item.detailLabel} - ${entry.item.detail}`, cols - 6)}`}
                     plain
                     dimColor
                     onPress={() => toggle(entry.item.id)}
@@ -620,7 +620,7 @@ function registerDecisions(on, options) {
                 )}
                 {entry.item.blocks !== '' && (
                   <Text color={decAccent(entry.item.group)} wrap="truncate-end">
-                    {`Blocks - ${entry.item.blocks}`}
+                    {`${entry.item.blocksLabel} - ${entry.item.blocks}`}
                   </Text>
                 )}
               </Box>
