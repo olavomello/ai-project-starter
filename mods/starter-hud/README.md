@@ -7,9 +7,13 @@ Optional Claude Code mod for projects built on [ai-project-starter](../../README
 1. **Measures real usage.** Hooks `turn.step` to read the model's actual token usage
    (uncached input, cache read, cache write, output) and `tool.call` to count tool
    calls, instead of relying on an agent to export `AILOG_*` variables by hand.
-2. **Shows it in-session.** Draws a band above the prompt — agent, task size, fresh
-   tokens against a budget (if one is set), cache ratio, last gate result, live agent
-   count — and appends a tool-call count to the spinner.
+2. **Shows it in-session.** Draws one row above the prompt, an icon before each item:
+   `⎇ main · ◆ tokens 92.4k / 120k · ↻ cache 92% · ✓ gate passed, first try · ▣ task M · ◎ agents 2/4`
+   (branch or agent, fresh tokens against the budget if one is set, cache ratio, last gate
+   result, task size, live agent count), and appends a tool-call count to the spinner.
+   Item order is also priority: on a narrow screen (over 100 characters) the last ones
+   drop first, never the branch or tokens. Tokens turn yellow at 80% of the budget and
+   red at the ceiling; the gate icon is green for a pass and red for a failure.
 3. **Hands it to the log pipeline.** After each model request, tool call, and turn, it
    merges the delta into `.agents/state/usage/<branch>.json`. `scripts/ai-log.mjs`
    reads that file (see its precedence rules), and deletes it once logged.

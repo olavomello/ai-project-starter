@@ -153,9 +153,9 @@ publishes one, `starter-hud`, at `mods/starter-hud/` in the
 (not copied into `template/` — a project built from this starter loads it from
 there as a plugin, it doesn't vendor its code).
 
-**What it shows and measures:** a 1-3 line band above the prompt — agent, task
-size, fresh tokens against the "Task token budget" knob (section 0) if one is
-set, cache ratio, the last gate result, live agent count — plus a tool-call
+**What it shows and measures:** one row above the prompt, an icon before each item — branch or
+agent, fresh tokens against the "Task token budget" knob (section 0) if one is
+set, cache ratio, the last gate result, task size, live agent count — plus a tool-call
 count appended to the spinner. It measures real per-turn token and tool-call
 usage and hands it to `scripts/ai-log.mjs` through a per-branch file, so the log
 stops depending on an agent remembering to export `AILOG_*` variables.

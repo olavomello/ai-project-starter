@@ -8,7 +8,7 @@ import {
   zeroCounters, addUsage, totalInput, freshTokens, cacheRatio,
 } from '../hooks/lib/usage.js';
 import { parseBudgetKnob, ceilingFor } from '../hooks/lib/knobs.js';
-import { formatBandLines, gateStatusText, spinnerSuffix, kilo } from '../hooks/lib/band.js';
+import { formatBandSegments, gateStatusText, spinnerSuffix, kilo, ICONS, SEPARATOR } from '../hooks/lib/band.js';
 import { join, dirname } from '../hooks/lib/path.js';
 
 test('sanitizeBranch matches the gate.sh printf rule, no trailing underscore', () => {
@@ -63,21 +63,49 @@ test('gateStatusText', () => {
   expect(gateStatusText(1, 2)).toBe('gate failed (attempt 2)');
 });
 
-test('formatBandLines: every state', () => {
-  expect(formatBandLines({
+const row = (segments: { icon: string; text: string }[]) => segments.map((x) => `${x.icon} ${x.text}`).join(SEPARATOR);
+
+test('formatBandSegments: one row, an icon before every piece of information', () => {
+  const full = formatBandSegments({
     agent: 'dev-api-tester', size: 'M', fresh: 49200, ceiling: 60000,
     cacheRatioVal: 0.78, gateText: 'gate passed, first try', agentsCount: 2, maxAgents: 4,
-  })).toEqual([
-    'dev-api-tester · task M',
-    'tokens 49.2k / 60k · cache 78%',
-    'gate passed, first try · agents 2/4',
-  ]);
+  }, { maxWidth: 200 });
+  expect(full.map((x) => x.key)).toEqual(['branch', 'tokens', 'cache', 'gate', 'size', 'agents']);
+  expect(full.every((x) => x.icon.length > 0)).toBe(true);
+  expect(row(full)).toBe(
+    `${ICONS.branch} dev-api-tester${SEPARATOR}${ICONS.tokens} tokens 49.2k / 60k${SEPARATOR}${ICONS.cache} cache 78%` +
+    `${SEPARATOR}${ICONS.gatePass} gate passed, first try${SEPARATOR}${ICONS.size} task M${SEPARATOR}${ICONS.agents} agents 2/4`,
+  );
 
-  // no size set, no ceiling, no cache yet, gate never ran, no live agents
-  expect(formatBandLines({
+  // no size set, no ceiling, no cache yet, gate never ran, no live agents: just branch and tokens
+  const lean = formatBandSegments({
     agent: 'main', size: null, fresh: 1200, ceiling: null,
     cacheRatioVal: null, gateText: null, agentsCount: 0, maxAgents: 4,
-  })).toEqual(['main', 'tokens 1.2k']);
+  });
+  expect(row(lean)).toBe(`${ICONS.branch} main${SEPARATOR}${ICONS.tokens} tokens 1.2k`);
+});
+
+test('formatBandSegments: tones follow the budget and the gate', () => {
+  const base = { agent: 'main', size: 'S', cacheRatioVal: null, gateText: null, agentsCount: 0, maxAgents: 4 };
+  const tone = (p: object, key: string) => formatBandSegments({ ...base, ...p } as never).find((x) => x.key === key)?.tone;
+  expect(tone({ fresh: 10000, ceiling: 60000 }, 'tokens')).toBe('plain');
+  expect(tone({ fresh: 50000, ceiling: 60000 }, 'tokens')).toBe('warn'); // 80% of the ceiling
+  expect(tone({ fresh: 60000, ceiling: 60000 }, 'tokens')).toBe('bad');
+  expect(tone({ fresh: 999999, ceiling: null }, 'tokens')).toBe('plain'); // no ceiling, nothing to warn about
+  expect(tone({ fresh: 1, ceiling: null, gateText: 'gate passed' }, 'gate')).toBe('ok');
+  const failed = formatBandSegments({ ...base, fresh: 1, ceiling: null, gateText: 'gate failed (attempt 2)' } as never).find((x) => x.key === 'gate');
+  expect([failed?.tone, failed?.icon]).toEqual(['bad', ICONS.gateFail]);
+});
+
+test('formatBandSegments: a narrow budget drops the low-priority segments first, never branch or tokens', () => {
+  const p = {
+    agent: 'dev-api-tester', size: 'M', fresh: 49200, ceiling: 60000,
+    cacheRatioVal: 0.78, gateText: 'gate passed, first try', agentsCount: 2, maxAgents: 4,
+  };
+  expect(formatBandSegments(p).map((x) => x.key)).toEqual(['branch', 'tokens', 'cache', 'gate', 'size']); // default width 100
+  expect(formatBandSegments(p, { maxWidth: 90 }).map((x) => x.key)).toEqual(['branch', 'tokens', 'cache', 'gate']);
+  expect(formatBandSegments(p, { maxWidth: 60 }).map((x) => x.key)).toEqual(['branch', 'tokens', 'cache']);
+  expect(formatBandSegments(p, { maxWidth: 1 }).map((x) => x.key)).toEqual(['branch', 'tokens']);
 });
 
 test('spinnerSuffix', () => {

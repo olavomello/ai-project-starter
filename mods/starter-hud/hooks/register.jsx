@@ -20,9 +20,11 @@ import { join, dirname } from './lib/path.js';
 import { sanitizeBranch, agentNameFromBranch } from './lib/branch.js';
 import { zeroCounters, addUsage, freshTokens, cacheRatio } from './lib/usage.js';
 import { parseBudgetKnob, ceilingFor } from './lib/knobs.js';
-import { formatBandLines, gateStatusText, spinnerSuffix, kilo } from './lib/band.js';
+import { formatBandSegments, gateStatusText, spinnerSuffix, kilo, SEPARATOR } from './lib/band.js';
 
 const MAX_AGENTS = 4;
+// Band icon colours by tone; a tone with no colour draws dim like the text.
+const TONE_COLOR = { ok: 'green', warn: 'yellow', bad: 'red' };
 
 function usageFilePath(root, safeBranch) {
   return join(root, '.agents', 'state', 'usage', `${safeBranch}.json`);
@@ -281,7 +283,7 @@ export const register = (on, options) => {
       const { Box, Text } = $.ui.resolve(e);
       const agentsCount = await countLiveAgents($, root);
       const ceiling = ceilingFor(budgetKnob, taskSize);
-      const lines = formatBandLines({
+      const segments = formatBandSegments({
         agent,
         size: taskSize,
         fresh: freshTokens(counters),
@@ -291,9 +293,16 @@ export const register = (on, options) => {
         agentsCount,
         maxAgents: MAX_AGENTS,
       });
+      const row = [];
+      segments.forEach((s, i) => {
+        const color = TONE_COLOR[s.tone];
+        if (i > 0) row.push(<Text key={s.key + 's'} dimColor>{SEPARATOR}</Text>);
+        row.push(color ? <Text key={s.key + 'i'} color={color}>{s.icon}</Text> : <Text key={s.key + 'i'} dimColor>{s.icon}</Text>);
+        row.push(<Text key={s.key + 't'} dimColor>{' ' + s.text}</Text>);
+      });
       return (
         <Box flexDirection="column">
-          {lines.map((line, i) => <Text key={String(i)} dimColor>{line}</Text>)}
+          <Box>{row}</Box>
           {rest}
         </Box>
       );

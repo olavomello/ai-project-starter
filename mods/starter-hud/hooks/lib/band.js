@@ -1,6 +1,18 @@
-// Pure helpers — no `$`. Text formatting for the AbovePrompt band and the
-// Spinner suffix. Kept separate from register.jsx so the formatting rules
-// can be unit-tested without the engine.
+// Pure helpers, no `$`. Text formatting for the AbovePrompt band (one row of icon + text
+// segments) and the Spinner suffix. Kept separate from register.jsx so the formatting
+// rules can be unit-tested without the engine.
+
+// Plain Unicode symbols that a terminal font or the desktop app both draw (no emoji, no icon font).
+export const ICONS = {
+  branch: '⎇', // branch / agent
+  tokens: '◆', // tokens used
+  cache: '↻', // cache reuse
+  gatePass: '✓',
+  gateFail: '✗',
+  size: '▣', // task size
+  agents: '◎', // live agents
+};
+export const SEPARATOR = '  ·  ';
 
 /** 49200 -> "49.2k", 60000 -> "60k", 1_250_000 -> "1.3M", 500 -> "500". */
 export function kilo(n) {
@@ -27,8 +39,10 @@ export function gateStatusText(prior, post) {
 }
 
 /**
- * Builds the (at most 3) text lines of the band, before any UI wrapping.
- * All inputs are plain data — no `$`, no engine types.
+ * The band as one row of segments, each an icon plus a short text. All inputs are plain data.
+ * Order is also priority: when the row would be wider than `maxWidth`, segments are dropped
+ * from the end (agents, then task size, then gate...) until it fits; the branch and the
+ * tokens always stay.
  *
  * @param {object} p
  * @param {string} p.agent
@@ -36,28 +50,39 @@ export function gateStatusText(prior, post) {
  * @param {number} p.fresh            fresh-token count (see usage.js freshTokens)
  * @param {number|null} p.ceiling     budget ceiling for `size`, or null
  * @param {number|null} p.cacheRatioVal  0..1, or null before the first request
- * @param {string|null} p.gateText    result of gateStatusText(...), or null if the
- *                                    gate hasn't run this session
+ * @param {string|null} p.gateText    result of gateStatusText(...), or null if the gate hasn't run
  * @param {number} p.agentsCount      live agent worktrees
  * @param {number} p.maxAgents
- * @returns {string[]} 1 to 3 lines
+ * @param {object} [o]
+ * @param {number} [o.maxWidth=100]   widest row, in characters, before low-priority segments go
+ * @returns {{key: string, icon: string, text: string, tone: 'ok'|'warn'|'bad'|'plain'}[]}
  */
-export function formatBandLines(p) {
-  const hasSize = p.size && p.size !== 'off';
-  const line1 = hasSize ? `${p.agent} · task ${p.size}` : p.agent;
+export function formatBandSegments(p, { maxWidth = 100 } = {}) {
+  const segments = [{ key: 'branch', icon: ICONS.branch, text: p.agent, tone: 'plain' }];
 
-  const tokensPart = p.ceiling != null
-    ? `tokens ${kilo(p.fresh)} / ${kilo(p.ceiling)}`
-    : `tokens ${kilo(p.fresh)}`;
-  const cachePart = p.cacheRatioVal == null ? '' : ` · cache ${Math.round(p.cacheRatioVal * 100)}%`;
-  const line2 = tokensPart + cachePart;
+  let tokensTone = 'plain';
+  if (p.ceiling != null && p.ceiling > 0) {
+    if (p.fresh >= p.ceiling) tokensTone = 'bad';
+    else if (p.fresh >= p.ceiling * 0.8) tokensTone = 'warn';
+  }
+  segments.push({
+    key: 'tokens', icon: ICONS.tokens, tone: tokensTone,
+    text: p.ceiling != null ? `tokens ${kilo(p.fresh)} / ${kilo(p.ceiling)}` : `tokens ${kilo(p.fresh)}`,
+  });
 
-  const line3Parts = [];
-  if (p.gateText) line3Parts.push(p.gateText);
-  if (p.agentsCount > 0) line3Parts.push(`agents ${p.agentsCount}/${p.maxAgents}`);
-  const line3 = line3Parts.join(' · ');
+  if (p.cacheRatioVal != null) {
+    segments.push({ key: 'cache', icon: ICONS.cache, text: `cache ${Math.round(p.cacheRatioVal * 100)}%`, tone: 'plain' });
+  }
+  if (p.gateText) {
+    const failed = p.gateText.startsWith('gate failed');
+    segments.push({ key: 'gate', icon: failed ? ICONS.gateFail : ICONS.gatePass, text: p.gateText, tone: failed ? 'bad' : 'ok' });
+  }
+  if (p.size && p.size !== 'off') segments.push({ key: 'size', icon: ICONS.size, text: `task ${p.size}`, tone: 'plain' });
+  if (p.agentsCount > 0) segments.push({ key: 'agents', icon: ICONS.agents, text: `agents ${p.agentsCount}/${p.maxAgents}`, tone: 'plain' });
 
-  return line3 ? [line1, line2, line3] : [line1, line2];
+  const width = (list) => list.reduce((n, s, i) => n + s.icon.length + 1 + s.text.length + (i ? SEPARATOR.length : 0), 0);
+  while (segments.length > 2 && width(segments) > maxWidth) segments.pop();
+  return segments;
 }
 
 /** The Spinner suffix: " · N tool calls", or '' when N is 0. */
