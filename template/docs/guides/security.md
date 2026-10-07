@@ -14,6 +14,7 @@ Read before touching auth, data access, uploads, payments, or anything reachable
 - Errors return a generic message to the client; stack traces and internals only in server logs.
 - Dependencies: no new dependency without asking; audit output reviewed when one is added.
 - Secrets on disk: `.claude/settings.json` denies Claude Code's file tools `.env` files (not `.env.example`), `secrets/**`, private keys and certificates. A `.claudeignore` file does nothing; see `docs/guides/claude-code.md`, "Keeping files out of Claude's reach".
+- The `starter-hud` mod's **AI Dash** button calls `$.http.fetch` (to `127.0.0.1` only, to see whether the dashboard runs), `$.process.spawn` (`node scripts/ai-dash.mjs`) and `$.process.run` (the OS's own URL opener). `claude plugin validate mods/starter-hud` lists these in its `calls:` line; read it, as for any mod.
 - Third-party mods (Claude Code plugins with JavaScript hooks): a mod runs with your permissions, and one with a `tool.check` hook can approve a call this project's own `PreToolUse` hooks blocked. Before installing any mod — including this starter's own `starter-hud` — run `claude plugin validate <dir>` and read its `hooks:` and `calls:` lines.
 
 ## If something is found

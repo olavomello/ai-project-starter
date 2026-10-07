@@ -9,6 +9,7 @@ import {
 } from '../hooks/lib/usage.js';
 import { parseBudgetKnob, ceilingFor } from '../hooks/lib/knobs.js';
 import { formatBandSegments, gateStatusText, spinnerSuffix, kilo, ICONS, SEPARATOR } from '../hooks/lib/band.js';
+import { DASH_LABEL, dashUrl, dashProbeUrl, isAiDash, openCommands, startArgv } from '../hooks/lib/dash.js';
 import { join, dirname } from '../hooks/lib/path.js';
 
 test('sanitizeBranch matches the gate.sh printf rule, no trailing underscore', () => {
@@ -117,4 +118,23 @@ test('path helpers: join and dirname (no Node builtins allowed in a mod)', () =>
   expect(join('/root', '.agents', 'state', 'usage', 'main.json')).toBe('/root/.agents/state/usage/main.json');
   expect(dirname('/a/b/.git')).toBe('/a/b');
   expect(dirname('/a')).toBe('/');
+});
+
+test('AI Dash button helpers: url, probe, recognising our dashboard, per-OS openers', () => {
+  expect(dashUrl()).toBe('http://127.0.0.1:4173/');
+  expect(dashProbeUrl()).toBe('http://127.0.0.1:4173/api/config');
+  expect(dashUrl(5000)).toBe('http://127.0.0.1:5000/');
+  expect(isAiDash('{"mod":{"enabled":true,"source":"project","ref":"main"}}')).toBe(true);
+  expect(isAiDash('{"mod":{"enabled":null}}')).toBe(true);
+  expect(isAiDash('<html>another app</html>')).toBe(false);
+  expect(isAiDash('{"hello":1}')).toBe(false);
+  expect(isAiDash('{"mod":null}')).toBe(false);
+  expect(isAiDash('')).toBe(false);
+  expect(openCommands('http://x/')).toEqual([
+    ['cmd', '/c', 'start', '', 'http://x/'],
+    ['open', 'http://x/'],
+    ['xdg-open', 'http://x/'],
+  ]);
+  expect(startArgv()).toEqual(['node', 'scripts/ai-dash.mjs', '--port', '4173']);
+  expect(DASH_LABEL.endsWith('AI Dash')).toBe(true);
 });

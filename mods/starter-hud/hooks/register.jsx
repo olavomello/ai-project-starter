@@ -21,10 +21,65 @@ import { sanitizeBranch, agentNameFromBranch } from './lib/branch.js';
 import { zeroCounters, addUsage, freshTokens, cacheRatio } from './lib/usage.js';
 import { parseBudgetKnob, ceilingFor } from './lib/knobs.js';
 import { formatBandSegments, gateStatusText, spinnerSuffix, kilo, SEPARATOR } from './lib/band.js';
+import { DASH_LABEL, dashUrl, dashProbeUrl, isAiDash, openCommands, startArgv } from './lib/dash.js';
 
 const MAX_AGENTS = 4;
 // Band icon colours by tone; a tone with no colour draws dim like the text.
 const TONE_COLOR = { ok: 'green', warn: 'yellow', bad: 'red' };
+
+// ---- the AI Dash button ----
+
+/** Is this project's ai-dash answering on its port? (Not just any program on that port.) */
+async function dashRunning($) {
+  try {
+    const r = await $.http.fetch(dashProbeUrl());
+    return r.ok && isAiDash(r.text);
+  } catch {
+    return false;
+  }
+}
+
+/** Opens `url` in the default browser, trying the Windows, macOS and Linux openers in turn. */
+async function openBrowser($, url) {
+  for (const argv of openCommands(url)) {
+    try {
+      const r = await $.process.run(argv, { timeoutMs: 15000 });
+      if (r.exitCode === 0) return true;
+    } catch { /* that opener does not exist on this OS; try the next */ }
+  }
+  return false;
+}
+
+/** Starts scripts/ai-dash.mjs for the session's life: the child ends with the session or the module. */
+function startDash($, root) {
+  void (async () => {
+    try {
+      for await (const piece of $.process.spawn({ argv: startArgv(), cwd: root })) void piece;
+    } catch { /* it could not start, or it stopped; the button reports it */ }
+  })();
+}
+
+/** Button handler: make sure the dashboard is running, starting it if not, then open it in the browser. */
+async function openDash($, root) {
+  try {
+    if (!root || !(await fileExists($, join(root, 'scripts', 'ai-dash.mjs')))) {
+      $.ui.toast('AI Dash: scripts/ai-dash.mjs not found in this project (run ai-project-starter update)');
+      return;
+    }
+    if (!(await dashRunning($))) {
+      $.ui.toast('AI Dash: starting the dashboard…');
+      startDash($, root);
+      for (let i = 0; i < 24 && !(await dashRunning($)); i++) await $.clock.sleep(250);
+      if (!(await dashRunning($))) {
+        $.ui.toast('AI Dash did not start on port 4173. Run it yourself: node scripts/ai-dash.mjs');
+        return;
+      }
+    }
+    if (!(await openBrowser($, dashUrl()))) $.ui.toast(`AI Dash is running: open ${dashUrl()}`);
+  } catch {
+    $.ui.toast('AI Dash: could not start or open the dashboard');
+  }
+}
 
 function usageFilePath(root, safeBranch) {
   return join(root, '.agents', 'state', 'usage', `${safeBranch}.json`);
@@ -280,7 +335,7 @@ export const register = (on, options) => {
     const rest = await next(e);
     if (inert) return rest;
     try {
-      const { Box, Text } = $.ui.resolve(e);
+      const { Box, Text, Button } = $.ui.resolve(e);
       const agentsCount = await countLiveAgents($, root);
       const ceiling = ceilingFor(budgetKnob, taskSize);
       const segments = formatBandSegments({
@@ -302,7 +357,10 @@ export const register = (on, options) => {
       });
       return (
         <Box flexDirection="column">
-          <Box>{row}</Box>
+          <Box justifyContent="space-between">
+            <Box>{row}</Box>
+            <Button key="aidash" label={DASH_LABEL} onPress={() => openDash($, root)} />
+          </Box>
           {rest}
         </Box>
       );
