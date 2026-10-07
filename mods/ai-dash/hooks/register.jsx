@@ -529,7 +529,7 @@ function registerDecisions(on, options) {
       );
     }
 
-    const room = Math.max(4, ((e.viewport && e.viewport.rows) || 24) - 7);
+    const room = Math.max(6, ((e.viewport && e.viewport.rows) || 24) - 8);
     const entries = toEntries(list);
     const { shown, start: from, end } = windowEntries(entries, start, room);
     const isPaged = from > 0 || end < entries.length;
@@ -543,21 +543,30 @@ function registerDecisions(on, options) {
         <Box flexDirection="column">
           {shown.map((entry) =>
             entry.kind === 'heading' ? (
-              <Text key={`h:${entry.group}:${entry.text}`} bold color={decAccent(entry.group)}>
-                {entry.text.toUpperCase()}
-              </Text>
+              <Box key={`h:${entry.group}:${entry.text}`} flexDirection="column">
+                <Box gap={1}>
+                  <Text color={decAccent(entry.group)}>{'▍'}</Text>
+                  <Text bold color={decAccent(entry.group)}>
+                    {entry.text.toUpperCase()}
+                  </Text>
+                  <Text dimColor>{entry.count}</Text>
+                </Box>
+                <Text dimColor wrap="truncate-end">
+                  {'─'.repeat(120)}
+                </Text>
+              </Box>
             ) : (
-              <Box key={entry.item.id} flexDirection="column">
+              <Box key={entry.item.id} flexDirection="column" marginBottom={1}>
                 <Box justifyContent="space-between" gap={2}>
-                  <Box flexGrow={1} flexShrink={1}>
-                    <Text wrap="truncate-end">
-                      <Text color={decAccent(entry.item.group)}>{'• '}</Text>
+                  <Box flexGrow={1} flexShrink={1} gap={1}>
+                    <Text color={decAccent(entry.item.group)}>{'●'}</Text>
+                    <Text bold wrap="truncate-end">
                       {entry.item.title}
                     </Text>
                   </Box>
                   <Button
                     key={`approve:${entry.item.id}`}
-                    label="Approve"
+                    label={'✓ Approve'}
                     variant="primary"
                     onPress={() => update($, decScreen, () => decConfirming(entry.item.id))}
                   />
@@ -566,6 +575,12 @@ function registerDecisions(on, options) {
                   <Text dimColor wrap="truncate-end">
                     {'  '}
                     {entry.item.detail}
+                  </Text>
+                )}
+                {entry.item.blocks !== '' && (
+                  <Text color={decAccent(entry.item.group)} wrap="truncate-end">
+                    {'  ↳ blocks · '}
+                    {entry.item.blocks}
                   </Text>
                 )}
               </Box>

@@ -147,20 +147,23 @@ export function buildPrompt(item, file) {
 export function toEntries(items) {
   const entries = [];
   let last = null;
+  let heading = null;
   for (const item of items) {
     const key = `${item.group}:${item.section}`;
     if (key !== last) {
-      entries.push({ kind: 'heading', text: item.section || 'Pending', group: item.group });
+      heading = { kind: 'heading', text: item.section || 'Pending', group: item.group, count: 0 };
+      entries.push(heading);
       last = key;
     }
+    if (heading) heading.count += 1;
     entries.push({ kind: 'item', item });
   }
   return entries;
 }
 
-const rowsOf = (entry) => (entry.kind === 'heading' ? 1 : 2);
+const rowsOf = (entry) => (entry.kind === 'heading' ? 2 : entry.item.blocks ? 4 : 3);
 
-/** Windows the display rows so a long list fits a pane: headings take 1 row, items 2. */
+/** Windows the display rows so a long list fits a pane: headings take 2 rows (title and rule), items 3 (title, detail, gap). */
 export function windowEntries(entries, offset, room) {
   const start = Math.min(Math.max(offset, 0), Math.max(entries.length - 1, 0));
   const shown = [];
