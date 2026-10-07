@@ -223,7 +223,7 @@
   .dec-ask { color: var(--text-2); font-size: 12px; }
   .dec-item.confirming { flex-direction: column; }
   .dec-confirm { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-  .dec-note { width: 100%; box-sizing: border-box; resize: vertical; background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 12.5px; }
+  .dec-note { width: 100%; min-height: 240px; overflow-y: auto; box-sizing: border-box; resize: vertical; background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 12.5px; }
   .dec-note:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .dec-confirm .dec-actions { justify-content: flex-start; }
   .dec-actions .btn { background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; font: inherit; font-size: 12.5px; cursor: pointer; }
@@ -482,12 +482,12 @@ document.getElementById('theme').onclick = () => {
   function item(it) {
     const confirming = confirmId === it.id;
     return '<div class="dec-item' + (confirming ? ' confirming' : '') + '">' +
-      '<div class="dec-main"><div class="dec-title">' + esc(it.title) + '</div>' +
+      '<div class="dec-main"><div class="dec-title">' + esc((it.num || String(data.items.indexOf(it) + 1)) + ' - ' + it.title) + '</div>' +
       (it.detail ? '<div class="dec-detail">' + esc((it.detailLabel || 'Details') + ' - ' + it.detail) + '</div>' : '') +
       (it.blocks ? '<div class="dec-blocks">' + esc((it.blocksLabel || 'Blocks') + ' - ' + it.blocks) + '</div>' : '') + '</div>' +
       (confirming
         ? '<div class="dec-confirm"><div class="dec-ask">Approve this item? It leaves the file and the agent receives it. Add instructions only if the agent needs them.</div>' +
-          '<textarea class="dec-note" id="dec-note" rows="3" maxlength="2000" placeholder="Instructions for the agent (optional): what to do, how, what to avoid">' + esc(note) + '</textarea>' +
+          '<textarea class="dec-note" id="dec-note" rows="12" maxlength="2000" placeholder="Instructions for the agent (optional): what to do, how, what to avoid">' + esc(note) + '</textarea>' +
           '<div class="dec-actions"><button class="btn primary" type="button" data-yes="' + esc(it.id) + '">Approve</button>' +
           '<button class="btn primary" type="button" data-yes-note="' + esc(it.id) + '">Approve with instructions</button>' +
           '<button class="btn" type="button" data-no="1">Cancel</button></div></div>'
