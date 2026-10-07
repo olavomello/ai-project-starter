@@ -40,3 +40,9 @@ test('the view wraps long lines and scrolls to keep the caret on screen', async 
   expect(view.filter((row) => row.cursor !== -1)).toHaveLength(1)
   expect(viewOf(editorOf(''), 10, 3)).toEqual([{ text: '', cursor: 0 }])
 })
+
+test('the space bar, named "space" by the engine, types a space', async () => {
+  const s = type(editorOf(), 'a', 'space', 'b')
+  expect(s.text).toBe('a b')
+  expect(type(s, 'shift').text).toBe('a b')
+})

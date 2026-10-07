@@ -7,7 +7,7 @@ export const MAX_TEXT = 4000;
 
 const NAMED = new Set([
   'up', 'down', 'left', 'right', 'return', 'enter', 'tab', 'backspace', 'delete', 'home', 'end',
-  'pageup', 'pagedown', 'escape', 'insert',
+  'pageup', 'pagedown', 'escape', 'insert', 'shift', 'control', 'alt', 'meta', 'capslock',
 ]);
 
 export const editorOf = (text = '') => ({ text: String(text).slice(0, MAX_TEXT), cursor: Math.min(String(text).length, MAX_TEXT) });
@@ -48,6 +48,8 @@ export function applyKey(state, event) {
     return state;
   }
   switch (key) {
+    case 'space':
+      return insert(state, ' '); // the engine names the space bar
     case 'return':
     case 'enter':
       return insert(state, '\n');

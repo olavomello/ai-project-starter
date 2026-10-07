@@ -57,6 +57,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- ai-dash Instructions editor: the space bar types a space (the engine names that key `space`, and it was typed as the word), typing no longer redraws the pane on every key, and the field takes 60% of the screen height.
 - ai-dash Pending decisions: a table with a leading id column (`#`, `ID`, `No`, or plain numbers) shows that number before the title (`9 - Mobile app`) instead of reading it as the title; tables without one are numbered by position. The approval screen shows the item's full data, and the Instructions field is now a multi-line editor in the pane (click it, Enter adds a line, long text scrolls) and a tall, scrolling textarea in AI Dash.
 - ai-dash Pending decisions (pane and AI Dash): the detail and blocks lines are labelled with the table's own column names (`Question - …`, `What is needed - …`, `Blocks - …`) instead of showing bare text.
 - ai-dash Pending decisions pane: each item reads `1 - Title` on one line, with its details and `Blocks - …` on the lines beneath (the number and title were drawn as nested text, which split across lines).

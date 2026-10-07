@@ -266,7 +266,8 @@ const decItems = atom({ plugin: 'ai-dash', key: 'decisionItems' }, []);
 const decScreen = atom({ plugin: 'ai-dash', key: 'decisionScreen' }, { kind: 'list' });
 const decOffset = atom({ plugin: 'ai-dash', key: 'decisionOffset' }, 0);
 const decExpanded = atom({ plugin: 'ai-dash', key: 'decisionExpanded' }, []);
-const decNote = atom({ plugin: 'ai-dash', key: 'decisionNote' }, '');
+// The Instructions being typed. A plain variable, not an atom: typing must not redraw the pane on every key.
+let decDraft = '';
 
 /** One line of `text` that fits `room` columns, ending in an ellipsis when it was cut. */
 const decClip = (text, room) => (text.length <= room ? text : `${text.slice(0, Math.max(room - 1, 1))}…`);
@@ -285,7 +286,10 @@ const DEC_LIST = { kind: 'list' };
 /** The number shown before an item: the table's own id column when it has one, else its place in the list. */
 const decNumber = (list, item) => (item.num !== '' ? item.num : String(list.findIndex((one) => one.id === item.id) + 1));
 const decConfirming = (id) => ({ kind: 'confirm', id });
-const decAsk = ($, id) => Promise.all([update($, decNote, () => ''), update($, decScreen, () => decConfirming(id))]);
+const decAsk = ($, id) => {
+  decDraft = '';
+  return update($, decScreen, () => decConfirming(id));
+};
 
 const decClock = (ms) => {
   const d = new Date(ms);
@@ -386,7 +390,7 @@ async function decApprove($, file, id, instructions) {
   try {
     const item = (await read($, decItems)).find((one) => one.id === id);
     await update($, decScreen, () => ({ kind: 'list' }));
-    await update($, decNote, () => '');
+    decDraft = '';
     if (!item) return;
     const markdown = String(await $.fs.read(file));
     const next = removeLine(markdown, item.raw);
@@ -494,7 +498,7 @@ function registerDecisions(on, options) {
   on('ui.message', async ($, e) => {
     const data = e.data;
     if (e.element === 'confirm-note' && data && typeof data === 'object' && typeof data.text === 'string') {
-      await update($, decNote, () => data.text.slice(0, 4000));
+      decDraft = data.text.slice(0, 4000);
     }
     return {};
   });
@@ -506,7 +510,6 @@ function registerDecisions(on, options) {
     const current = await read($, decScreen);
     const start = await read($, decOffset);
     const expanded = await read($, decExpanded);
-    const note = await read($, decNote);
     const cols = (e.viewport && e.viewport.cols) || 80;
     const toggle = (id) => update($, decExpanded, (ids) => (ids.includes(id) ? ids.filter((one) => one !== id) : [...ids, id]));
     const close = () => $.ui.close({ id: DEC_PANE });
@@ -529,6 +532,7 @@ function registerDecisions(on, options) {
 
     if (current.kind === 'confirm') {
       const item = list.find((one) => one.id === current.id);
+      const noteRows = Math.max(6, Math.floor((((e.viewport && e.viewport.rows) || 24) * 60) / 100)); // the field takes 60% of the screen
       const back = () => update($, decScreen, () => ({ kind: 'list' }));
       if (!item) {
         return <Box flexDirection="column">{header('Confirm approval', back, false)}</Box>;
@@ -549,9 +553,9 @@ function registerDecisions(on, options) {
             <Client
               key="confirm-note"
               module="./editor.jsx"
-              props={{ value: note, rows: Math.max(8, ((e.viewport && e.viewport.rows) || 24) - 18), placeholder: 'what to do, how, what to avoid' }}
+              props={{ value: '', rows: noteRows, placeholder: 'what to do, how, what to avoid' }}
               width="100%"
-              height={Math.max(8, ((e.viewport && e.viewport.rows) || 24) - 18)}
+              height={noteRows}
             />
           </Box>
           <Box gap={2}>
@@ -561,7 +565,7 @@ function registerDecisions(on, options) {
               label={'\u27a4 Approve with instructions'}
               hotkey="w"
               variant="primary"
-              onPress={() => (note.trim() === '' ? $.ui.toast('Type the instructions first, or use Approve only.') : decApprove($, file, item.id, note.trim()))}
+              onPress={() => (decDraft.trim() === '' ? $.ui.toast('Type the instructions first, or use Approve only.') : decApprove($, file, item.id, decDraft.trim()))}
             />
             <Button key="confirm-no" label="Cancel" hotkey="n" onPress={back} />
           </Box>
