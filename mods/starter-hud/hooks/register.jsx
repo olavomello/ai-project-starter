@@ -432,13 +432,16 @@ export const register = (on, options) => {
       });
       const buttons = [<Button key="aidash" label={DASH_LABEL} onPress={() => openDash($, root)} />];
       const view = updateView(updateState.info, updateState.updating);
-      if (view === 'available') buttons.push(<Box key="updatebox" marginLeft={2}><Button key="update" label={UPDATE_LABEL} onPress={() => runUpdate($, root, updateState)} /></Box>);
-      if (view === 'updating') buttons.push(<Box key="updatingbox" marginLeft={2}><Text dimColor>{UPDATING_LABEL}</Text></Box>);
+      if (view === 'available') buttons.push(<Button key="update" label={UPDATE_LABEL} onPress={() => runUpdate($, root, updateState)} />);
+      if (view === 'updating') buttons.push(<Text key="updating" dimColor>{UPDATING_LABEL}</Text>);
+      // The band shares this slot with other plugins' rows (their buttons sit on the right too), so it keeps
+      // to its own line: the items wrap under each other when the window is narrow instead of drawing over a
+      // neighbour, the buttons never shrink, and a blank line separates it from whatever is drawn below.
       return (
         <Box flexDirection="column">
-          <Box justifyContent="space-between">
-            <Box>{row}</Box>
-            <Box>{buttons}</Box>
+          <Box flexWrap="wrap" justifyContent="space-between" columnGap={2} marginBottom={1}>
+            <Box flexShrink={1}>{row}</Box>
+            <Box flexShrink={0} columnGap={2}>{buttons}</Box>
           </Box>
           {rest}
         </Box>

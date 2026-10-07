@@ -1,6 +1,6 @@
 {
   "name": "starter-hud",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": { "name": "olavomello" },
   "description": "Measures real token, cache and tool-call usage per task and shows it in a small band above the prompt. Hands the numbers to ai-project-starter's execution log instead of leaving them at zero."
 }
