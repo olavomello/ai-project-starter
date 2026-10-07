@@ -337,3 +337,28 @@ test('with no token data the breakdown bars share executions, with tokens they s
   assert.ok(some.includes('Tokens by task type') && some.includes('>90%<') && some.includes('of tokens'));
   assert.equal(shareBar([], 'model', 'Tokens by model'), '');
 });
+
+// ---- the Task column and breakdown hide while every record is "other" ----
+function loadRecentTable() {
+  const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
+  const start = html.indexOf('const hasTaskTypes = ');
+  const end = html.indexOf('// Replaces a panel\'s markup');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return vm.runInNewContext(`${html.slice(start, end)}; ({ recentTable, hasTaskTypes })`, { esc, fmt: (n) => String(n), Date, Math });
+}
+const rec = (task_type, agent = 'main') => ({ task_type, agent, model: 'unknown', gate: 'pass', tokens_in: 0, tokens_out: 0, ts: '2026-10-06T20:00:00Z' });
+
+test('the Recent executions table drops the Task column while every record is "other"', () => {
+  const { recentTable, hasTaskTypes } = loadRecentTable();
+  const allOther = recentTable([rec('other'), rec('other', 'dev-api-builder')]);
+  assert.ok(!allOther.includes('<th>Task</th>'));
+  assert.equal((allOther.match(/<td/g) || []).length, 2 * 5, 'five cells per row without the Task column');
+  assert.ok(allOther.includes('dev-api-builder'));
+  const mixed = recentTable([rec('other'), rec('fix-bug')]);
+  assert.ok(mixed.includes('<th>Task</th>') && mixed.includes('fix-bug'));
+  assert.equal((mixed.match(/<td/g) || []).length, 2 * 6);
+  assert.equal(hasTaskTypes([rec('other')]), false);
+  assert.equal(hasTaskTypes([rec('other'), rec('plan')]), true);
+  assert.equal(hasTaskTypes([]), false);
+  assert.equal(recentTable([]), '');
+});
