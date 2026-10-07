@@ -680,6 +680,16 @@ function recentTable(recs) {
   </div>`;
 }
 
+// Replaces a panel's markup without moving the page: the panels are rebuilt every few seconds,
+// and a momentary collapse of their height used to throw the scroll position back up.
+function setHtml(el, html) {
+  const canKeep = typeof window !== 'undefined' && el.style;
+  const y = canKeep ? window.scrollY : 0;
+  if (canKeep) el.style.minHeight = el.offsetHeight + 'px';
+  el.innerHTML = html;
+  if (canKeep) { el.style.minHeight = ''; window.scrollTo(0, y); }
+}
+
 // Live agents: polls the local server's GET api/live while the tab is visible.
 // Static hosting (Vercel, `npx serve`) has no such endpoint, so the panel stays hidden there.
 // Each run has a monitor button (console icon) that opens that agent's recent tool calls.
@@ -750,7 +760,7 @@ function recentTable(recs) {
     const recent = state.recent.length
       ? '<div class="live-sub">Recently finished</div><ul class="live-list dim runs">' + state.recent.slice(0, 6).map((r) => runLi(r, false)).join('') + '</ul>'
       : '';
-    el.innerHTML = '<h2>Live</h2><div class="card live-card">' + head + running + claims + recent + '</div>';
+    setHtml(el, '<h2>Live</h2><div class="card live-card">' + head + running + claims + recent + '</div>');
     restore(snap);
   }
   el.addEventListener('click', (e) => {
@@ -868,8 +878,8 @@ function recentTable(recs) {
     const body = calls || runs
       ? '<div class="legend"><span><i class="sw" style="background:var(--series-1)"></i>session</span><span><i class="sw" style="background:var(--series-3)"></i>subagents</span></div>' + chart(range, buckets)
       : '<p class="act-empty">No activity in the ' + WINDOW[range] + '.</p>';
-    el.innerHTML = '<h2>Activity</h2><div class="card act-card"><div class="act-head"><div class="act-total"><b>' + num(calls) + '</b>tool calls · ' +
-      num(runs) + ' run' + (runs === 1 ? '' : 's') + ' · ' + WINDOW[range] + '</div><div class="act-seg" role="group" aria-label="Time range">' + seg + '</div></div>' + body + '</div>';
+    setHtml(el, '<h2>Activity</h2><div class="card act-card"><div class="act-head"><div class="act-total"><b>' + num(calls) + '</b>tool calls · ' +
+      num(runs) + ' run' + (runs === 1 ? '' : 's') + ' · ' + WINDOW[range] + '</div><div class="act-seg" role="group" aria-label="Time range">' + seg + '</div></div>' + body + '</div>');
     wireTips(el);
   }
   el.addEventListener('click', (e) => {
