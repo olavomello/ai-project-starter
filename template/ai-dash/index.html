@@ -573,24 +573,34 @@ function tiles(d) {
 
 // Line chart: input vs cache-read tokens per day. Two series -> legend + direct end labels, one axis.
 function lineChart(days) {
-  if (days.length < 2) return `<div class="card"><h2 style="margin-top:0">Tokens per day</h2><p class="empty">Needs at least two days of records.</p></div>`;
+  // Tokens are measured by the starter-hud mod (or AILOG_TOKENS_IN). Until a record carries any, a chart of
+  // zeros says nothing, so the trend falls back to what the gate always records: executions per day.
+  const byExec = days.every(d => !d.tokens_in && !d.cache_read);
+  const title = byExec ? 'Executions per day' : 'Tokens per day';
+  if (days.length < 2) return `<div class="card"><h2 style="margin-top:0">${title}</h2><p class="empty">Needs at least two days of records.</p></div>`;
   const W = 1040, H = 300, P = { t: 16, r: 62, b: 30, l: 54 };
-  const max = Math.max(...days.flatMap(d => [d.tokens_in, d.cache_read])) || 1;
+  const series = byExec
+    ? [['executions', 'var(--series-5)', 'gate runs']]
+    : [['tokens_in', 'var(--series-1)', 'input'], ['cache_read', 'var(--series-3)', 'cached']];
+  const max = Math.max(...days.flatMap(d => series.map(([k]) => d[k]))) || 1;
   const x = i => P.l + (i * (W - P.l - P.r)) / Math.max(days.length - 1, 1);
   const y = v => P.t + (1 - v / max) * (H - P.t - P.b);
   const path = k => days.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d[k]).toFixed(1)}`).join('');
   const ticks = [0, max / 2, max];
-  const series = [['tokens_in', 'var(--series-1)', 'input'], ['cache_read', 'var(--series-3)', 'cached']];
   const last = days.length - 1;
+  const aria = byExec ? 'Gate executions per day' : 'Input and cached tokens per day';
+  const tip = d => byExec
+    ? `<b>${esc(d.day)}</b><br>${d.executions} execution(s)<br><i>no token usage recorded yet</i>`
+    : `<b>${esc(d.day)}</b><br>input ${fmt(d.tokens_in)}<br>cached ${fmt(d.cache_read)}<br>${d.executions} execution(s)`;
   return `<div class="card">
-    <h2 style="margin-top:0">Tokens per day</h2>
+    <h2 style="margin-top:0">${title}</h2>
     <div class="legend">${series.map(([, c, n]) =>
       `<span><i class="sw" style="background:${c}"></i>${n}</span>`).join('')}</div>
-    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Input and cached tokens per day">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${aria}">
       ${ticks.map(v => `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--grid)" stroke-width="1"/>
          <text class="ax" x="${P.l - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${kilo(Math.round(v))}</text>`).join('')}
       ${series.map(([k, c]) => `<path d="${path(k)}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
-      ${series.map(([k, c, n]) => `<circle cx="${x(last).toFixed(1)}" cy="${y(days[last][k]).toFixed(1)}" r="4" fill="${c}" stroke="var(--surface-1)" stroke-width="2"/>
+      ${series.map(([k, c]) => `<circle cx="${x(last).toFixed(1)}" cy="${y(days[last][k]).toFixed(1)}" r="4" fill="${c}" stroke="var(--surface-1)" stroke-width="2"/>
          <text class="dl" x="${(x(last) + 9).toFixed(1)}" y="${(y(days[last][k]) + 4).toFixed(1)}">${kilo(days[last][k])}</text>`).join('')}
       ${days.map((d, i) => {
         const show = days.length <= 6 || i === 0 || i === last || i === Math.floor(last / 2);
@@ -598,8 +608,7 @@ function lineChart(days) {
       }).join('')}
       ${days.map((d, i) => {
         const w = (W - P.l - P.r) / Math.max(days.length, 1);
-        return `<rect class="hit" x="${(x(i) - w / 2).toFixed(1)}" y="${P.t}" width="${w.toFixed(1)}" height="${H - P.t - P.b}"
-          data-tip="<b>${esc(d.day)}</b><br>input ${fmt(d.tokens_in)}<br>cached ${fmt(d.cache_read)}<br>${d.executions} execution(s)"/>`;
+        return `<rect class="hit" x="${(x(i) - w / 2).toFixed(1)}" y="${P.t}" width="${w.toFixed(1)}" height="${H - P.t - P.b}" data-tip="${esc(tip(d))}"/>`;
       }).join('')}
     </svg>
   </div>`;
@@ -607,32 +616,38 @@ function lineChart(days) {
 
 // Part-to-whole by task type or model: single stacked bar, not a donut (skill: donut deprioritized
 // for part-to-whole; stacked bar carries it). Fixed categorical slot order, direct % + value labels.
-function shareBar(rows, key, title, total) {
+// Shares are of tokens; while no record carries tokens they are of executions, so the card is never a row of 0%.
+function shareBar(rows, key, title) {
   if (!rows.length) return '';
+  const byTokens = rows.some(r => r.tokens_in > 0);
+  const m = byTokens ? 'tokens_in' : 'executions';
+  const total = rows.reduce((s, r) => s + r[m], 0) || 1;
+  const heading = byTokens ? title : title.replace(/^Tokens/, 'Executions');
+  const unit = byTokens ? 'of tokens' : 'of executions';
   const top = rows.slice(0, 5);
-  const rest = rows.slice(5).reduce((s, r) => s + r.tokens_in, 0);
-  const segs = rest > 0 ? [...top, { [key]: 'Other', tokens_in: rest, executions: rows.slice(5).reduce((s, r) => s + r.executions, 0) }] : top;
+  const rest = rows.slice(5).reduce((s, r) => s + r[m], 0);
+  const segs = rest > 0 ? [...top, { [key]: 'Other', tokens_in: rows.slice(5).reduce((s, r) => s + r.tokens_in, 0), executions: rows.slice(5).reduce((s, r) => s + r.executions, 0) }] : top;
   let acc = 0;
   const W = 100;
   return `<div class="card">
-    <h2 style="margin-top:0">${esc(title)}</h2>
-    <svg viewBox="0 0 ${W} 14" style="border-radius:4px;overflow:hidden" role="img" aria-label="${esc(title)} share">
+    <h2 style="margin-top:0">${esc(heading)}</h2>
+    <svg viewBox="0 0 ${W} 14" style="border-radius:4px;overflow:hidden" role="img" aria-label="${esc(heading)} share">
       ${segs.map((r, i) => {
-        const w = (r.tokens_in / total) * W;
+        const w = (r[m] / total) * W;
         const x0 = acc; acc += w;
         const c = i === segs.length - 1 && rest > 0 ? 'var(--text-3)' : SERIES[i % SERIES.length];
         return `<rect class="seg" x="${x0.toFixed(2)}" y="0" width="${Math.max(w - 0.3, 0).toFixed(2)}" height="14" fill="${c}"
-          data-tip="<b>${esc(r[key])}</b><br>${pct(r.tokens_in / total)} of tokens<br>${fmt(r.tokens_in)} tokens · ${r.executions} exec(s)"/>`;
+          data-tip="<b>${esc(r[key])}</b><br>${pct(r[m] / total)} ${unit}<br>${fmt(r.tokens_in)} tokens · ${r.executions} exec(s)"/>`;
       }).join('')}
     </svg>
     <div class="bars-list" style="margin-top:16px">
       ${segs.map((r, i) => {
         const c = i === segs.length - 1 && rest > 0 ? 'var(--text-3)' : SERIES[i % SERIES.length];
-        const w = Math.max((r.tokens_in / total) * 100, 1.5);
+        const w = Math.max((r[m] / total) * 100, 1.5);
         return `<div class="bar-row">
           <span class="nm"><i class="sw" style="background:${c};display:inline-block;margin-right:6px"></i>${esc(r[key])}</span>
           <span class="bar-track"><span class="bar-fill" style="width:${w.toFixed(1)}%;background:${c}"></span></span>
-          <span class="val">${pct(r.tokens_in / total)}</span>
+          <span class="val">${pct(r[m] / total)}</span>
         </div>`;
       }).join('')}
     </div>
@@ -921,14 +936,13 @@ function render(d) {
   document.getElementById('crumb').innerHTML = `<b>${esc(d.log_records)}</b> execution${d.log_records === 1 ? '' : 's'} logged`;
   hideOrb('orb');
   document.getElementById('meta-text').textContent = `updated ${new Date(d.generated_at).toLocaleString()}`;
-  const total = d.by_task.reduce((s, r) => s + r.tokens_in, 0) || 1;
   document.getElementById('root').innerHTML =
     tiles(d) +
     noUsageNote(d) +
     '<h2>Trend</h2>' + lineChart(d.by_day) +
     '<h2>Breakdown</h2><div class="grid3">' +
-      shareBar(d.by_task, 'task_type', 'Tokens by task type', total) +
-      shareBar(d.by_model, 'model', 'Tokens by model', total) +
+      shareBar(d.by_task, 'task_type', 'Tokens by task type') +
+      shareBar(d.by_model, 'model', 'Tokens by model') +
     '</div>' +
     '<h2>Activity</h2><div class="grid2">' +
       recentTable(d.recent) +
