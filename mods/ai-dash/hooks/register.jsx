@@ -537,7 +537,7 @@ function registerDecisions(on, options) {
             label="Instructions"
             placeholder="what to do, how, what to avoid (optional)"
             value={note}
-            submitLabel="approve with instructions"
+            submitLabel={'21b5'}
             autoFocus
             onInput={(text) => update($, decNote, () => text)}
             onSubmit={(text) => (text.trim() === '' ? decApprove($, file, item.id) : decApprove($, file, item.id, text.trim()))}

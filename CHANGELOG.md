@@ -57,6 +57,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- ai-dash approval screen: the instructions field no longer draws a second "approve with instructions" chip next to it; Enter is hinted with a small ↵.
 - ai-dash Pending decisions pane: click a decision's detail line (`▸`) to read it in full, wrapped; click `▾ hide details` to fold it back.
 - ai-dash Pending decisions pane: sections with a coloured bar, a count and a rule, each decision as a spaced entry (bold title, `✓ Approve` button, dim detail, the items it blocks on its own line).
 - The Claude Code mod is renamed from `starter-hud` to `ai-dash` (plugin id `ai-dash@ai-project-starter`, folder `mods/ai-dash`, version 0.4.0). Existing projects migrate on their own: `ai-project-starter update` and `doctor --fix` rename the `enabledPlugins` key, install the new plugin and uninstall the old one; the AI Dash update button and `scripts/mod.mjs` understand both names.
