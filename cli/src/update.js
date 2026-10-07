@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, rmSync as rmFile, mkdirSync } from 'node:f
 import { existsSync, hashFile, isFile } from './lib/fsutil.js';
 import { resolveSource } from './lib/source.js';
 import { buildFileHashes, readManifest, writeManifest, newManifest, isProtected, isIgnored, MANIFEST_FILE } from './lib/manifest.js';
-import { mergeSettings } from './lib/settings-merge.js';
+import { mergeSettings, fixModPin } from './lib/settings-merge.js';
 import { die, info, ok, warn, section } from './lib/log.js';
 
 const SETTINGS_FILE = '.claude/settings.json';
@@ -92,6 +92,13 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
         // Local customization, starter unchanged — keep local. The baseline stays the
         // starter's last-synced copy; recording the local hash instead would turn this
         // file into a false conflict at the next update.
+        if (rel === SETTINGS_FILE) {
+          const { text, change } = fixModPin(readFileSync(join(target, rel), 'utf8'));
+          if (text !== null) {
+            merged.push({ file: rel, hooks: [change] });
+            if (!dryRun) writeFileSync(join(target, rel), text);
+          }
+        }
         continue;
       }
       // Both changed. The project's settings.json is edited by the session-mod toggle,

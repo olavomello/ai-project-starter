@@ -398,7 +398,7 @@ document.getElementById('theme').onclick = () => {
         });
         if (!r.ok) throw new Error(String(r.status));
         const data = await r.json();
-        renderSwitch(data.mod.enabled === true, 'Run /reload-plugins (or restart the session), then commit the settings file.');
+        renderSwitch(data.mod.enabled === true, 'Install the plugin once (claude plugin install starter-hud@ai-project-starter --scope project), run /reload-plugins, then commit the settings file.');
       } catch {
         sw.disabled = false;
         document.getElementById('mod-note').textContent = 'Could not reach the local server — is it still running?';

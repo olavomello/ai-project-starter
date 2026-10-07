@@ -117,8 +117,12 @@ project:
    `.claude/settings.json` by hand, that script is the one implementation of
    this toggle, shared with the CLI and the ai-dash Settings area.
 3. Show me the resulting `.claude/settings.json` diff.
-4. Tell me to run `/reload-plugins` (or restart the session) and to commit the
-   settings file so the rest of the team gets the same setting.
+4. If the mod was just enabled, tell me it still has to be installed once on each
+   machine (enabling it in settings does not download it): `claude plugin marketplace
+   add olavomello/ai-project-starter#main`, then `claude plugin install
+   starter-hud@ai-project-starter --scope project`. Then tell me to run
+   `/reload-plugins` (or restart the session) and to commit the settings file so the
+   rest of the team gets the same setting.
 
 Do not mention any AI assistant or tool name anywhere in the commit message if
 I ask you to commit this.

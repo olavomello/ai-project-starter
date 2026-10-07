@@ -153,7 +153,12 @@ function main() {
       try {
         const status = enableMod(flags.dir, { local: flags.local, ref: flags.ref });
         printStatus(flags.dir, status, flags.json);
-        console.log('Run /reload-plugins (or restart the session), then commit the settings file.');
+        if (!flags.json) {
+          console.log('Enabling the mod in settings does not download it. Install it once on this machine:');
+          console.log(`  claude plugin marketplace add ${MARKETPLACE_REPO}#${status.ref || 'main'}`);
+          console.log(`  claude plugin install starter-hud@${MARKETPLACE_NAME} --scope project`);
+          console.log('(or, in the Claude desktop app: + > Plugins > Add plugin). Then run /reload-plugins, or start a new session, and commit the settings file.');
+        }
       } catch (e) { die(e.message); }
       break;
     }
@@ -161,7 +166,7 @@ function main() {
       try {
         const status = disableMod(flags.dir, { local: flags.local });
         printStatus(flags.dir, status, flags.json);
-        console.log('Run /reload-plugins (or restart the session), then commit the settings file.');
+        if (!flags.json) console.log('Run /reload-plugins (or restart the session), then commit the settings file.');
       } catch (e) { die(e.message); }
       break;
     }

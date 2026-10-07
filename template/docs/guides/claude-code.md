@@ -173,8 +173,10 @@ initiative. Three equivalent ways, all backed by the single implementation in
 
 All three write the same key: `.claude/settings.json`'s
 `enabledPlugins["starter-hud@ai-project-starter"]`. Commit that file so the rest
-of the team gets the same setting, and run `/reload-plugins` (or restart the
-session) after toggling it.
+of the team gets the same setting. Enabling the mod in settings does not download it:
+each person runs `claude plugin marketplace add olavomello/ai-project-starter#main` and
+`claude plugin install starter-hud@ai-project-starter --scope project` once (or uses
+**+ > Plugins > Add plugin** in the desktop app), then `/reload-plugins` or a new session.
 
 **Where it runs and where it doesn't:** the band and spinner suffix draw only in
 the terminal and the Desktop Code tab — the measuring hooks and the usage file
