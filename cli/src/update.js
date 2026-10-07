@@ -7,6 +7,7 @@
 import { join, dirname } from 'node:path';
 import { readFileSync, writeFileSync, rmSync as rmFile, mkdirSync } from 'node:fs';
 import { existsSync, hashFile, isFile } from './lib/fsutil.js';
+import { gitHistoryHashes } from './lib/exec.js';
 import { resolveSource } from './lib/source.js';
 import { buildFileHashes, readManifest, writeManifest, newManifest, isProtected, isIgnored, MANIFEST_FILE } from './lib/manifest.js';
 import { mergeSettings, fixModPin } from './lib/settings-merge.js';
@@ -23,7 +24,12 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
   }
 
   section(`Checking ai-project-starter#${ref} against your last sync (v${manifest.starterVersion})...`);
-  const { templateDir, starterVersion, starterRef, cleanup } = resolveSource({ source, ref });
+  const { templateDir, starterVersion, starterRef, repoDir, cleanup } = resolveSource({ source, ref });
+  // Is this file byte-identical to some version the starter has ever shipped (so the project never touched it)?
+  const everShipped = (rel, hash) => {
+    const history = gitHistoryHashes(repoDir, `template/${rel}`);
+    return history !== null && history.has(hash);
+  };
 
   try {
     const incoming = buildFileHashes(templateDir);
@@ -115,6 +121,16 @@ export function update({ target = '.', ref = 'main', source, dryRun = false }) {
           newFiles[rel] = newHash;
           continue;
         }
+      }
+      // The recorded baseline can be stale (an earlier update that stopped at conflicts moved the synced
+      // commit without moving the files), which would flag an untouched file as customized. A file that is
+      // byte-identical to a version the starter once shipped is untouched whatever the baseline says: take
+      // the new one.
+      if (localHash !== undefined && newHash !== undefined && everShipped(rel, localHash)) {
+        applied.push(rel);
+        if (!dryRun) writeFile(join(target, rel), join(templateDir, rel));
+        newFiles[rel] = newHash;
+        continue;
       }
       // Both changed: conflict.
       conflicts.push(rel);

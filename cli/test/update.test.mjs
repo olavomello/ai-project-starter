@@ -362,3 +362,44 @@ test('the Recent executions table drops the Task column while every record is "o
   assert.equal(hasTaskTypes([]), false);
   assert.equal(recentTable([]), '');
 });
+
+test('update takes the new version of a file that is untouched, even when the recorded baseline is stale', () => {
+  const dir = tmp();
+  const git = (cwd, ...args) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd, encoding: 'utf8' });
+  try {
+    const starter = join(dir, 'starter');
+    mkdirSync(join(starter, 'template', 'scripts'), { recursive: true });
+    writeFileSync(join(starter, 'VERSION'), '0.1.0\n');
+    writeFileSync(join(starter, 'template', 'scripts', 'a.mjs'), 'export const v = 1;\n');
+    git(starter, 'init', '--quiet');
+    git(starter, 'add', '-A');
+    git(starter, 'commit', '--quiet', '-m', 'v1');
+    const v1 = git(starter, 'rev-parse', 'HEAD').stdout.trim();
+    writeFileSync(join(starter, 'template', 'scripts', 'a.mjs'), 'export const v = 2;\n');
+    git(starter, 'add', '-A');
+    git(starter, 'commit', '--quiet', '-m', 'v2');
+
+    const target = join(dir, 'proj');
+    mkdirSync(join(target, 'scripts'), { recursive: true });
+    writeFileSync(join(target, 'scripts', 'a.mjs'), 'export const v = 1;\n'); // the starter's v1, untouched
+    const stale = {
+      $schema: 'ai-project-starter/manifest@1', starter, starterVersion: '0.1.0', starterRef: v1,
+      createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+      files: { 'scripts/a.mjs': `sha256:${'0'.repeat(64)}` }, // a baseline that matches nothing
+    };
+    writeFileSync(join(target, '.ai-project-starter.json'), JSON.stringify(stale, null, 2));
+
+    const r = cli('update', target, '--source', starter);
+    assert.equal(readFileSync(join(target, 'scripts', 'a.mjs'), 'utf8'), 'export const v = 2;\n', r.stdout + r.stderr);
+    assert.equal(existsSync(join(target, 'scripts', 'a.mjs.incoming')), false, 'no conflict file');
+
+    // A file the project really changed is still a conflict.
+    writeFileSync(join(target, 'scripts', 'a.mjs'), 'export const v = 99; // mine\n');
+    writeFileSync(join(starter, 'template', 'scripts', 'a.mjs'), 'export const v = 3;\n');
+    git(starter, 'add', '-A');
+    git(starter, 'commit', '--quiet', '-m', 'v3');
+    writeFileSync(join(target, '.ai-project-starter.json'), JSON.stringify({ ...stale, starterRef: v1 }, null, 2));
+    cli('update', target, '--source', starter);
+    assert.equal(existsSync(join(target, 'scripts', 'a.mjs.incoming')), true, 'a customized file still conflicts');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
