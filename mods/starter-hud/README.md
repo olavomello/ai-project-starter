@@ -21,6 +21,14 @@ Optional Claude Code mod for projects built on [ai-project-starter](../../README
    session, run `node scripts/ai-dash.mjs` yourself and the button just opens it. It only
    recognises the project's own dashboard (by its `/api/config` answer), not another
    program on that port.
+   Next to it, an **↑ Update available** button appears when the starter's `main` is newer than
+   the commit this project was last synced with (`scripts/ais-update.mjs check` compares
+   `starterRef` in `.ai-project-starter.json` with `git ls-remote`, at most every 30 minutes, on
+   session start and after turns). Clicking it runs `scripts/ais-update.mjs apply`: the CLI's
+   `update` through `npx`, then `claude plugin update starter-hud@ai-project-starter`. If the
+   dashboard was running it is stopped (`POST /api/shutdown`, local only) and started again on the
+   new code, then the check runs again and the button goes away. Commit the changed files
+   afterwards; a new mod version loads in the next session.
 3. **Hands it to the log pipeline.** After each model request, tool call, and turn, it
    merges the delta into `.agents/state/usage/<branch>.json`. `scripts/ai-log.mjs`
    reads that file (see its precedence rules), and deletes it once logged.

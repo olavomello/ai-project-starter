@@ -10,6 +10,7 @@ import {
 import { parseBudgetKnob, ceilingFor } from '../hooks/lib/knobs.js';
 import { formatBandSegments, gateStatusText, spinnerSuffix, kilo, ICONS, SEPARATOR } from '../hooks/lib/band.js';
 import { DASH_LABEL, dashUrl, dashProbeUrl, isAiDash, openCommands, startArgv } from '../hooks/lib/dash.js';
+import { UPDATE_LABEL, UPDATING_LABEL, CHECK_EVERY_MS, checkArgv, applyArgv, shutdownInit, parseCheck, updateView, updatedToast } from '../hooks/lib/update.js';
 import { join, dirname } from '../hooks/lib/path.js';
 
 test('sanitizeBranch matches the gate.sh printf rule, no trailing underscore', () => {
@@ -137,4 +138,29 @@ test('AI Dash button helpers: url, probe, recognising our dashboard, per-OS open
   ]);
   expect(startArgv()).toEqual(['node', 'scripts/ai-dash.mjs', '--port', '4173']);
   expect(DASH_LABEL.endsWith('AI Dash')).toBe(true);
+});
+
+test('update button helpers: what to run, reading the answer, what to show', () => {
+  expect(checkArgv()).toEqual(['node', 'scripts/ais-update.mjs', 'check', '--json']);
+  expect(checkArgv(true)).toEqual(['node', 'scripts/ais-update.mjs', 'check', '--json', '--force']);
+  expect(applyArgv()).toEqual(['node', 'scripts/ais-update.mjs', 'apply']);
+  expect(shutdownInit()).toEqual({ method: 'POST', headers: { 'content-type': 'application/json', 'x-ai-dash': '1' }, body: '{}' });
+
+  expect(parseCheck('{"available":true,"current":"abc1234","latest":"def5678","checkedAt":1}')).toEqual({ available: true, current: 'abc1234', latest: 'def5678' });
+  expect(parseCheck('noise on top\n{"available":false,"current":"abc1234","latest":"abc1234"}\n')).toEqual({ available: false, current: 'abc1234', latest: 'abc1234' });
+  expect(parseCheck('{"available":"yes"}')).toBe(null);
+  expect(parseCheck('not json')).toBe(null);
+  expect(parseCheck('')).toBe(null);
+
+  expect(updateView(null, false)).toBe('idle');
+  expect(updateView({ available: false, current: 'a', latest: 'a' }, false)).toBe('idle');
+  expect(updateView({ available: true, current: 'a', latest: 'b' }, false)).toBe('available');
+  expect(updateView({ available: true, current: 'a', latest: 'b' }, true)).toBe('updating');
+  expect(updateView(null, true)).toBe('updating');
+
+  expect(UPDATE_LABEL.endsWith('Update available')).toBe(true);
+  expect(UPDATING_LABEL.includes('Updating')).toBe(true);
+  expect(CHECK_EVERY_MS).toBe(600000);
+  expect(updatedToast(true)).toContain('dashboard restarted');
+  expect(updatedToast(false)).not.toContain('dashboard restarted');
 });
