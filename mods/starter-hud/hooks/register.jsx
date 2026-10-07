@@ -790,7 +790,7 @@ export const register = (on, options) => {
       // the buttons never shrink.
       return (
         <Box flexDirection="column">
-          <Box flexWrap="wrap" justifyContent="space-between" columnGap={2} paddingX={1}>
+          <Box flexWrap="wrap" justifyContent="space-between" columnGap={2} paddingX={1} marginBottom={1}>
             <Box gap={2} flexShrink={1}>
               {segments.map((seg) => (
                 <Box key={seg.key} gap={1}>
