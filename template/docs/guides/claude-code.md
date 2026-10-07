@@ -108,6 +108,20 @@ the same guarantee by a different mechanism. Add another rule only when it clear
 both bars above: narrow paths, and fine to be Claude-only (or backed by an
 equivalent pointer elsewhere).
 
+## Keeping files out of Claude's reach
+
+There is no `.claudeignore`: Claude Code does not read one, and a file with that name has no effect. The supported mechanism is a `Read` deny rule in `permissions.deny` of `.claude/settings.json`, which uses gitignore pattern syntax. This project ships a short default list there:
+
+| Rule | Keeps out |
+|---|---|
+| `Read(.env)`, `Read(.env.*)`, then `Read(!.env.example)` | real env files; the example file stays readable (the negation must come after the rule it carves out) |
+| `Read(secrets/**)` | a `secrets/` folder at any depth |
+| `Read(*.pem)`, `*.key`, `*.p12`, `*.pfx`, `**/id_rsa`, `**/id_ed25519` | private keys and certificates |
+
+A `Read` deny rule also blocks Edit and Write on that path, and applies to Grep, Glob, `@` mentions and the file commands Claude Code recognises in Bash (`cat`, `head`, `sed`, redirections). It does not cover a script that opens the file itself, or `grep -r` run from the folder that holds it; for a hard guarantee enable the sandbox.
+
+Add rules for your stack in the same list, or in `.claude/settings.local.json` for personal ones. Deliberately **not** denied by default: `node_modules/`, build output, images and PDFs. Those are noise, not secrets, and sometimes the right thing to read; keep them out of git with `.gitignore` (the template's already lists the common ones) rather than hiding them from the agent. `ai-project-starter update` adds any new starter deny rule to a customized `settings.json` without touching yours.
+
 ## Settings, hooks, and MCP
 
 | File | Committed | Use |

@@ -227,3 +227,31 @@ test('the dashboard explains zero tokens instead of leaving the tiles blank', ()
   assert.equal(note({ log_records: 43, totals: { tokens_in: 1200, cache_read: 0 } }), '');
   assert.equal(note({ log_records: 0, totals: { tokens_in: 0, cache_read: 0 } }), '');
 });
+
+// ---- permission deny rules ----
+test('the template denies secrets to Claude Code and keeps the example env readable', () => {
+  const settings = JSON.parse(readFileSync(join(ROOT, 'template', '.claude', 'settings.json'), 'utf8'));
+  const deny = settings.permissions.deny;
+  for (const rule of ['Read(.env)', 'Read(.env.*)', 'Read(!.env.example)', 'Read(secrets/**)', 'Read(*.pem)', 'Read(*.key)']) assert.ok(deny.includes(rule), rule);
+  assert.ok(deny.indexOf('Read(!.env.example)') > deny.indexOf('Read(.env.*)'), 'the negation comes after the rule it carves out');
+  assert.ok(!deny.some((r) => /node_modules|dist|png|pdf|svg/.test(r)), 'noise is handled by .gitignore, not hidden from the agent');
+  assert.ok(!existsSync(join(ROOT, 'template', '.claudeignore')), 'Claude Code ignores .claudeignore, so the template does not ship one');
+});
+
+test('the template .gitignore covers dependencies and build output without hiding vendored code', () => {
+  const lines = readFileSync(join(ROOT, 'template', '.gitignore'), 'utf8').split(/\r?\n/);
+  for (const entry of ['node_modules/', 'dist/', '.next/', 'coverage/', '*.log', '.env', '!.env.example', '*.pem']) assert.ok(lines.includes(entry), entry);
+  assert.ok(!lines.includes('vendor/') && !lines.includes('*.svg') && !lines.includes('*.png'));
+});
+
+test('mergeSettings appends missing starter deny rules in order and keeps the project\'s own', () => {
+  const incoming = JSON.stringify({ permissions: { deny: ['Read(.env)', 'Read(.env.*)', 'Read(!.env.example)'] } });
+  const local = JSON.stringify({ permissions: { allow: ['Bash(pnpm test)'], deny: ['Read(.env)', 'Read(mine/**)'] } });
+  const { text, added } = mergeSettings(local, incoming);
+  const out = JSON.parse(text);
+  assert.deepEqual(added, ['deny: Read(.env.*)', 'deny: Read(!.env.example)']);
+  assert.deepEqual(out.permissions.deny, ['Read(.env)', 'Read(mine/**)', 'Read(.env.*)', 'Read(!.env.example)']);
+  assert.deepEqual(out.permissions.allow, ['Bash(pnpm test)']);
+  assert.deepEqual(mergeSettings(text, incoming).added, [], 'idempotent');
+  assert.deepEqual(JSON.parse(mergeSettings('{}', incoming).text).permissions.deny, ['Read(.env)', 'Read(.env.*)', 'Read(!.env.example)']);
+});

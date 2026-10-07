@@ -4,8 +4,10 @@
 // update would flag it as a conflict every time the starter adds a hook. Only
 // the `hooks` section is merged: a starter hook is added unless the project
 // already runs the same command for that event. Everything else in the
-// project's file (enabledPlugins, extraKnownMarketplaces, its own hooks,
-// permissions, ...) is kept exactly as it is.
+// project's file (enabledPlugins, extraKnownMarketplaces, its own hooks and
+// permission rules, ...) is kept exactly as it is. The one other thing added is
+// `permissions.deny`: starter deny rules the project doesn't have yet are appended
+// in order, so a negation such as `Read(!.env.example)` stays after its parent rule.
 
 const groupMatcher = (group) => (typeof group.matcher === 'string' ? group.matcher : '');
 const commandOf = (hook) => (hook && hook.type === 'command' ? `${hook.command || ''}\u0000${(hook.args || []).join('\u0000')}` : JSON.stringify(hook));
@@ -38,5 +40,15 @@ export function mergeSettings(localText, incomingText) {
     }
   }
   if (!Object.keys(local.hooks).length) delete local.hooks;
+
+  const wantedDeny = incoming && incoming.permissions && Array.isArray(incoming.permissions.deny) ? incoming.permissions.deny : [];
+  if (wantedDeny.length) {
+    local.permissions = local.permissions && typeof local.permissions === 'object' ? local.permissions : {};
+    const deny = Array.isArray(local.permissions.deny) ? local.permissions.deny : [];
+    for (const rule of wantedDeny) {
+      if (typeof rule === 'string' && !deny.includes(rule)) { deny.push(rule); added.push(`deny: ${rule}`); }
+    }
+    local.permissions.deny = deny;
+  }
   return { text: JSON.stringify(local, null, 2) + '\n', added };
 }

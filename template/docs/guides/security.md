@@ -13,6 +13,7 @@ Read before touching auth, data access, uploads, payments, or anything reachable
 - Rate limiting on auth, write, and expensive endpoints.
 - Errors return a generic message to the client; stack traces and internals only in server logs.
 - Dependencies: no new dependency without asking; audit output reviewed when one is added.
+- Secrets on disk: `.claude/settings.json` denies Claude Code's file tools `.env` files (not `.env.example`), `secrets/**`, private keys and certificates. A `.claudeignore` file does nothing; see `docs/guides/claude-code.md`, "Keeping files out of Claude's reach".
 - Third-party mods (Claude Code plugins with JavaScript hooks): a mod runs with your permissions, and one with a `tool.check` hook can approve a call this project's own `PreToolUse` hooks blocked. Before installing any mod — including this starter's own `starter-hud` — run `claude plugin validate <dir>` and read its `hooks:` and `calls:` lines.
 
 ## If something is found
