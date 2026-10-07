@@ -33,7 +33,18 @@ Claude Code caches an installed plugin by the `version` in `.claude-plugin/plugi
    dashboard was running it is stopped (`POST /api/shutdown`, local only) and started again on the
    new code, then the check runs again and the button goes away. Commit the changed files
    afterwards; a new mod version loads in the next session.
-3. **Hands it to the log pipeline.** After each model request, tool call, and turn, it
+3. **Shows the decisions waiting on you, when the project has the file.** If `docs/pending-decisions.md`
+   exists, a second row reads `◆ Pending decisions : 14` with one coloured square per item and two buttons,
+   **↻ Refresh** and **View ›**. View opens a pane with the items grouped by section, each with an
+   **Approve** button: approving asks for a confirmation, hands the item to the agent as a prompt and removes
+   its row from the file. `/pending` opens the pane from the prompt. Without the file the row is not drawn.
+   An item is a table row (the first row of each table is its header) or a bullet; the first cell is the
+   title, the second the detail, the last cell what it blocks. Options (`userConfig`): `file`, `pollMs`,
+   `showWhenMissing`. **AI Dash** shows and approves the same items (header icon): an item approved there
+   leaves the file at once, and its prompt waits in `.agents/state/decisions-inbox.jsonl` until an open
+   session picks it up (any refresh, the watch interval or a tool call), once. If you also have the standalone
+   `pending-decisions` mod installed, remove it for projects using this one: both draw the same row.
+4. **Hands it to the log pipeline.** After each model request, tool call, and turn, it
    merges the delta into `.agents/state/usage/<branch>.json` (one file per session branch; the next gate run on *any* branch consumes all of them). `scripts/ai-log.mjs`
    reads that file (see its precedence rules), and deletes it once logged.
 

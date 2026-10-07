@@ -42,6 +42,15 @@ row is read-only and shows the two commands to run instead
 
 `GET /api/activity` feeds the **Activity** card under the Live panel: tool calls per bucket as stacked bars (the session's own calls and the subagents'), with a Hour / Day / Week / Month filter (last 24 hours, 14 days, 12 weeks, 12 months; weeks start on Monday, buckets use your local time zone) and the number of runs in the tooltip. The choice is remembered in the browser. The raw `live.jsonl` is trimmed to its newest 3000 lines; what is trimmed away is first added to hourly counters in the local, git-ignored `.agents/log/activity.json`, so the chart keeps months of history without keeping the sensitive detail. Counts only, like the Live panel it needs the local server and stays hidden on static hosting.
 
+`GET /api/decisions` and `POST /api/decisions/approve` feed the **Pending decisions** icon in the header
+(a checklist, with the number of items): it appears only where `docs/pending-decisions.md` exists, and opens a
+list grouped by section with an **Approve** button per item. Approving asks first, then removes the row from the
+file and queues its prompt in `.agents/state/decisions-inbox.jsonl`; the starter-hud mod hands the prompt to the
+open Claude Code session, once (with no session open it waits, and the viewer says how many are waiting). The
+approve endpoint has the same guard as the Settings switch: a local Host and Origin, a JSON content type, the
+`X-AI-Dash` header and a body of exactly `{ "id": "<item id>" }`. Under `npx serve` or a static host there is
+no endpoint, so the icon stays hidden. `node scripts/decisions.mjs list` prints the same items.
+
 `GET /api/skills` feeds the **Skills and agents** viewer (book icon): name,
 description, creation date, last usage and validity of every skill in `.claude/skills/`
 and agent in `docs/agents/`, never their bodies. Last usage

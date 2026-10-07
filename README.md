@@ -192,6 +192,7 @@ scripts/mod.mjs                   toggle the optional starter-hud session mod (.
 scripts/skills.mjs                list, create and validate skills (YAML frontmatter); records usage for "last usage"
 scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings area's API and /api/live
 scripts/agent-live.mjs            SubagentStart/Stop hook: records which agents run; feeds the Live panel
+scripts/decisions.mjs             reads docs/pending-decisions.md and approves items for AI Dash (the mod hands them to the session)
 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
 docs/tasks.md                     fixed task taxonomy used by the log

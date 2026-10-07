@@ -16,17 +16,20 @@
 // engine. Every hook fails open: a thrown error here must never block a
 // tool call, a prompt, or a turn.
 
+import { atom, read, update } from 'claude-code';
+
 import { join, dirname } from './lib/path.js';
 import { sanitizeBranch, agentNameFromBranch } from './lib/branch.js';
 import { zeroCounters, addUsage, freshTokens, cacheRatio } from './lib/usage.js';
 import { parseBudgetKnob, ceilingFor } from './lib/knobs.js';
-import { formatBandSegments, gateStatusText, spinnerSuffix, kilo, SEPARATOR } from './lib/band.js';
+import { formatBandSegments, gateStatusText, spinnerSuffix, kilo } from './lib/band.js';
+import { buildPrompt, parseItems, removeLine, toEntries, windowEntries } from './lib/decisions-parse.js';
 import { DASH_LABEL, dashUrl, dashProbeUrl, isAiDash, openCommands, startArgv } from './lib/dash.js';
 import { UPDATE_LABEL, UPDATING_LABEL, CHECK_EVERY_MS, checkArgv, applyArgv, shutdownInit, parseCheck, updateView, updatedToast } from './lib/update.js';
 
 const MAX_AGENTS = 4;
-// Band icon colours by tone; a tone with no colour draws dim like the text.
-const TONE_COLOR = { ok: 'green', warn: 'yellow', bad: 'red' };
+// Band icon colours by tone, as theme colours so they follow the user's theme like the Pending decisions band.
+const TONE_COLOR = { ok: 'success', warn: 'warning', bad: 'error', plain: 'suggestion' };
 
 // ---- the AI Dash button ----
 
@@ -247,6 +250,350 @@ async function askOrLogBudgetReached($, taskSize, fresh, ceiling, turnId) {
   }
 }
 
+// ---- the Pending decisions band and pane ----
+// Shown only when the project has the markdown file the decisions live in (default
+// docs/pending-decisions.md); without it the band stays hidden.
+//   band : `◆ Pending decisions : 14`, a row of coloured squares (one per item, one colour per section),
+//          and two buttons on the right: Refresh and View.
+//   pane : the items as a list, each with an Approve button and a one-line detail. Approve asks for a
+//          confirmation, then hands the item to the agent as a prompt and removes its row from the file.
+//   /pending opens the pane from the prompt. The file is watched, so a change by you or by the agent
+//   reaches the band within a second or two, and right after any tool call.
+
+const DEC_PANE = 'decisions';
+
+const decItems = atom({ plugin: 'starter-hud', key: 'decisionItems' }, []);
+const decScreen = atom({ plugin: 'starter-hud', key: 'decisionScreen' }, { kind: 'list' });
+const decOffset = atom({ plugin: 'starter-hud', key: 'decisionOffset' }, 0);
+const decStatus = atom({ plugin: 'starter-hud', key: 'decisionStatus' }, {
+  exists: false,
+  stamp: '',
+  checkedAt: 0,
+  error: null,
+});
+
+/** One decAccent per section, so the bar in the band and the headings in the pane agree. */
+const DEC_ACCENTS = ['suggestion', 'warning', 'permission', 'success'];
+const decAccent = (group) => DEC_ACCENTS[group % DEC_ACCENTS.length] || 'suggestion';
+
+const DEC_LIST = { kind: 'list' };
+const decConfirming = (id) => ({ kind: 'confirm', id });
+
+const decClock = (ms) => {
+  const d = new Date(ms);
+  const two = (n) => String(n).padStart(2, '0');
+  return `${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
+};
+
+let decTimer;
+let decBusy = false;
+let decRoot = null; // the project's shared git root, once known: where AI Dash queues the items it approves
+
+const DEC_INBOX = '.agents/state/decisions-inbox.jsonl';
+
+/**
+ * Hands the session the prompts AI Dash queued when the Administrator approved an item there. The queue is
+ * claimed (emptied) before anything is sent, so a prompt is never sent twice by this session.
+ */
+async function decDrainInbox($) {
+  const path = decRoot ? join(decRoot, DEC_INBOX) : DEC_INBOX;
+  try {
+    if (!(await $.fs.exists(path))) return;
+    const entries = [];
+    for (const line of String(await $.fs.read(path)).split('\n')) {
+      try {
+        const entry = JSON.parse(line);
+        if (entry && typeof entry.prompt === 'string' && entry.prompt !== '') entries.push(entry);
+      } catch { /* a torn or foreign line is skipped */ }
+    }
+    if (!entries.length) return; // nothing queued: leave the file alone
+    await $.fs.write(path, '');
+    for (const entry of entries) {
+      void $.prompt.submit({ text: entry.prompt });
+      $.ui.toast(`Approved in AI Dash: ${entry.title || 'a decision'}`);
+    }
+  } catch { /* the next read asks again */ }
+}
+
+const DEC_DEFAULT_FILE = 'docs/pending-decisions.md';
+
+/** Reads the file and replaces the list. Never throws: a failure becomes the decStatus line. */
+async function decLoad($, file) {
+  await decDrainInbox($);
+  const checkedAt = await $.clock.now();
+  try {
+    if (!(await $.fs.exists(file))) {
+      await update($, decItems, () => []);
+      await update($, decStatus, () => ({ exists: false, stamp: '', checkedAt, error: null }));
+      return;
+    }
+    const [text, stat] = await Promise.all([$.fs.read(file), $.fs.stat(file)]);
+    const list = parseItems(String(text));
+    await update($, decItems, () => list);
+    await update($, decStatus, () => ({
+      exists: true,
+      stamp: `${stat.mtimeMs}:${stat.size}`,
+      checkedAt,
+      error: null,
+    }));
+    // A refresh can drop the item a confirmation was about, or shrink the list under the window.
+    await update($, decScreen, (current) =>
+      current.kind === 'confirm' && !list.some((item) => item.id === current.id) ? DEC_LIST : current,
+    );
+    await update($, decOffset, (current) => Math.min(current, Math.max(list.length * 2, 0)));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await update($, decStatus, (previous) => ({ ...previous, checkedAt, error: message }));
+  }
+}
+
+/** The cheap decCheck the decTimer and the tool hook run: reload only when the file changed. */
+async function decCheck($, file) {
+  if (decBusy) return;
+  await decDrainInbox($);
+  try {
+    const present = await $.fs.exists(file);
+    const known = await read($, decStatus);
+    if (!present) {
+      if (known.exists) await decLoad($, file);
+      return;
+    }
+    const stat = await $.fs.stat(file);
+    if (!known.exists || known.stamp !== `${stat.mtimeMs}:${stat.size}`) await decLoad($, file);
+  } catch {
+    // the next period asks again
+  }
+}
+
+async function decOpenPane($, file) {
+  await update($, decScreen, () => ({ kind: 'list' }));
+  await update($, decOffset, () => 0);
+  await decLoad($, file);
+  await $.ui.open({ id: DEC_PANE, title: 'Pending decisions', focus: true, closeOnEscape: true });
+}
+
+/** Hands the item to the agent first, then takes its row out of the file. */
+async function decApprove($, file, id) {
+  decBusy = true;
+  try {
+    const item = (await read($, decItems)).find((one) => one.id === id);
+    await update($, decScreen, () => ({ kind: 'list' }));
+    if (!item) return;
+    const markdown = String(await $.fs.read(file));
+    const next = removeLine(markdown, item.raw);
+    if (next === null) {
+      $.ui.toast('That item changed on disk. The list was refreshed.');
+      return;
+    }
+    void $.prompt.submit({ text: buildPrompt(item, file) });
+    await $.fs.write(file, next);
+    $.ui.toast(`Sent to the agent: ${item.title}`);
+  } catch (error) {
+    $.ui.toast(`Could not approve: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    decBusy = false;
+    await decLoad($, file);
+  }
+}
+
+function decReadConfig(options) {
+  const opts = options || {};
+  return {
+    file: typeof opts.file === 'string' && opts.file !== '' ? opts.file : DEC_DEFAULT_FILE,
+    pollMs: Math.max(250, Number(opts.pollMs) || 1500),
+    showWhenMissing: opts.showWhenMissing === true,
+  };
+}
+
+let decConfig = decReadConfig();
+
+/** Session start: register /pending, read the file once and start watching it. */
+async function startDecisions($) {
+  // A command name another plugin already owns must never break the rest of the mod.
+  try {
+    await $.command.register({ name: 'pending', description: 'Review the pending decisions and approve one' });
+  } catch { /* the band and pane still work without the slash command */ }
+  await decLoad($, decConfig.file);
+  if (decTimer) decTimer.cancel();
+  decTimer = $.clock.every(decConfig.pollMs, () => {
+    void decCheck($, decConfig.file);
+  });
+}
+
+/** Session end: stop watching. */
+function stopDecisions() {
+  if (decTimer) decTimer.cancel();
+  decTimer = undefined;
+}
+
+/** The agent often edits the file itself: look right after any tool call instead of waiting a period. */
+function noteToolCall($) {
+  void decCheck($, decConfig.file);
+}
+
+/**
+ * The Pending decisions row, drawn above `rest` (what the plugins below draw). Returns `rest` untouched
+ * when the project has no decisions file, so a project without it never sees the band.
+ */
+async function decisionsBand($, e, rest) {
+  if (e.props.hasSurvey) return rest;
+  const known = await read($, decStatus);
+  if (!known.exists && !decConfig.showWhenMissing) return rest; // no decisions file in this project: nothing to show
+
+  const list = await read($, decItems);
+  const { Box, Text, Button } = $.ui.resolve(e);
+  const { file } = decConfig;
+  const count = list.length;
+  const tone = !known.exists ? 'error' : count === 0 ? 'success' : 'warning';
+
+  return (
+    <Box flexDirection="column">
+      <Box justifyContent="space-between" paddingX={1}>
+        <Box gap={1}>
+          <Text color={tone}>{count === 0 && known.exists ? '\u25c7' : '\u25c6'}</Text>
+          <Text bold>Pending decisions : {known.exists ? count : 'file not found'}</Text>
+          {known.exists && count > 0 && (
+            <Text>
+              {list.slice(0, 24).map((item) => (
+                <Text color={decAccent(item.group)}>{'\u25aa'}</Text>
+              ))}
+              {count > 24 && <Text dimColor>+{count - 24}</Text>}
+            </Text>
+          )}
+        </Box>
+        <Box gap={2}>
+          <Button key="refresh" label={'\u21bb Refresh'} hotkey="r" dimColor onPress={() => decLoad($, file)} />
+          <Button key="view" label={'View \u203a'} hotkey="v" variant="primary" onPress={() => decOpenPane($, file)} />
+        </Box>
+      </Box>
+      {rest}
+    </Box>
+  );
+}
+
+/** The hooks only this part owns: the /pending command and the pane. The rest is called from the mod's own hooks. */
+function registerDecisions(on, options) {
+  decConfig = decReadConfig(options);
+  const { file } = decConfig;
+
+  on('command.run', { command: 'pending' }, async ($) => {
+    await decOpenPane($, file);
+    return { text: 'Pending decisions opened.' };
+  });
+
+  on('ui.render', { component: 'Pane', requestId: DEC_PANE }, async ($, e) => {
+    const { Box, Text, Button } = $.ui.resolve(e);
+    const list = await read($, decItems);
+    const known = await read($, decStatus);
+    const current = await read($, decScreen);
+    const start = await read($, decOffset);
+    const close = () => $.ui.close({ id: DEC_PANE });
+
+    const header = (title, onClose, withRefresh) => (
+      <Box justifyContent="space-between">
+        <Box gap={1}>
+          <Text color="warning">{'◆'}</Text>
+          <Text bold>{title}</Text>
+          {withRefresh && <Text dimColor>{list.length}</Text>}
+        </Box>
+        <Box gap={2}>
+          {withRefresh && (
+            <Button key="pane-refresh" label={'↻ Refresh'} hotkey="r" dimColor onPress={() => decLoad($, file)} />
+          )}
+          <Button key="pane-close" label={'✕ Close'} hotkey="x" dimColor onPress={onClose} />
+        </Box>
+      </Box>
+    );
+
+    if (current.kind === 'confirm') {
+      const item = list.find((one) => one.id === current.id);
+      const back = () => update($, decScreen, () => ({ kind: 'list' }));
+      if (!item) {
+        return <Box flexDirection="column">{header('Confirm approval', back, false)}</Box>;
+      }
+      return (
+        <Box flexDirection="column" gap={1}>
+          {header('Confirm approval', back, false)}
+          <Box flexDirection="column" borderStyle="round" borderColor={decAccent(item.group)} paddingX={1}>
+            <Text bold>{item.title}</Text>
+            {item.detail !== '' && <Text dimColor>{item.detail}</Text>}
+            {item.blocks !== '' && <Text color={decAccent(item.group)}>Blocks · {item.blocks}</Text>}
+          </Box>
+          <Text bold>Confirm approval?</Text>
+          <Text dimColor>The agent receives this item to execute it, then it leaves the list.</Text>
+          <Box gap={2}>
+            <Button key="confirm-yes" label="Y  Yes" hotkey="y" variant="primary" onPress={() => decApprove($, file, item.id)} />
+            <Button key="confirm-no" label="N  No" hotkey="n" onPress={back} />
+          </Box>
+        </Box>
+      );
+    }
+
+    const room = Math.max(4, ((e.viewport && e.viewport.rows) || 24) - 7);
+    const entries = toEntries(list);
+    const { shown, start: from, end } = windowEntries(entries, start, room);
+    const isPaged = from > 0 || end < entries.length;
+
+    return (
+      <Box flexDirection="column" gap={1}>
+        {header('Pending decisions', close, true)}
+        {!known.exists && <Text color="error">File not found: {file}</Text>}
+        {known.error !== null && <Text color="error">{known.error}</Text>}
+        {known.exists && list.length === 0 && <Text color="success">{'✓'} All clear. Nothing waits on you.</Text>}
+        <Box flexDirection="column">
+          {shown.map((entry) =>
+            entry.kind === 'heading' ? (
+              <Text key={`h:${entry.group}:${entry.text}`} bold color={decAccent(entry.group)}>
+                {entry.text.toUpperCase()}
+              </Text>
+            ) : (
+              <Box key={entry.item.id} flexDirection="column">
+                <Box justifyContent="space-between" gap={2}>
+                  <Box flexGrow={1} flexShrink={1}>
+                    <Text wrap="truncate-end">
+                      <Text color={decAccent(entry.item.group)}>{'• '}</Text>
+                      {entry.item.title}
+                    </Text>
+                  </Box>
+                  <Button
+                    key={`approve:${entry.item.id}`}
+                    label="Approve"
+                    variant="primary"
+                    onPress={() => update($, decScreen, () => decConfirming(entry.item.id))}
+                  />
+                </Box>
+                {entry.item.detail !== '' && (
+                  <Text dimColor wrap="truncate-end">
+                    {'  '}
+                    {entry.item.detail}
+                  </Text>
+                )}
+              </Box>
+            ),
+          )}
+        </Box>
+        {isPaged && (
+          <Box gap={2}>
+            <Button
+              key="page-up"
+              label={'▲'}
+              dimColor
+              onPress={() => update($, decOffset, () => Math.max(0, from - Math.max(1, shown.length - 1)))}
+            />
+            <Button key="page-down" label={'▼'} dimColor onPress={() => update($, decOffset, () => Math.min(entries.length - 1, end))} />
+            <Text dimColor>
+              {from + 1}–{end} of {entries.length}
+            </Text>
+          </Box>
+        )}
+        <Text dimColor>
+          {known.checkedAt > 0 ? `Updated ${decClock(known.checkedAt)} · ` : ''}watching {file}
+        </Text>
+      </Box>
+    );
+  });
+}
+
 export const register = (on, options) => {
   // ---- session-lifetime state (plain closures over `register`, never
   // passed to the top-level `$`-touching functions above — those take it as
@@ -269,12 +616,14 @@ export const register = (on, options) => {
   // ---- session.start: establish identity, decide inert, register /budget ----
   on('session.start', async ($, e, next) => {
     const result = await next(e);
+    try { await startDecisions($); } catch { /* the decisions band is optional */ }
     try {
       const info = await gitInfo($);
       const hasGate = info ? await fileExists($, join(info.root, 'scripts/gate.sh')) : false;
       if (!info || !hasGate) { inert = true; return result; }
 
       root = info.root;
+      decRoot = root;
       branch = info.branch;
       safeBranch = sanitizeBranch(branch);
       agent = agentNameFromBranch(branch);
@@ -367,7 +716,13 @@ export const register = (on, options) => {
   });
 
   // ---- tool-call count + gate status (never rewrites the command) ----
+  on('session.end', ($, e, next) => {
+    stopDecisions();
+    return next(e);
+  });
+
   on('tool.call', async ($, e, next) => {
+    noteToolCall($);
     if (inert) return next(e);
 
     const isGateCall = e.tool === 'Bash'
@@ -407,7 +762,9 @@ export const register = (on, options) => {
 
   // ---- the band ----
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const rest = await next(e);
+    const below = await next(e);
+    let rest = below;
+    try { rest = await decisionsBand($, e, below); } catch { rest = below; } // the Pending decisions row, when the project has its file
     if (inert) return rest;
     try {
       const { Box, Text, Button } = $.ui.resolve(e);
@@ -423,25 +780,26 @@ export const register = (on, options) => {
         agentsCount,
         maxAgents: MAX_AGENTS,
       });
-      const row = [];
-      segments.forEach((s, i) => {
-        const color = TONE_COLOR[s.tone];
-        if (i > 0) row.push(<Text key={s.key + 's'} dimColor>{SEPARATOR}</Text>);
-        row.push(color ? <Text key={s.key + 'i'} color={color}>{s.icon}</Text> : <Text key={s.key + 'i'} dimColor>{s.icon}</Text>);
-        row.push(<Text key={s.key + 't'} dimColor>{' ' + s.text}</Text>);
-      });
-      const buttons = [<Button key="aidash" label={DASH_LABEL} onPress={() => openDash($, root)} />];
+      const buttons = [<Button key="aidash" label={DASH_LABEL} hotkey="d" dimColor onPress={() => openDash($, root)} />];
       const view = updateView(updateState.info, updateState.updating);
-      if (view === 'available') buttons.push(<Button key="update" label={UPDATE_LABEL} onPress={() => runUpdate($, root, updateState)} />);
+      if (view === 'available') buttons.push(<Button key="update" label={UPDATE_LABEL} hotkey="u" variant="primary" onPress={() => runUpdate($, root, updateState)} />);
       if (view === 'updating') buttons.push(<Text key="updating" dimColor>{UPDATING_LABEL}</Text>);
-      // The band shares this slot with other plugins' rows (their buttons sit on the right too), so it keeps
-      // to its own line: the items wrap under each other when the window is narrow instead of drawing over a
-      // neighbour, the buttons never shrink, and a blank line separates it from whatever is drawn below.
+      // Same pattern as the Pending decisions band: a coloured icon and a plain label on the left, buttons
+      // with a hotkey on the right. The band shares this slot with other plugins' rows, so it keeps to its
+      // own line (items wrap under each other on a narrow window instead of drawing over a neighbour) and
+      // the buttons never shrink.
       return (
         <Box flexDirection="column">
-          <Box flexWrap="wrap" justifyContent="space-between" columnGap={2} marginBottom={1}>
-            <Box flexShrink={1}>{row}</Box>
-            <Box flexShrink={0} columnGap={2}>{buttons}</Box>
+          <Box flexWrap="wrap" justifyContent="space-between" columnGap={2} paddingX={1}>
+            <Box gap={2} flexShrink={1}>
+              {segments.map((seg) => (
+                <Box key={seg.key} gap={1}>
+                  <Text color={TONE_COLOR[seg.tone]}>{seg.icon}</Text>
+                  <Text bold={seg.key === 'branch'}>{seg.text}</Text>
+                </Box>
+              ))}
+            </Box>
+            <Box gap={2} flexShrink={0}>{buttons}</Box>
           </Box>
           {rest}
         </Box>
@@ -461,5 +819,6 @@ export const register = (on, options) => {
     }
   });
 
-  void options; // userConfig is unused by this mod; part of the Register signature
+  // The Pending decisions band, pane and /pending: drawn below the band above, only where the file exists.
+  registerDecisions(on, options);
 };
