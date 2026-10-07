@@ -16,7 +16,7 @@ export function resolveSource({ source = STARTER_REPO, ref = 'main' }) {
       ? readText(join(source, 'VERSION')).trim()
       : 'local';
     const starterRef = gitAvailable() ? gitRevParseHead(source) : 'local';
-    return { templateDir, starterVersion, starterRef, cleanup() {} };
+    return { templateDir, starterVersion, starterRef, repoDir: source, cleanup() {} };
   }
 
   if (!gitAvailable()) {
@@ -33,7 +33,7 @@ export function resolveSource({ source = STARTER_REPO, ref = 'main' }) {
   }
   const starterVersion = existsSync(join(tmp, 'VERSION')) ? readText(join(tmp, 'VERSION')).trim() : 'unknown';
   const starterRef = gitRevParseHead(tmp);
-  return { templateDir, starterVersion, starterRef, cleanup: () => rmSync(tmp, { recursive: true, force: true }) };
+  return { templateDir, starterVersion, starterRef, repoDir: join(tmp, 'src'), cleanup: () => rmSync(tmp, { recursive: true, force: true }) };
 }
 
 function mktempClone(url, ref) {

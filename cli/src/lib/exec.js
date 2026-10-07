@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 // Thin wrapper around `git`. The CLI shells out to the real `git` binary
 // (present on Windows without WSL/Git Bash — only the *.sh scripts needed
 // bash) rather than reimplementing clone/rev-parse.
@@ -19,6 +20,25 @@ export function gitCloneShallow(url, ref, dest) {
       `git clone of ${url}#${ref} failed:\n${(r.stderr || r.stdout || '').trim()}`,
     );
   }
+}
+
+/**
+ * sha256 of every version `path` has had in the repo at `dir` (newest first, at most `cap`), or null when
+ * the history cannot be read. A shallow clone has no history, so the first call fetches it.
+ */
+export function gitHistoryHashes(dir, path, cap = 40) {
+  const shallow = spawnSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: dir, encoding: 'utf8' });
+  if (shallow.status === 0 && shallow.stdout.trim() === 'true') {
+    spawnSync('git', ['fetch', '--quiet', '--unshallow', 'origin'], { cwd: dir, encoding: 'utf8' });
+  }
+  const log = spawnSync('git', ['log', '--format=%H', `-${cap}`, '--', path], { cwd: dir, encoding: 'utf8' });
+  if (log.status !== 0) return null;
+  const hashes = new Set();
+  for (const sha of log.stdout.split(/\r?\n/).filter(Boolean)) {
+    const r = spawnSync('git', ['show', `${sha}:${path}`], { cwd: dir, maxBuffer: 64 * 1024 * 1024 });
+    if (r.status === 0) hashes.add(`sha256:${createHash('sha256').update(r.stdout).digest('hex')}`);
+  }
+  return hashes;
 }
 
 export function gitRevParseHead(dir) {
