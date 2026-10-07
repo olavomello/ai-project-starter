@@ -296,3 +296,44 @@ test('update repairs the bad pin even when the starter did not change settings.j
     assert.ok(!/marketplace ref/.test(cli('update', target, '--source', src, '--dry-run').stdout), 'nothing left to repair');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// ---- charts with and without token data ----
+function loadCharts() {
+  const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
+  const start = html.indexOf('function lineChart(days) {');
+  const end = html.indexOf('function agentTable(d) {');
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = (n) => (n == null ? '-' : n.toLocaleString());
+  const pct = (v) => (v == null ? '-' : Math.round(v * 100) + '%');
+  const kilo = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'k' : String(n));
+  const SERIES = ['a', 'b', 'c', 'd', 'e'];
+  return vm.runInNewContext(`${html.slice(start, end)}; ({ lineChart, shareBar })`, { esc, fmt, pct, kilo, SERIES, Math, Number, String });
+}
+const day = (day, executions, tokens_in = 0, cache_read = 0) => ({ day, executions, tokens_in, cache_read });
+
+test('with no token data the trend charts gate executions per day instead of a flat zero line', () => {
+  const { lineChart } = loadCharts();
+  const html = lineChart([day('2026-10-06', 45), day('2026-10-07', 25)]);
+  assert.ok(html.includes('Executions per day') && !html.includes('Tokens per day'));
+  assert.ok(html.includes('gate runs') && html.includes('45 execution(s)') && html.includes('no token usage recorded yet'));
+  assert.ok(html.includes('<path'), 'a line is drawn');
+  const withTokens = lineChart([day('2026-10-06', 3, 1200, 900), day('2026-10-07', 2, 800, 700)]);
+  assert.ok(withTokens.includes('Tokens per day') && withTokens.includes('cached') && !withTokens.includes('Executions per day'));
+  assert.ok(lineChart([day('2026-10-06', 5)]).includes('Needs at least two days'));
+});
+
+test('with no token data the breakdown bars share executions, with tokens they share tokens', () => {
+  const { shareBar } = loadCharts();
+  const rows = (t) => [
+    { task_type: 'other', executions: 67, tokens_in: t[0], gate_first_pass: 0.4 },
+    { task_type: 'build-feature', executions: 2, tokens_in: t[1], gate_first_pass: 0.5 },
+    { task_type: 'fix-bug', executions: 1, tokens_in: t[2], gate_first_pass: 0 },
+  ];
+  const none = shareBar(rows([0, 0, 0]), 'task_type', 'Tokens by task type');
+  assert.ok(none.includes('Executions by task type') && !none.includes('Tokens by task type'));
+  assert.ok(none.includes('>96%<') && none.includes('>3%<') && none.includes('>1%<'), 'shares of 67/70, 2/70 and 1/70');
+  assert.ok(none.includes('of executions'));
+  const some = shareBar(rows([9000, 900, 100]), 'task_type', 'Tokens by task type');
+  assert.ok(some.includes('Tokens by task type') && some.includes('>90%<') && some.includes('of tokens'));
+  assert.equal(shareBar([], 'model', 'Tokens by model'), '');
+});
