@@ -6,6 +6,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 ## [Unreleased]
 ### Added
 
+- AI Dash: a row in the Agents card opens the agent: its description, then an on/off switch. The switch rewrites the `Status :` line in `docs/agents/<name>.md` and syncs `.claude/agents/`, so Claude Code lists or stops listing the agent. New `scripts/agents-status.mjs` (`list`, `<name> on|off`) and `GET api/agents`, `POST api/agents/status` (same guard as the other writes). Switched-off agents carry an "off" tag in the table.
+
 - AI Dash: **Settings > Model prices** edits `docs/model-prices.json` (USD per 1M tokens: input, output, cache read, cache write), stamps `updated` with the date of each save and re-runs the report so the cost follows. New `scripts/prices.mjs` and `GET/POST api/prices` (same guard as the other writes). The shipped file now holds rounded average list prices for the main Claude, GPT and Gemini models, dated `2026-10-07`; they are starting points to check against each provider's pricing page.
 - AI Dash: **Active agents** (running now out of agents seen) before Tokens in, and **Success rate** after Executions; a soft glow on every card under the pointer, and the card a menu entry points at glows briefly when it is clicked; "By Olavo Mello" credit under the server status in the sidebar.
 - Pending decisions approval, in the ai-dash mod (pane) and in AI Dash: the confirmation offers **Approve** (item only) or **Approve with instructions**, with an optional text field (up to 2000 characters). The instructions are passed to the agent together with the item, so it knows exactly what is being handled and how; the prompt keeps AGENTS.md above them. `POST api/decisions/approve` accepts an optional `instructions` string.- ai-dash: an **▦ AI Dash** button at the far right of the band. It checks whether the project's dashboard answers on `127.0.0.1:4173` (recognising it by its `/api/config` answer), starts `node scripts/ai-dash.mjs` for the session if not, and opens it in the default browser on Windows, macOS or Linux. New calls in the mod: `$.http.fetch`, `$.process.spawn`, `$.process.run` for the opener, `$.clock.sleep`. Update an installed copy with `claude plugin update ai-dash@ai-project-starter`.
@@ -58,6 +60,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 - `docs/guides/efficiency.md` and `docs/guides/security.md`: document the mod's usage-file handoff to `ai-log.mjs`, and the review step (`claude plugin validate <dir>`, read its `hooks:`/`calls:` lines) before installing any mod, this starter's own included.
 
 ### Changed
+
+- AI Dash: the Skills dialog lists skills only; agents moved to the Agents card.
 
 - AI Dash: Live agents sits right above the Agents card, both beside Recent executions; Usage and activity takes the full width. The Live card is no longer hidden for the whole visit when its first poll fails once (it retries a few times before concluding there is no live server).
 - AI Dash: the Live agents card sits beside Recent executions; the Agents table moved up beside Usage and activity. Settings > Model prices says to restart the dash when the running server predates the price editor.
