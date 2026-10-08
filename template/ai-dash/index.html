@@ -276,52 +276,246 @@
   .hit { fill: transparent; }
   .seg { cursor: default; }
   .note { font-size: 12px; color: var(--text-3); margin-top: 14px; }
+
+  /* ===== redesign: app shell, deep indigo theme, tinted KPI cards, a two-column board ===== */
+  :root {
+    --surface-0: #0a0920;
+    --surface-1: #110f2b;
+    --surface-2: #19173a;
+    --border:    #25224d;
+    --text-1:    #f4f3ff;
+    --text-2:    #b6b4d6;
+    --text-3:    #8683ae;
+    --accent:    #6d4cf5;
+    --accent-2:  #8b6dff;
+    --series-1:  #8b5cf6;
+    --series-2:  #f59e0b;
+    --series-3:  #22c55e;
+    --series-4:  #3b82f6;
+    --series-5:  #ec4899;
+    --grid:      #1f1d44;
+    --good:      #22c55e;
+  }
+  :root[data-theme="light"] {
+    --surface-0: #f3f2fb;
+    --surface-1: #ffffff;
+    --surface-2: #f5f3ff;
+    --border:    #e3e0f5;
+    --text-1:    #17143a;
+    --text-2:    #51507a;
+    --text-3:    #8584aa;
+    --accent:    #5b3df0;
+    --accent-2:  #7b5cff;
+    --series-1:  #7c4dff;
+    --series-2:  #e08a00;
+    --series-3:  #16a34a;
+    --series-4:  #2563eb;
+    --series-5:  #db2777;
+    --grid:      #ebe9f8;
+    --good:      #16a34a;
+  }
+  body {
+    background:
+      radial-gradient(1100px 380px at 62% -140px, rgba(109, 76, 245, .28), transparent 70%),
+      var(--surface-0);
+    background-attachment: fixed;
+  }
+  :root[data-theme="light"] body { background: radial-gradient(1100px 380px at 62% -160px, rgba(109, 76, 245, .12), transparent 70%), var(--surface-0); }
+
+  html, body { overflow-x: clip; } /* clip, not hidden: hidden would make the body a scroll container and break the sticky sidebar */
+  .a-agents table, .a-recent table { min-width: 0; }
+  .a-agents th, .a-agents td { padding-right: 8px; }
+  .app { display: grid; grid-template-columns: 216px minmax(0, 1fr); min-height: 100vh; }
+  .side { position: sticky; top: 0; align-self: start; height: 100vh; padding: 22px 14px 18px; display: flex; flex-direction: column; gap: 6px;
+    border-right: 1px solid var(--border); background: linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 70%, transparent), transparent); }
+  .side .brand { margin: 0 6px 2px; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+  .side .brand .logo { width: 26px; height: 26px; }
+  .tagline { margin: 0 6px 20px; color: var(--text-3); font-size: 11.5px; }
+  .nav { display: flex; flex-direction: column; gap: 3px; }
+  .nav button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border: 0; border-radius: 10px;
+    background: transparent; color: var(--text-2); font: inherit; font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer; position: relative; }
+  .nav button svg { width: 17px; height: 17px; flex: none; }
+  .nav button:hover { color: var(--text-1); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .nav button.on { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 6px 18px -8px var(--accent); }
+  .nav button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  .nav .dec-count { position: static; margin-left: auto; }
+  .sys { margin-top: auto; padding: 12px 13px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1); font-size: 12px; color: var(--text-3); }
+  .sys b { display: flex; align-items: center; gap: 8px; color: var(--text-1); font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .sys i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); flex: none; }
+  .sys.off i { background: var(--text-3); }
+  .sys.warn i { background: var(--warning); }
+  .main { min-width: 0; padding: 24px 28px 64px; }
+  .wrap { max-width: none; margin: 0; padding: 0; }
+
+  header { margin-bottom: 22px; gap: 14px; align-items: flex-start; }
+  header .greet { flex: 1 1 260px; min-width: 0; }
+  header .greet h1 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+  header .greet .sub { margin: 4px 0 0; font-size: 13.5px; }
+  header .brand { display: none; }
+  header .crumb { display: none; }
+  header .tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  button.gear, button.theme { border-radius: 12px; width: 40px; height: 40px; background: var(--surface-1); }
+  header #skills-btn, header #settings-btn, header #decisions-btn { display: none; }
+  .pill { display: inline-flex; align-items: center; gap: 9px; padding: 0 14px; height: 40px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface-1); color: var(--text-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+  .board { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+  .board > * { min-width: 0; }
+  #root { display: contents; }
+  .a-kpis { grid-column: 1 / -1; }
+  .a-usage { grid-column: span 8; }
+  .a-live { grid-column: span 4; }
+  .a-trend { grid-column: span 8; }
+  .a-split { grid-column: span 4; }
+  .a-recent { grid-column: span 8; }
+  .a-agents { grid-column: span 4; }
+  .a-note { grid-column: 1 / -1; }
+  @media (max-width: 1180px) { .a-usage, .a-live, .a-trend, .a-split, .a-recent, .a-agents { grid-column: 1 / -1; } }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .side { display: none; }
+    .main { padding: 18px 16px 56px; }
+    header .brand { display: flex; }
+  }
+  .a-trend > .card, .a-recent > .card, .a-agents > .card { height: 100%; }
+  .a-split { display: flex; flex-direction: column; gap: 16px; }
+  .a-split > .card { flex: 1 1 auto; }
+  .board section h2, .board .card > h2, .board > div > h2 { margin: 0 0 12px; font-size: 16px; font-weight: 650; letter-spacing: -0.005em; text-transform: none; color: var(--text-1); }
+
+  .card { border-radius: 16px; padding: 18px 20px; background: linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 100%, transparent), color-mix(in srgb, var(--surface-0) 40%, var(--surface-1))); box-shadow: 0 1px 0 rgba(255,255,255,.03) inset; }
+
+  /* KPI cards: a tinted glass tile, icon chip, big number, sparkline */
+  .tiles { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+  .tile { --tint: var(--series-1); position: relative; gap: 8px; padding: 16px 18px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--tint) 20%, var(--surface-1)), var(--surface-1) 72%);
+    border-color: color-mix(in srgb, var(--tint) 34%, var(--border)); }
+  .tile .top { justify-content: flex-start; gap: 10px; }
+  .tile .chip { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: none;
+    background: color-mix(in srgb, var(--tint) 28%, transparent); color: var(--tint); }
+  .tile .chip svg { width: 15px; height: 15px; }
+  .tile .label { font-size: 14px; color: var(--text-1); font-weight: 560; }
+  .tile .value { font-size: 30px; letter-spacing: -0.03em; margin-top: 2px; }
+  .tile .foot { font-size: 12px; }
+  .tile svg.spark { width: 112px; height: 38px; }
+  .tile svg.spark path { stroke-width: 2; }
+
+  /* buttons and segmented controls */
+  .act-seg { border-radius: 10px; background: var(--surface-2); border-color: var(--border); padding: 3px; gap: 2px; }
+  .act-seg button { background: transparent; border: 0; border-radius: 8px; padding: 6px 14px; }
+  .act-seg button + button { border-left: 0; }
+  .act-seg button[aria-pressed="true"] { background: var(--accent); box-shadow: 0 4px 12px -4px var(--accent); }
+  .act-card, .live-card { padding: 18px 20px; margin-bottom: 0; }
+  .act-total b { font-size: 26px; }
+
+  /* tables */
+  th { text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 560; color: var(--text-3); }
+  td { border-top-color: var(--border); }
+  tr:hover td { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+  .badge.ok, .badge.warn, .badge.bad { font-weight: 650; }
+  .bar-track { background: var(--surface-2); }
+
+  /* donut */
+  .donut-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .donut { position: relative; width: 150px; height: 150px; flex: none; }
+  .donut svg { width: 150px; height: 150px; transform: rotate(-90deg); }
+  .donut .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+  .donut .mid b { font-size: 20px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .donut .mid span { font-size: 11px; color: var(--text-3); }
+  .donut-row .bars-list { flex: 1 1 160px; min-width: 0; gap: 11px; }
+  .bars-list.legend-list .bar-row { grid-template-columns: minmax(0, 1fr) 46px; }
+  .bars-list.legend-list .bar-track { display: none; }
+
+  .modal, .modal-backdrop .modal { background: var(--surface-1); }
+  @media (max-width: 900px) {
+    header #skills-btn, header #settings-btn, header #decisions-btn:not([hidden]) { display: inline-flex; }
+  }
+  @media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .tile .value { font-size: 24px; } .tile svg.spark { width: 70px; } }
+
+  #live { grid-column: span 4; order: 3; }
+  #activity { grid-column: span 8; order: 2; }
+  #live[hidden], #activity[hidden] { display: none; }
+  .a-kpis { order: 1; } .a-trend { order: 4; } .a-split { order: 5; } .a-recent { order: 6; } .a-agents { order: 7; } .a-note { order: 0; }
+  @media (max-width: 1180px) { #live, #activity { grid-column: 1 / -1; } }
+  .board section > .card { height: 100%; }
 </style>
 </head>
 <body>
+<div class="app">
+  <aside class="side" aria-label="Sections">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 16 16" aria-hidden="true">
+        <rect width="3" height="7" x="1" y="8" rx="1" fill="#8b6dff"/>
+        <rect width="3" height="11" x="6" y="4" rx="1" fill="#6d8dff"/>
+        <rect width="3" height="14" x="11" y="1" rx="1" fill="#22c55e"/>
+      </svg>
+      AI Dash
+    </div>
+    <p class="tagline">Know what your agents do and what it costs.</p>
+    <nav class="nav">
+      <button type="button" class="on" data-nav="top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overview</button>
+      <button type="button" data-nav="live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9"/></svg>Live agents</button>
+      <button type="button" data-nav="activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Activity</button>
+      <button type="button" data-nav="recent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Executions</button>
+      <button type="button" data-nav="agents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4M9 13v1M15 13v1"/></svg>Agents</button>
+      <button type="button" data-open="decisions-btn" id="nav-decisions" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Pending decisions<span class="dec-count" id="nav-dec-count" hidden></span></button>
+      <button type="button" data-open="skills-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M9 8h6M9 12h6"/></svg>Skills</button>
+      <button type="button" data-open="settings-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Settings</button>
+    </nav>
+    <div class="sys off" id="sys"><b><i></i><span id="sys-title">Checking</span></b><span id="sys-sub">Reading the local server</span></div>
+  </aside>
+  <main class="main">
 <div class="wrap">
   <header>
     <div class="brand">
       <svg class="logo" viewBox="0 0 16 16" aria-hidden="true">
-        <rect width="3" height="7" x="1" y="8" rx="1" fill="#2a78d6"/>
-        <rect width="3" height="11" x="6" y="4" rx="1" fill="#2a78d6"/>
-        <rect width="3" height="14" x="11" y="1" rx="1" fill="#1baf7a"/>
+        <rect width="3" height="7" x="1" y="8" rx="1" fill="#8b6dff"/>
+        <rect width="3" height="11" x="6" y="4" rx="1" fill="#6d8dff"/>
+        <rect width="3" height="14" x="11" y="1" rx="1" fill="#22c55e"/>
       </svg>
-      Agent Activity
+      AI Dash
+    </div>
+    <div class="greet">
+      <h1 id="greeting">Welcome back</h1>
+      <p class="sub" id="greeting-sub">Here is what your agents are doing in this project.</p>
     </div>
     <div class="crumb" id="crumb"></div>
-    <div class="spacer"></div>
-    <div class="meta" id="meta"><span class="orb" id="orb"></span><span id="meta-text">loading</span></div>
-    <button class="gear" id="decisions-btn" type="button" title="Pending decisions" aria-label="Open pending decisions" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-      </svg>
-      <span class="dec-count" id="decisions-count" hidden></span>
-    </button>
-    <button class="gear" id="skills-btn" type="button" title="Skills" aria-label="Open skills viewer">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M9 8h6M9 12h6"/>
-      </svg>
-    </button>
-    <button class="gear" id="settings-btn" type="button" title="Settings" aria-label="Open settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    </button>
-    <button class="theme" id="theme" type="button" title="Toggle theme" aria-label="Toggle light/dark theme">
-      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="4"/>
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-      </svg>
-      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
-      </svg>
-    </button>
+    <div class="tools">
+      <div class="meta pill" id="meta"><span class="orb" id="orb"></span><span id="meta-text">loading</span></div>
+      <button class="gear" id="decisions-btn" type="button" title="Pending decisions" aria-label="Open pending decisions" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        <span class="dec-count" id="decisions-count" hidden></span>
+      </button>
+      <button class="gear" id="skills-btn" type="button" title="Skills" aria-label="Open skills viewer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M9 8h6M9 12h6"/>
+        </svg>
+      </button>
+      <button class="gear" id="settings-btn" type="button" title="Settings" aria-label="Open settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>
+        </svg>
+      </button>
+      <button class="theme" id="theme" type="button" title="Toggle theme" aria-label="Toggle light/dark theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+        </svg>
+      </button>
+    </div>
   </header>
-  <section id="live" hidden></section>
-  <section id="activity" hidden></section>
-  <div id="root"></div>
+  <div class="board">
+    <section id="live" hidden></section>
+    <section id="activity" hidden></section>
+    <div id="root"></div>
+  </div>
+</div>
+  </main>
 </div>
 <div class="tip" id="tip"></div>
 
@@ -710,8 +904,15 @@ function tiles(d) {
     { label: 'Executions', value: fmt(t.executions), delta: '',
       foot: fmt(t.tool_calls) + ' tool calls', spark: spark('executions', 'var(--series-5)'), color: 'var(--series-5)' },
   ];
-  return `<div class="tiles">${items.map(it => `<div class="card tile">
-    <div class="top"><span class="label">${esc(it.label)}</span></div>
+  const ICONS = {
+    'Tokens in': '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+    'Cache read': '<path d="M20 6 9 17l-5-5"/>',
+    'Gate first pass': '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
+    'Est. cost': '<path d="M12 2v20M17 6.5C16 5 14.2 4.5 12 4.5c-2.5 0-4.5 1.2-4.5 3s1.8 2.6 4.5 3.2 4.5 1.4 4.5 3.3-2 3-4.5 3c-2.4 0-4.2-.7-5.2-2.2"/>',
+    'Executions': '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  };
+  return `<div class="tiles">${items.map(it => `<div class="card tile" style="--tint:${it.color}">
+    <div class="top"><span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[it.label] || ''}</svg></span><span class="label">${esc(it.label)}</span></div>
     <div class="value">${esc(it.value)}</div>
     <div class="bottom">
       <div>${it.delta}<div class="foot">${esc(it.foot)}</div></div>
@@ -748,7 +949,9 @@ function lineChart(days) {
     <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${aria}">
       ${ticks.map(v => `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--grid)" stroke-width="1"/>
          <text class="ax" x="${P.l - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${kilo(Math.round(v))}</text>`).join('')}
-      ${series.map(([k, c]) => `<path d="${path(k)}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
+      <defs>${series.map(([k, c], i) => `<linearGradient id="area${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient>`).join('')}</defs>
+      ${series.map(([k], i) => `<path d="${path(k)}L${x(last).toFixed(1)},${y(0).toFixed(1)}L${x(0).toFixed(1)},${y(0).toFixed(1)}Z" fill="url(#area${i})"/>`).join('')}
+      ${series.map(([k, c]) => `<path d="${path(k)}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
       ${series.map(([k, c]) => `<circle cx="${x(last).toFixed(1)}" cy="${y(days[last][k]).toFixed(1)}" r="4" fill="${c}" stroke="var(--surface-1)" stroke-width="2"/>
          <text class="dl" x="${(x(last) + 9).toFixed(1)}" y="${(y(days[last][k]) + 4).toFixed(1)}">${kilo(days[last][k])}</text>`).join('')}
       ${days.map((d, i) => {
@@ -777,19 +980,24 @@ function shareBar(rows, key, title) {
   const rest = rows.slice(5).reduce((s, r) => s + r[m], 0);
   const segs = rest > 0 ? [...top, { [key]: 'Other', tokens_in: rows.slice(5).reduce((s, r) => s + r.tokens_in, 0), executions: rows.slice(5).reduce((s, r) => s + r.executions, 0) }] : top;
   let acc = 0;
-  const W = 100;
   return `<div class="card">
     <h2 style="margin-top:0">${esc(heading)}</h2>
-    <svg viewBox="0 0 ${W} 14" style="border-radius:4px;overflow:hidden" role="img" aria-label="${esc(heading)} share">
-      ${segs.map((r, i) => {
-        const w = (r[m] / total) * W;
-        const x0 = acc; acc += w;
-        const c = i === segs.length - 1 && rest > 0 ? 'var(--text-3)' : SERIES[i % SERIES.length];
-        return `<rect class="seg" x="${x0.toFixed(2)}" y="0" width="${Math.max(w - 0.3, 0).toFixed(2)}" height="14" fill="${c}"
-          data-tip="<b>${esc(r[key])}</b><br>${pct(r[m] / total)} ${unit}<br>${fmt(r.tokens_in)} tokens · ${r.executions} exec(s)"/>`;
-      }).join('')}
-    </svg>
-    <div class="bars-list" style="margin-top:16px">
+    <div class="donut-row">
+    <div class="donut" role="img" aria-label="${esc(heading)} share">
+      <svg viewBox="0 0 42 42">
+        <circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--surface-2)" stroke-width="5"/>
+        ${segs.map((r, i) => {
+          const w = (r[m] / total) * 100;
+          const gap = segs.length > 1 ? 0.6 : 0;
+          const off = acc; acc += w;
+          const c = i === segs.length - 1 && rest > 0 ? 'var(--text-3)' : SERIES[i % SERIES.length];
+          return `<circle class="seg" cx="21" cy="21" r="15.9155" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${Math.max(w - gap, 0).toFixed(2)} ${(100 - Math.max(w - gap, 0)).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"
+            data-tip="<b>${esc(r[key])}</b><br>${pct(r[m] / total)} ${unit}<br>${fmt(r.tokens_in)} tokens · ${r.executions} exec(s)"/>`;
+        }).join('')}
+      </svg>
+      <div class="mid"><b>${byTokens ? kilo(total) : fmt(total)}</b><span>${byTokens ? 'tokens' : 'executions'}</span></div>
+    </div>
+    <div class="bars-list legend-list">
       ${segs.map((r, i) => {
         const c = i === segs.length - 1 && rest > 0 ? 'var(--text-3)' : SERIES[i % SERIES.length];
         const w = Math.max((r[m] / total) * 100, 1.5);
@@ -799,6 +1007,7 @@ function shareBar(rows, key, title) {
           <span class="val">${pct(r[m] / total)}</span>
         </div>`;
       }).join('')}
+    </div>
     </div>
     <details><summary>Table view</summary>
       <div class="table-scroll"><table><thead><tr><th>${esc(key.replace(/_/g, ' '))}</th><th class="n">Execs</th><th class="n">Tokens in</th><th class="n">1st pass</th></tr></thead>
@@ -929,7 +1138,7 @@ function setHtml(el, html) {
     const recent = state.recent.length
       ? '<div class="live-sub">Recently finished</div><ul class="live-list dim runs">' + state.recent.slice(0, 6).map((r) => runLi(r, false)).join('') + '</ul>'
       : '';
-    setHtml(el, '<h2>Live</h2><div class="card live-card">' + head + running + claims + recent + '</div>');
+    setHtml(el, '<div class="card live-card"><h2>Live agents</h2>' + head + running + claims + recent + '</div>');
     restore(snap);
   }
   el.addEventListener('click', (e) => {
@@ -939,17 +1148,21 @@ function setHtml(el, html) {
     if (open.has(id)) open.delete(id); else open.add(id);
     render();
   });
+  // Tells the sidebar's status card; the page's own tests run this code without a real document, hence the guard.
+  function announce(detail) { try { document.dispatchEvent(new CustomEvent('live-state', { detail })); } catch { /* no event support here */ } }
   async function poll() {
     if (document.hidden) return;
     try {
       const r = await fetch('api/live', { cache: 'no-store' });
       if (!r.ok) throw new Error(r.status);
       state = await r.json(); fetchedAt = Date.now(); offline = false;
+      announce({ offline: false, running: state.running.length });
       if (!shown) { shown = true; el.hidden = false; }
       render();
     } catch {
       if (!shown) { clearInterval(timer); return; } // no live endpoint here: stay hidden
       offline = true; render();
+      announce({ offline: true, running: 0 });
     }
   }
   const timer = setInterval(poll, 2000);
@@ -1047,7 +1260,7 @@ function setHtml(el, html) {
     const body = calls || runs
       ? '<div class="legend"><span><i class="sw" style="background:var(--series-1)"></i>session</span><span><i class="sw" style="background:var(--series-3)"></i>subagents</span></div>' + chart(range, buckets)
       : '<p class="act-empty">No activity in the ' + WINDOW[range] + '.</p>';
-    setHtml(el, '<h2>Activity</h2><div class="card act-card"><div class="act-head"><div class="act-total"><b>' + num(calls) + '</b>tool calls · ' +
+    setHtml(el, '<div class="card act-card"><h2>Usage and activity</h2><div class="act-head"><div class="act-total"><b>' + num(calls) + '</b>tool calls · ' +
       num(runs) + ' run' + (runs === 1 ? '' : 's') + ' · ' + WINDOW[range] + '</div><div class="act-seg" role="group" aria-label="Time range">' + seg + '</div></div>' + body + '</div>');
     wireTips(el);
   }
@@ -1090,18 +1303,14 @@ function render(d) {
   document.getElementById('crumb').innerHTML = `<b>${esc(d.log_records)}</b> execution${d.log_records === 1 ? '' : 's'} logged`;
   hideOrb('orb');
   document.getElementById('meta-text').textContent = `updated ${new Date(d.generated_at).toLocaleString()}`;
+  const split = (hasTaskTypes(d.by_task) ? shareBar(d.by_task, 'task_type', 'Tokens by task type') : '') + shareBar(d.by_model, 'model', 'Tokens by model');
   document.getElementById('root').innerHTML =
-    tiles(d) +
-    noUsageNote(d) +
-    '<h2>Trend</h2>' + lineChart(d.by_day) +
-    '<h2>Breakdown</h2><div class="grid3">' +
-      (hasTaskTypes(d.by_task) ? shareBar(d.by_task, 'task_type', 'Tokens by task type') : '') +
-      shareBar(d.by_model, 'model', 'Tokens by model') +
-    '</div>' +
-    '<h2>Activity</h2><div class="grid2">' +
-      recentTable(d.recent) +
-      agentTable(d) +
-    '</div>';
+    '<div class="a-kpis">' + tiles(d) + '</div>' +
+    (noUsageNote(d) ? '<div class="a-note">' + noUsageNote(d) + '</div>' : '') +
+    '<div class="a-trend">' + lineChart(d.by_day) + '</div>' +
+    '<div class="a-split">' + split + '</div>' +
+    '<div class="a-recent" id="recent">' + recentTable(d.recent) + '</div>' +
+    '<div class="a-agents" id="agents">' + agentTable(d) + '</div>';
   wireTips(document.getElementById('root'));
 }
 
@@ -1120,6 +1329,45 @@ fetch('data.json', { cache: 'no-store' })
       </div>`;
     showOrb('orb-empty', 'listening', 20);
   });
+
+// The app shell: greeting, the sidebar's navigation, and its system status.
+(function setupShell() {
+  const $ = (id) => document.getElementById(id);
+  const hour = new Date().getHours();
+  $('greeting').textContent = hour < 5 ? 'Working late?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+  const targets = { top: () => window.scrollTo({ top: 0, behavior: 'smooth' }), live: 'live', activity: 'activity', recent: 'recent', agents: 'agents' };
+  const buttons = [...document.querySelectorAll('.nav button')];
+  const mark = (btn) => { for (const b of buttons) b.classList.toggle('on', b === btn); };
+  for (const btn of buttons) {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.open) { $(btn.dataset.open).click(); return; }
+      const t = targets[btn.dataset.nav];
+      mark(btn);
+      if (typeof t === 'function') { t(); return; }
+      const el = $(t);
+      if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  // Pending decisions: the entry shows when the server answers for them, with the same count as the old button.
+  const dec = $('decisions-btn'), navDec = $('nav-decisions'), navCount = $('nav-dec-count'), count = $('decisions-count');
+  const syncDec = () => { navDec.hidden = dec.hidden; navCount.hidden = count.hidden; navCount.textContent = count.textContent; };
+  new MutationObserver(syncDec).observe(dec, { attributes: true, childList: true, subtree: true, characterData: true });
+  syncDec();
+
+  // System status: the local server answering is what makes the live panels work.
+  const sys = $('sys');
+  document.addEventListener('live-state', (e) => {
+    const d = e.detail || {};
+    sys.classList.toggle('off', false);
+    sys.classList.toggle('warn', !!d.offline);
+    $('sys-title').textContent = d.offline ? 'Server not reachable' : d.running ? d.running + ' agent' + (d.running === 1 ? '' : 's') + ' running' : 'All quiet';
+    $('sys-sub').textContent = d.offline ? 'Retrying every 2 s' : 'Local server connected';
+  });
+  const noServer = setTimeout(() => { if (sys.classList.contains('off')) { $('sys-title').textContent = 'Static view'; $('sys-sub').textContent = 'No live server here'; } }, 9000);
+  document.addEventListener('live-state', () => clearTimeout(noServer), { once: true });
+})();
 </script>
 </body>
 </html>
