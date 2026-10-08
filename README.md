@@ -195,7 +195,7 @@ scripts/agent-live.mjs            SubagentStart/Stop hook: records which agents 
 scripts/decisions.mjs             reads docs/pending-decisions.md and approves items for AI Dash (the mod hands them to the session)
 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
-docs/tasks.md                     fixed task taxonomy used by the log
+docs/tasks.md                     fixed task taxonomy used by the log and listed in AI Dash's Tasks card
 docs/model-prices.json            starting prices (average list prices, dated) — edit them in AI Dash > Settings > Model prices
 docs/agents/                      one committed file per agent; ships with sys-init-starter.md (one-time, removed after setup)
 .claude/agents/                   generated Claude Code subagent pointers for docs/agents/ (they show up as @agent-<name>)
@@ -290,7 +290,7 @@ Both the log and `ai-dash/data.json` resolve to the repo's **shared git root**, 
 
 `ai-dash/` (named to avoid colliding with a project's own `dashboard/` folder) is a dependency-free static page (no build, no framework) showing tokens, cache reuse, gate first-pass rate, cost, and per-agent/per-task activity, light and dark. Deploy it on Vercel with **Root Directory** set to `ai-dash` — nothing else to configure.
 
-**The aggregate holds counts only** — no prompts, no file paths, no source content — and task names come from the fixed taxonomy in `docs/tasks.md` for exactly that reason, since a Vercel deployment is public by default. Turn on Deployment Protection before the first deploy if the project is client work; details in `ai-dash/README.md`. Cost stays blank until you fill in `docs/model-prices.json` yourself — a stale price is worse than none.
+**The aggregate holds counts only** — no prompts, no file paths, no source content — and task names come from the fixed taxonomy in `docs/tasks.md` for exactly that reason, since a Vercel deployment is public by default. Turn on Deployment Protection before the first deploy if the project is client work; details in `ai-dash/README.md`. The cost uses the prices in `docs/model-prices.json` (rounded starting points, editable in AI Dash > Settings); check them against each provider's pricing page.
 
 **Viewed locally, `ai-dash/` can do more than display.** `node scripts/ai-dash.mjs` serves the dashboard on `127.0.0.1` and adds a Settings area (the gear icon) that reads and writes `.claude/settings.json` directly — today, a single switch for the optional session mod below — plus a **Skills and agents** viewer (book icon) listing each one's name, description, creation date and last usage, with a valid/invalid badge for skills' YAML headers and functions' format. *Last usage* comes from a local, git-ignored usage log (a `PostToolUse` hook records skill uses; `agent-team.sh claim` records agents), never from editing the files, so there are no merge conflicts between worktrees (served from your working tree by the local server only; never published, since skill text isn't part of the counts-only aggregate). It's a local-only server (it refuses any request whose `Host`/`Origin` isn't `127.0.0.1`), and opening `ai-dash/index.html` as a static file still works — the Settings area just falls back to showing the toggle command instead of a live switch.
 

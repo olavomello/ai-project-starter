@@ -6,6 +6,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 ## [Unreleased]
 ### Added
 
+- AI Dash: a **Tasks** card and menu entry. It lists the task types of `docs/tasks.md` in the order the file gives them, with a status (agent working, in progress, recent, idle), the agent on it, how many runs it has and when the last one was. "In progress" comes from a marker an agent sets with the new `node scripts/tasks.mjs start <task_type> --agent <name>` and clears with `done` (it expires after two hours); "agent working" means that agent has a run open in the live log; "recent" means a gate run for that task in the last hour. `GET api/tasks`.
+
 - AI Dash: **Settings > Theme** with five palettes (Indigo, Light, Ocean, Forest, Sunset). The choice is kept in the browser (`localStorage`) and applied before first paint; the sun/moon button flips Light and Indigo and saves it too.
 
 - AI Dash: a row in the Agents card opens the agent: its description, then an on/off switch. The switch rewrites the `Status :` line in `docs/agents/<name>.md` and syncs `.claude/agents/`, so Claude Code lists or stops listing the agent. New `scripts/agents-status.mjs` (`list`, `<name> on|off`) and `GET api/agents`, `POST api/agents/status` (same guard as the other writes). Switched-off agents carry an "off" tag in the table.
