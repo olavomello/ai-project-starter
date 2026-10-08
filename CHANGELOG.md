@@ -6,6 +6,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 ## [Unreleased]
 ### Added
 
+- AI Dash: **Settings > Theme** with five palettes (Indigo, Light, Ocean, Forest, Sunset). The choice is kept in the browser (`localStorage`) and applied before first paint; the sun/moon button flips Light and Indigo and saves it too.
+
 - AI Dash: a row in the Agents card opens the agent: its description, then an on/off switch. The switch rewrites the `Status :` line in `docs/agents/<name>.md` and syncs `.claude/agents/`, so Claude Code lists or stops listing the agent. New `scripts/agents-status.mjs` (`list`, `<name> on|off`) and `GET api/agents`, `POST api/agents/status` (same guard as the other writes). Switched-off agents carry an "off" tag in the table.
 
 - AI Dash: **Settings > Model prices** edits `docs/model-prices.json` (USD per 1M tokens: input, output, cache read, cache write), stamps `updated` with the date of each save and re-runs the report so the cost follows. New `scripts/prices.mjs` and `GET/POST api/prices` (same guard as the other writes). The shipped file now holds rounded average list prices for the main Claude, GPT and Gemini models, dated `2026-10-07`; they are starting points to check against each provider's pricing page.
@@ -60,6 +62,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 - `docs/guides/efficiency.md` and `docs/guides/security.md`: document the mod's usage-file handoff to `ai-log.mjs`, and the review step (`claude plugin validate <dir>`, read its `hooks:`/`calls:` lines) before installing any mod, this starter's own included.
 
 ### Changed
+
+- AI Dash: the Settings icons are a gear (the sidebar one looked like a sun).
 
 - AI Dash: the Skills dialog lists skills only; agents moved to the Agents card.
 
