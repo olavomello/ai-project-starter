@@ -1932,6 +1932,9 @@
       tr.task-in-progress td:first-child { box-shadow: inset 3px 0 0 #eab308; }
       @keyframes task-pulse { 50% { opacity: 0.25; } }
       @media (prefers-reduced-motion: reduce) { .task-pill.working i { animation: none; } }
+
+      .live-foot { margin: 12px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--text-3); }
+      li.bg-line { font-size: 12.5px; color: var(--text-3); }
     </style>
   </head>
   <body>
@@ -2925,7 +2928,7 @@
         const agents = Math.max(d.by_agent ? d.by_agent.length : 0, 1);
         const items = [
           {
-            label: "Active agents",
+            label: "Agents running",
             value: "",
             valueHtml:
               '<span id="kpi-active">' +
@@ -2934,7 +2937,7 @@
               agents +
               "</small>",
             delta: "",
-            foot: "running now",
+            foot: "excludes background commands",
             spark: "",
             color: "var(--series-6)",
           },
@@ -3008,7 +3011,7 @@
           "Est. cost":
             '<path d="M12 2v20M17 6.5C16 5 14.2 4.5 12 4.5c-2.5 0-4.5 1.2-4.5 3s1.8 2.6 4.5 3.2 4.5 1.4 4.5 3.3-2 3-4.5 3c-2.4 0-4.2-.7-5.2-2.2"/>',
           Executions: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
-          "Active agents":
+          "Agents running":
             '<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4M9 13v1M15 13v1"/>',
           "Success rate":
             '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
@@ -3422,14 +3425,30 @@
                 .join("") +
               "</ul>"
             : "";
+          // A run that ended without ever announcing its start (type "unknown") is a background task, not an agent:
+          // list the agents, and fold those into one line instead of a row of "unknown, took 0s".
+          const named = state.recent.filter((r) => r.type !== "unknown");
+          const bg = state.recent.filter((r) => r.type === "unknown");
+          const bgLine = bg.length
+            ? '<li class="bg-line"><span class="live-name">' +
+              bg.length +
+              " background task" +
+              (bg.length > 1 ? "s" : "") +
+              ' finished</span><span class="live-time">last ' +
+              clock(bg[0].stopped) +
+              "</span></li>"
+            : "";
           const recent = state.recent.length
             ? '<div class="live-sub">Recently finished</div><ul class="live-list dim runs">' +
-              state.recent
+              named
                 .slice(0, 6)
                 .map((r) => runLi(r, false))
                 .join("") +
+              bgLine +
               "</ul>"
             : "";
+          const note =
+            '<p class="live-foot">Counts agents that announced their start. Background commands and monitors do not, so Claude Desktop may show more tasks.</p>';
           setHtml(
             el,
             '<div class="card live-card"><h2>Live agents</h2>' +
@@ -3437,6 +3456,7 @@
               running +
               claims +
               recent +
+              note +
               "</div>",
           );
           restore(snap);
