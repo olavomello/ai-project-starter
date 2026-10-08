@@ -57,6 +57,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- AI Dash redesign: an app layout with a left sidebar (Overview, Live agents, Activity, Executions, Agents, Pending decisions, Skills, Settings, and a server status card), a greeting header, a deep indigo theme, tinted KPI cards with icons and sparklines, a two-column board (usage and live agents, token trend and breakdown, executions and agents), donut charts for the token breakdowns and an area fill under the trend. Same data and endpoints; on narrow screens the sidebar gives way to the header buttons.
 - ai-dash Instructions editor: the space bar types a space (the engine names that key `space`, and it was typed as the word), typing no longer redraws the pane on every key, and the field takes 60% of the screen height.
 - ai-dash Pending decisions: a table with a leading id column (`#`, `ID`, `No`, or plain numbers) shows that number before the title (`9 - Mobile app`) instead of reading it as the title; tables without one are numbered by position. The approval screen shows the item's full data, and the Instructions field is now a multi-line editor in the pane (click it, Enter adds a line, long text scrolls) and a tall, scrolling textarea in AI Dash.
 - ai-dash Pending decisions (pane and AI Dash): the detail and blocks lines are labelled with the table's own column names (`Question - …`, `What is needed - …`, `Blocks - …`) instead of showing bare text.
