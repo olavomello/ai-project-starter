@@ -432,10 +432,10 @@
   @media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .tile .value { font-size: 24px; } .tile svg.spark { width: 70px; } }
 
   #live { grid-column: span 4; order: 7; }
-  #activity { grid-column: span 8; order: 2; }
+  #activity { grid-column: 1 / -1; order: 2; }
   #live[hidden], #activity[hidden] { display: none; }
-  .a-kpis { order: 1; } .a-trend { order: 4; } .a-split { order: 5; } .a-recent { order: 6; } .a-agents { order: 3; } .a-note { order: 0; }
-  @media (max-width: 1180px) { #live, #activity { grid-column: 1 / -1; } }
+  .a-kpis { order: 1; } .a-trend { order: 4; } .a-split { order: 5; } .a-recent { order: 6; grid-row: span 2; } .a-agents { order: 8; } .a-note { order: 0; }
+  @media (max-width: 1180px) { #live, #activity { grid-column: 1 / -1; } .a-recent { grid-row: auto; } }
   .board section > .card { height: 100%; }
 
   /* ===== polish: hover glow, menu glow, success/active cards, model prices ===== */
@@ -1217,6 +1217,7 @@ function setHtml(el, html) {
   });
   // Tells the sidebar's status card; the page's own tests run this code without a real document, hence the guard.
   function announce(detail) { try { document.dispatchEvent(new CustomEvent('live-state', { detail })); } catch { /* no event support here */ } }
+  let failedFirst = 0;
   async function poll() {
     if (document.hidden) return;
     try {
@@ -1227,7 +1228,9 @@ function setHtml(el, html) {
       if (!shown) { shown = true; el.hidden = false; }
       render();
     } catch {
-      if (!shown) { clearInterval(timer); return; } // no live endpoint here: stay hidden
+      // No live endpoint here (static hosting): stay hidden. A server that is merely busy gets a few more tries,
+      // so one failed first poll does not hide the card for the whole visit.
+      if (!shown) { failedFirst += 1; if (failedFirst >= 5) clearInterval(timer); return; }
       offline = true; render();
       announce({ offline: true, running: 0 });
     }
