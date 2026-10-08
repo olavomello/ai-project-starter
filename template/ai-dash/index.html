@@ -1604,12 +1604,12 @@
       }
 
       #live {
-        grid-column: span 4;
-        order: 7;
+        grid-column: span 6;
+        order: 2;
       }
       #activity {
         grid-column: 1 / -1;
-        order: 2;
+        order: 4;
       }
       #live[hidden],
       #activity[hidden] {
@@ -1619,28 +1619,27 @@
         order: 1;
       }
       .a-trend {
-        order: 4;
-      }
-      .a-split {
         order: 5;
       }
-      .a-recent {
+      .a-split {
         order: 6;
-        grid-row: span 2;
+      }
+      .a-recent {
+        order: 8;
+        grid-column: 1 / -1;
       }
       .a-agents {
-        order: 8;
+        order: 3;
+        grid-column: span 6;
       }
       .a-note {
         order: 0;
       }
       @media (max-width: 1180px) {
         #live,
-        #activity {
+        #activity,
+        .a-agents {
           grid-column: 1 / -1;
-        }
-        .a-recent {
-          grid-row: auto;
         }
       }
       .board section > .card {
