@@ -59,6 +59,7 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- AI Dash: Live agents sits right above the Agents card, both beside Recent executions; Usage and activity takes the full width. The Live card is no longer hidden for the whole visit when its first poll fails once (it retries a few times before concluding there is no live server).
 - AI Dash: the Live agents card sits beside Recent executions; the Agents table moved up beside Usage and activity. Settings > Model prices says to restart the dash when the running server predates the price editor.
 - AI Dash redesign (tagline: Agent Orchestration Platform): an app layout with a left sidebar (Overview, Live agents, Activity, Executions, Agents, Pending decisions, Skills, Settings, and a server status card), a greeting header, a deep indigo theme, tinted KPI cards with icons and sparklines, a two-column board (usage and live agents, token trend and breakdown, executions and agents), donut charts for the token breakdowns and an area fill under the trend. Same data and endpoints; on narrow screens the sidebar gives way to the header buttons.
 - ai-dash Instructions editor: the space bar types a space (the engine names that key `space`, and it was typed as the word), typing no longer redraws the pane on every key, and the field takes 60% of the screen height.
