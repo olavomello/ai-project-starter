@@ -94,6 +94,6 @@ If you would rather not host it at all, serve it locally with the command above.
 | Cache read | Share of input tokens served from cache. Rising is good; a fall usually means something dynamic leaked into the stable prompt prefix. |
 | Gate first pass | Share of tasks where `scripts/gate.sh` passed on the first run. This is the closest thing here to a quality signal, because it is measured rather than judged. |
 | Est. cost | Computed from `docs/model-prices.json`: rounded average list prices shipped as a starting point, with the date they were entered in `updated`. Edit them in Settings > Model prices (or by hand), and re-check them against each provider's pricing page. A model that is missing from the file stays unpriced. |
-| Active agents | Agents running right now (from the live server) out of the agents that have logged work. |
+| Agents running | Agents with a run open right now (from the live server) out of the agents that have logged work. It counts agents that announced their start through the `SubagentStart` hook; background commands and monitors do not announce themselves, so Claude Desktop's own "running tasks" figure can be higher. Runs that end without ever having started are folded into one "background tasks finished" line. |
 | Success rate | Share of gate runs that passed, on any attempt. |
 | Tokens by task type | Where the budget actually goes. A task type far above its share of the work is the first place to look for waste. |

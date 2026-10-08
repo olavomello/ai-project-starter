@@ -65,6 +65,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- AI Dash: the "Active agents" card is now "Agents running" and says it excludes background commands; the Live card explains that Claude Desktop may count more tasks, and folds runs that ended without a recorded start (type unknown) into one "background tasks finished" line instead of listing each as "unknown, took 0s".
+
 - AI Dash: the Settings icons are a gear (the sidebar one looked like a sun).
 
 - AI Dash: the Skills dialog lists skills only; agents moved to the Agents card.
