@@ -437,6 +437,56 @@
   .a-kpis { order: 1; } .a-trend { order: 4; } .a-split { order: 5; } .a-recent { order: 6; } .a-agents { order: 7; } .a-note { order: 0; }
   @media (max-width: 1180px) { #live, #activity { grid-column: 1 / -1; } }
   .board section > .card { height: 100%; }
+
+  /* ===== polish: hover glow, menu glow, success/active cards, model prices ===== */
+  :root { --series-6: #14b8a6; --glow: var(--accent); }
+  .card { transition: box-shadow .25s ease, border-color .25s ease; }
+  .card:hover { border-color: color-mix(in srgb, var(--glow) 55%, var(--border));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--glow) 30%, transparent), 0 10px 34px -10px color-mix(in srgb, var(--glow) 60%, transparent); }
+  .tile:hover { --glow: var(--tint); }
+  .glow-on { animation: glow-pulse 2.2s ease-out; }
+  @keyframes glow-pulse {
+    0%   { box-shadow: 0 0 0 1px color-mix(in srgb, var(--glow) 80%, transparent), 0 0 38px 2px color-mix(in srgb, var(--glow) 75%, transparent); border-color: var(--glow); }
+    100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { transition: none; }
+    .glow-on { animation: none; box-shadow: 0 0 0 2px var(--glow); }
+  }
+  .tile .value small { font-size: 17px; font-weight: 500; color: var(--text-3); letter-spacing: 0; }
+  .kpi-badge { margin-left: auto; padding: 2px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 650; font-variant-numeric: tabular-nums;
+    color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
+  .tiles { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
+  @media (min-width: 1400px) { .tiles { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; } .tile { padding: 14px 14px; } .tile .label { font-size: 13px; } .tile .value { font-size: 25px; } .tile svg.spark { width: 64px; } }
+  @media (min-width: 1100px) and (max-width: 1399px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .tile .value { font-size: 28px; }
+  .tile svg.spark { width: 84px; }
+
+  .credit { display: block; margin: 12px 6px 0; font-size: 12px; color: var(--text-3); text-decoration: none; }
+  .credit:hover { color: var(--accent-2); text-decoration: underline; }
+  .credit:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; border-radius: 4px; }
+
+  .modal.wide-ish { width: min(760px, 94vw); max-height: 86vh; overflow-y: auto; }
+  .prices-card { margin-bottom: 4px; }
+  .prices-body table { min-width: 0; font-size: 12.5px; }
+  .prices-body th { padding-bottom: 6px; }
+  .prices-body td { padding: 5px 6px 5px 0; border-top: 0; }
+  .prices-body tr:hover td { background: transparent; }
+  .prices-body input { width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; font-size: 12.5px; color: var(--text-1);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; font-variant-numeric: tabular-nums; }
+  .prices-body input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .prices-body input.name { min-width: 150px; }
+  .prices-body td.rm { width: 28px; padding-right: 0; }
+  .prices-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .prices-actions button { background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border); border-radius: 8px; padding: 6px 13px; font: inherit; font-size: 12.5px; cursor: pointer; }
+  .prices-actions button:hover { border-color: var(--text-3); }
+  .prices-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .prices-actions button:focus-visible, .prices-body button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .prices-body button.x { background: none; border: 0; color: var(--text-3); cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 4px; }
+  .prices-body button.x:hover { color: var(--critical); }
+  .prices-status { font-size: 12.5px; color: var(--text-3); }
+  .prices-status.bad { color: var(--critical); }
+  .prices-status.ok { color: var(--good); }
 </style>
 </head>
 <body>
@@ -450,7 +500,7 @@
       </svg>
       AI Dash
     </div>
-    <p class="tagline">Know what your agents do and what it costs.</p>
+    <p class="tagline">Agent Orchestration Platform</p>
     <nav class="nav">
       <button type="button" class="on" data-nav="top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overview</button>
       <button type="button" data-nav="live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M7.5 7.5a6.4 6.4 0 0 0 0 9M16.5 7.5a6.4 6.4 0 0 1 0 9"/></svg>Live agents</button>
@@ -462,6 +512,7 @@
       <button type="button" data-open="settings-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Settings</button>
     </nav>
     <div class="sys off" id="sys"><b><i></i><span id="sys-title">Checking</span></b><span id="sys-sub">Reading the local server</span></div>
+    <a class="credit" href="https://www.linkedin.com/in/olavomello/" target="_blank" rel="noopener noreferrer">By Olavo Mello</a>
   </aside>
   <main class="main">
 <div class="wrap">
@@ -520,13 +571,22 @@
 <div class="tip" id="tip"></div>
 
 <div class="modal-backdrop" id="settings-backdrop">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="modal wide-ish" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="modal-top">
       <h2 id="settings-title">Settings</h2>
       <button class="close" id="settings-close" type="button" aria-label="Close settings">&times;</button>
     </div>
     <p class="modal-sub">Changes here write to this project's files — see each row for what and where.</p>
     <div id="settings-body">
+      <div class="prices-card" id="prices-card">
+        <div class="settings-row">
+          <div>
+            <div class="label">Model prices</div>
+            <div class="desc">USD per 1,000,000 tokens, saved in <code>docs/model-prices.json</code>. The cost on the dashboard uses them. <span id="prices-updated"></span></div>
+          </div>
+        </div>
+        <div id="prices-body" class="prices-body"></div>
+      </div>
       <div class="settings-row">
         <div>
           <div class="label">In-session status mod (Claude Code)</div>
@@ -890,7 +950,10 @@ function tiles(d) {
   const t = d.totals, r = d.rates, days = d.by_day;
   const [prevIn, curIn] = days.length >= 2 ? halves(days, 'tokens_in') : [null, null];
   const spark = (key, color) => sparkline(days.map(x => x[key] || 0), color);
+  const agents = Math.max(d.by_agent ? d.by_agent.length : 0, 1);
   const items = [
+    { label: 'Active agents', value: '', valueHtml: '<span id="kpi-active">' + (window.__running || 0) + '</span><small> / ' + agents + '</small>', delta: '',
+      foot: 'running now', spark: '', color: 'var(--series-6)' },
     { label: 'Tokens in', value: kilo(t.tokens_in), delta: deltaTag(curIn, prevIn, false),
       foot: fmt(t.tokens_in) + ' total', spark: spark('tokens_in', 'var(--series-1)'), color: 'var(--series-1)' },
     { label: 'Cache read', value: pct(r.cache_read_ratio), delta: '',
@@ -903,6 +966,8 @@ function tiles(d) {
       : { label: 'Est. cost', value: '—', delta: '', foot: 'fill docs/model-prices.json', spark: '', color: 'var(--text-3)' },
     { label: 'Executions', value: fmt(t.executions), delta: '',
       foot: fmt(t.tool_calls) + ' tool calls', spark: spark('executions', 'var(--series-5)'), color: 'var(--series-5)' },
+    { label: 'Success rate', value: pct(r.gate_pass), valueHtml: '', delta: '', badge: pct(r.gate_pass),
+      foot: 'gates passed, any attempt', spark: '', color: 'var(--good)' },
   ];
   const ICONS = {
     'Tokens in': '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
@@ -910,10 +975,12 @@ function tiles(d) {
     'Gate first pass': '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
     'Est. cost': '<path d="M12 2v20M17 6.5C16 5 14.2 4.5 12 4.5c-2.5 0-4.5 1.2-4.5 3s1.8 2.6 4.5 3.2 4.5 1.4 4.5 3.3-2 3-4.5 3c-2.4 0-4.2-.7-5.2-2.2"/>',
     'Executions': '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+    'Active agents': '<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V4M9 13v1M15 13v1"/>',
+    'Success rate': '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
   };
   return `<div class="tiles">${items.map(it => `<div class="card tile" style="--tint:${it.color}">
-    <div class="top"><span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[it.label] || ''}</svg></span><span class="label">${esc(it.label)}</span></div>
-    <div class="value">${esc(it.value)}</div>
+    <div class="top"><span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[it.label] || ''}</svg></span><span class="label">${esc(it.label)}</span>${it.badge ? `<span class="kpi-badge">${esc(it.badge)}</span>` : ''}</div>
+    <div class="value">${it.valueHtml || esc(it.value)}</div>
     <div class="bottom">
       <div>${it.delta}<div class="foot">${esc(it.foot)}</div></div>
       ${it.spark}
@@ -1120,7 +1187,7 @@ function setHtml(el, html) {
       d.scrollTop = !s || s.bottom ? d.scrollHeight : s.top; // follow the tail unless the reader scrolled up
     }
     if (snap.focus) {
-      for (const b of el.querySelectorAll('[data-mon-toggle]')) if (b.dataset.monToggle === snap.focus) { b.focus(); break; }
+      for (const b of el.querySelectorAll('[data-mon-toggle]')) if (b.dataset.monToggle === snap.focus) { b.focus({ preventScroll: true }); break; }
     }
   }
   function render() {
@@ -1338,15 +1405,25 @@ fetch('data.json', { cache: 'no-store' })
 
   const targets = { top: () => window.scrollTo({ top: 0, behavior: 'smooth' }), live: 'live', activity: 'activity', recent: 'recent', agents: 'agents' };
   const buttons = [...document.querySelectorAll('.nav button')];
+  // A short glow on what the menu entry points at, so it is clear which part of the page is meant.
+  const pulse = (cards) => {
+    for (const c of cards) {
+      c.classList.remove('glow-on');
+      void c.offsetWidth; // restart the animation when the same entry is clicked twice
+      c.classList.add('glow-on');
+      setTimeout(() => c.classList.remove('glow-on'), 2300);
+    }
+  };
   const mark = (btn) => { for (const b of buttons) b.classList.toggle('on', b === btn); };
   for (const btn of buttons) {
     btn.addEventListener('click', () => {
       if (btn.dataset.open) { $(btn.dataset.open).click(); return; }
       const t = targets[btn.dataset.nav];
       mark(btn);
-      if (typeof t === 'function') { t(); return; }
+      if (typeof t === 'function') { t(); pulse(document.querySelectorAll('.tiles .tile')); return; }
       const el = $(t);
       if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      pulse(el ? el.querySelectorAll('.card') : []);
     });
   }
 
@@ -1364,9 +1441,78 @@ fetch('data.json', { cache: 'no-store' })
     sys.classList.toggle('warn', !!d.offline);
     $('sys-title').textContent = d.offline ? 'Server not reachable' : d.running ? d.running + ' agent' + (d.running === 1 ? '' : 's') + ' running' : 'All quiet';
     $('sys-sub').textContent = d.offline ? 'Retrying every 2 s' : 'Local server connected';
+    window.__running = d.running || 0;
+    const active = $('kpi-active');
+    if (active) active.textContent = String(window.__running);
   });
   const noServer = setTimeout(() => { if (sys.classList.contains('off')) { $('sys-title').textContent = 'Static view'; $('sys-sub').textContent = 'No live server here'; } }, 9000);
   document.addEventListener('live-state', () => clearTimeout(noServer), { once: true });
+})();
+
+// Settings > Model prices: edits docs/model-prices.json through the local server (GET/POST api/prices).
+(function setupPrices() {
+  const body = document.getElementById('prices-body');
+  const updated = document.getElementById('prices-updated');
+  const openBtn = document.getElementById('settings-btn');
+  const FIELDS = [['in', 'Input'], ['out', 'Output'], ['cache_read', 'Cache read'], ['cache_write', 'Cache write']];
+  let rows = null, status = '', statusClass = '';
+
+  const esc2 = (v) => String(v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function draw() {
+    if (rows === null) return;
+    body.innerHTML = '<div class="table-scroll"><table><thead><tr><th>Model</th>' + FIELDS.map(([, l]) => '<th>' + l + '</th>').join('') + '<th></th></tr></thead><tbody>' +
+      rows.map((r, i) => '<tr><td><input class="name" data-row="' + i + '" data-f="name" value="' + esc2(r.name) + '" aria-label="Model name" placeholder="model-name"></td>' +
+        FIELDS.map(([f, l]) => '<td><input data-row="' + i + '" data-f="' + f + '" value="' + esc2(r[f]) + '" inputmode="decimal" aria-label="' + l + ' price for ' + esc2(r.name || 'new model') + '"></td>').join('') +
+        '<td class="rm"><button class="x" type="button" data-rm="' + i + '" aria-label="Remove ' + esc2(r.name || 'model') + '">&times;</button></td></tr>').join('') +
+      '</tbody></table></div><div class="prices-actions"><button type="button" id="prices-add">Add model</button><button type="button" class="primary" id="prices-save">Save prices</button>' +
+      '<span class="prices-status ' + statusClass + '" role="status">' + esc2(status) + '</span></div>';
+  }
+  async function load() {
+    try {
+      const r = await fetch('api/prices', { cache: 'no-store' });
+      if (!r.ok) throw new Error(String(r.status));
+      const d = await r.json();
+      rows = Object.entries(d.models || {}).map(([name, v]) => ({ name, in: v.in, out: v.out, cache_read: v.cache_read, cache_write: v.cache_write }));
+      updated.textContent = d.updated ? 'Last updated ' + d.updated + '.' : 'Not dated yet.';
+      status = d.error || ''; statusClass = d.error ? 'bad' : '';
+      draw();
+    } catch {
+      body.innerHTML = '<p class="settings-static">Editing needs the local server. Run <code>node scripts/ai-dash.mjs</code>, or edit <code>docs/model-prices.json</code> by hand.</p>';
+    }
+  }
+  async function save() {
+    const models = {};
+    for (const r of rows) {
+      const name = r.name.trim();
+      if (!name) continue;
+      models[name] = { in: r.in, out: r.out, cache_read: r.cache_read, cache_write: r.cache_write };
+    }
+    status = 'Saving'; statusClass = ''; draw();
+    try {
+      const res = await fetch('api/prices', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-AI-Dash': '1' }, body: JSON.stringify({ models }) });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) { status = out.error || 'Could not save (' + res.status + ')'; statusClass = 'bad'; }
+      else {
+        status = 'Saved' + (out.refreshed ? ', cost refreshed' : ', run scripts/ai-report.mjs to refresh the cost'); statusClass = 'ok';
+        updated.textContent = 'Last updated ' + out.updated + '.';
+      }
+    } catch { status = 'Could not reach the server'; statusClass = 'bad'; }
+    draw();
+  }
+  body.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t || t.dataset.row === undefined) return;
+    rows[Number(t.dataset.row)][t.dataset.f] = t.value;
+  });
+  body.addEventListener('click', (e) => {
+    const t = e.target && e.target.closest ? e.target : null;
+    if (!t) return;
+    const rm = t.closest('[data-rm]');
+    if (rm) { rows.splice(Number(rm.dataset.rm), 1); status = ''; draw(); return; }
+    if (t.closest('#prices-add')) { rows.push({ name: '', in: 0, out: 0, cache_read: 0, cache_write: 0 }); status = ''; draw(); const last = body.querySelectorAll('input.name'); if (last.length) last[last.length - 1].focus(); return; }
+    if (t.closest('#prices-save')) save();
+  });
+  openBtn.addEventListener('click', load);
 })();
 </script>
 </body>

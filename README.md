@@ -196,7 +196,7 @@ scripts/decisions.mjs             reads docs/pending-decisions.md and approves i
 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
 docs/tasks.md                     fixed task taxonomy used by the log
-docs/model-prices.json            you fill this in — cost stays blank until you do
+docs/model-prices.json            starting prices (average list prices, dated) — edit them in AI Dash > Settings > Model prices
 docs/agents/                      one committed file per agent; ships with sys-init-starter.md (one-time, removed after setup)
 .claude/agents/                   generated Claude Code subagent pointers for docs/agents/ (they show up as @agent-<name>)
 docs/guides/                      loaded on demand: security, efficiency, delegation, claude-code
@@ -407,7 +407,7 @@ A flag always overrides its `AILOG_*` env var when both are given to `ai-log.mjs
 
 **Dashboard shows no data / "no data yet".** No execution has run through `scripts/gate.sh` in this repo yet — run it once, or `node scripts/ai-report.mjs` after `node scripts/ai-log.mjs` has appended at least one line.
 
-**Dashboard cost column is blank.** By design — fill in real numbers in `docs/model-prices.json` first; the starter never ships example prices, since a stale price is worse than none.
+**Dashboard cost looks wrong or is blank.** `docs/model-prices.json` ships with rounded average list prices for the main models and an `updated` date; they are starting points, not quotes. Check them against each provider's pricing page and edit them in AI Dash (Settings > Model prices). A model that is missing from the file, or named differently from what your usage log records, stays unpriced.
 
 **A tag was pushed before `main` was up to date.** Delete and recreate it: `git push origin :refs/tags/vX.Y.Z && git tag -d vX.Y.Z`, then `git fetch origin && git reset --hard origin/main`, retag, and push.
 

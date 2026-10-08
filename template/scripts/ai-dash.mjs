@@ -20,6 +20,7 @@ import { listSkills, usageMap, NEVER } from './skills.mjs';
 import { readLive, readActivity } from './agent-live.mjs';
 import { field as fieldOf } from './agents-sync.mjs';
 import { readDecisions, approveDecision, MAX_INSTRUCTIONS } from './decisions.mjs';
+import { readPrices, parseModels, writePrices } from './prices.mjs';
 
 function repoRoot() {
   try {
@@ -192,6 +193,29 @@ async function handlePostApprove(req, res) {
   sendJson(res, result.ok ? 200 : 409, result);
 }
 
+/** Model prices: GET reads docs/model-prices.json, POST replaces its models (same guard as the other writes). */
+async function handleGetPrices(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  sendJson(res, 200, readPrices(ROOT));
+}
+
+async function handlePostPrices(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
+  if (req.headers['x-ai-dash'] !== '1') return sendJson(res, 400, { error: 'missing X-AI-Dash header' });
+  let text;
+  try { text = await readBody(req, 32 * 1024); } catch { return sendJson(res, 400, { error: 'body too large' }); }
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { return sendJson(res, 400, { error: 'invalid JSON' }); }
+  const checked = parseModels(parsed);
+  if (!checked.ok) return sendJson(res, 400, { error: checked.error });
+  const saved = writePrices(ROOT, checked.models);
+  // Re-run the report so the cost on the dashboard follows the new prices; a failure here must not undo the save.
+  let refreshed = true;
+  try { execFileSync(process.execPath, [join(ROOT, 'scripts', 'ai-report.mjs')], { cwd: ROOT, stdio: 'ignore', timeout: 20000 }); } catch { refreshed = false; }
+  sendJson(res, 200, { ok: true, ...saved, refreshed });
+}
+
 async function handlePostConfig(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
   if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
@@ -235,6 +259,9 @@ const server = createServer(async (req, res) => {
     if (url.pathname === '/api/activity' && req.method === 'GET') return await handleGetActivity(req, res);
     if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
+    if (url.pathname === '/api/prices' && req.method === 'GET') return await handleGetPrices(req, res);
+    if (url.pathname === '/api/prices' && req.method === 'POST') return await handlePostPrices(req, res);
+    if (url.pathname === '/api/prices') return send(res, 405, 'method not allowed', 'text/plain');
     if (url.pathname === '/api/decisions' && req.method === 'GET') return await handleGetDecisions(req, res);
     if (url.pathname === '/api/decisions/approve' && req.method === 'POST') return await handlePostApprove(req, res);
     if (url.pathname === '/api/decisions/approve') return send(res, 405, 'method not allowed', 'text/plain');
