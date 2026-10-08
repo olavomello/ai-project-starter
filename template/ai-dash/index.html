@@ -431,10 +431,10 @@
   }
   @media (max-width: 640px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .tile .value { font-size: 24px; } .tile svg.spark { width: 70px; } }
 
-  #live { grid-column: span 4; order: 3; }
+  #live { grid-column: span 4; order: 7; }
   #activity { grid-column: span 8; order: 2; }
   #live[hidden], #activity[hidden] { display: none; }
-  .a-kpis { order: 1; } .a-trend { order: 4; } .a-split { order: 5; } .a-recent { order: 6; } .a-agents { order: 7; } .a-note { order: 0; }
+  .a-kpis { order: 1; } .a-trend { order: 4; } .a-split { order: 5; } .a-recent { order: 6; } .a-agents { order: 3; } .a-note { order: 0; }
   @media (max-width: 1180px) { #live, #activity { grid-column: 1 / -1; } }
   .board section > .card { height: 100%; }
 
@@ -1470,6 +1470,7 @@ fetch('data.json', { cache: 'no-store' })
   async function load() {
     try {
       const r = await fetch('api/prices', { cache: 'no-store' });
+      if (r.status === 404 || r.status === 405) { body.innerHTML = '<p class="settings-static">This dash server was started before the price editor existed. Stop it and run <code>node scripts/ai-dash.mjs</code> again, then reopen Settings.</p>'; return; }
       if (!r.ok) throw new Error(String(r.status));
       const d = await r.json();
       rows = Object.entries(d.models || {}).map(([name, v]) => ({ name, in: v.in, out: v.out, cache_read: v.cache_read, cache_write: v.cache_write }));
