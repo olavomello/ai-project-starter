@@ -1846,6 +1846,21 @@
       .prices-status.ok {
         color: var(--good);
       }
+
+  /* ===== agents: a row opens the agent, with its on/off switch ===== */
+  tr.agent-row { cursor: pointer; }
+  tr.agent-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  tr.agent-row td.name { font-weight: 560; }
+  .agent-off { margin-left: 8px; font-size: 10.5px; font-weight: 650; padding: 1px 7px; border-radius: 99px; color: var(--text-3); border: 1px solid var(--border); }
+  .agent-desc { margin: 4px 0 0; color: var(--text-2); font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; }
+  .agent-switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; padding: 14px 0 4px; border-top: 1px solid var(--border); }
+  .agent-switch .label { font-size: 14px; font-weight: 600; }
+  .agent-switch .state { margin-left: 10px; font-size: 12.5px; font-weight: 650; color: var(--text-3); }
+  .agent-switch .state.on { color: var(--good); }
+  .agent-meta { margin: 14px 0 0; display: grid; gap: 4px; font-size: 12.5px; color: var(--text-3); }
+  .agent-meta b { color: var(--text-2); font-weight: 560; }
+  .agent-note { margin-top: 10px; font-size: 12px; color: var(--text-3); }
+  .agent-note.bad { color: var(--critical); }
     </style>
   </head>
   <body>
@@ -2221,6 +2236,16 @@
       </div>
     </div>
 
+    <div class="modal-backdrop" id="agent-backdrop">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="agent-title">
+        <div class="modal-top">
+          <h2 id="agent-title">Agent</h2>
+          <button class="close" id="agent-close" type="button" aria-label="Close agent">&times;</button>
+        </div>
+        <div id="agent-body"></div>
+      </div>
+    </div>
+
     <div class="modal-backdrop" id="skills-backdrop">
       <div
         class="modal wide"
@@ -2229,7 +2254,7 @@
         aria-labelledby="skills-title"
       >
         <div class="modal-top">
-          <h2 id="skills-title">Skills and agents</h2>
+          <h2 id="skills-title">Skills</h2>
           <button
             class="close"
             id="skills-close"
@@ -2240,8 +2265,7 @@
           </button>
         </div>
         <p class="modal-sub" id="skills-sub">
-          Name, description, creation date and last usage of every skill and
-          agent. Last usage comes from a local log, never from editing the
+          Name, description, creation date and last usage of every skill. Last usage comes from a local log, never from editing the
           files.
         </p>
         <input
@@ -2653,9 +2677,7 @@
                 : `<div class="settings-static">${list.length ? "No match." : "None yet."}</div>`)
             );
           };
-          body.innerHTML =
-            section("Skills", items.skills, (k) => k.name) +
-            section("Agents", items.agents, (k) => k.name);
+          body.innerHTML = section("Skills", items.skills, (k) => k.name);
           for (const d of body.querySelectorAll(".s-desc"))
             d.onclick = () => d.classList.toggle("clamp");
         }
@@ -2666,7 +2688,7 @@
             const r = await fetch("api/skills", { cache: "no-store" });
             if (!r.ok) throw new Error(String(r.status));
             const d = await r.json();
-            items = { skills: d.skills || [], agents: d.agents || [] };
+            items = { skills: d.skills || [], agents: [] };
             render();
           } catch {
             body.innerHTML = `<div class="settings-static">Not available on static hosting (skills are read from your working tree, never published). Run locally:<br>
@@ -3069,7 +3091,7 @@
     <div class="table-scroll"><table><thead><tr><th>Agent</th><th class="n">Execs</th><th class="n">Tokens in</th><th class="n">Tool calls</th><th class="n">Gate 1st pass</th></tr></thead>
     <tbody>${rows
       .map(
-        (r) => `<tr>
+        (r) => `<tr class="agent-row" data-agent="${esc(r.agent)}" tabindex="0" role="button" aria-label="Open ${esc(r.agent)}">
       <td class="name">${esc(r.agent)}</td>
       <td class="n">${r.executions}</td>
       <td class="n">${fmt(r.tokens_in)}</td>
@@ -4007,6 +4029,106 @@
         });
         openBtn.addEventListener("click", load);
       })();
+
+// Agents card: a row opens the agent (description, then an on/off switch). The switch writes the Status line
+// of docs/agents/<name>.md and syncs .claude/agents/ through the local server (GET api/agents, POST api/agents/status).
+(function setupAgents() {
+  const card = document.getElementById('root'); // the Agents card is built inside it when the data loads
+  const backdrop = document.getElementById('agent-backdrop');
+  const body = document.getElementById('agent-body');
+  const title = document.getElementById('agent-title');
+  const html = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let roster = null;
+  let note = '', noteBad = false, saving = false, current = '';
+
+  const close = () => backdrop.classList.remove('open');
+  document.getElementById('agent-close').onclick = close;
+  backdrop.onclick = (e) => { if (e.target === backdrop) close(); };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && backdrop.classList.contains('open')) close(); });
+
+  async function fetchRoster() {
+    try {
+      const r = await fetch('api/agents', { cache: 'no-store' });
+      if (!r.ok) return null;
+      return (await r.json()).agents || [];
+    } catch { return null; }
+  }
+
+  // A small "off" tag on the agents that are switched off, once the table is on the page.
+  async function annotate() {
+    const list = await fetchRoster();
+    if (!list) return;
+    roster = list;
+    for (const row of card.querySelectorAll('tr.agent-row')) {
+      const a = list.find((x) => x.name === row.dataset.agent);
+      const cell = row.querySelector('td.name');
+      const tag = cell.querySelector('.agent-off');
+      if (a && a.status === 'OFF' && !tag) cell.insertAdjacentHTML('beforeend', '<span class="agent-off">off</span>');
+      if (tag && !(a && a.status === 'OFF')) tag.remove();
+    }
+  }
+
+  function draw() {
+    const a = (roster || []).find((x) => x.name === current);
+    title.textContent = current;
+    if (!roster) {
+      body.innerHTML = '<p class="settings-static">Agents are read from <code>docs/agents/</code> by the local server. Run <code>node scripts/ai-dash.mjs</code> (stop and start it again if it was already running).</p>';
+      return;
+    }
+    if (!a) {
+      body.innerHTML = '<p class="agent-desc">This name is in the usage log but not in the roster (<code>docs/agents/</code>), so there is no description and nothing to switch. The main session shows up like this.</p>';
+      return;
+    }
+    const on = a.status === 'ON';
+    body.innerHTML =
+      '<p class="agent-desc">' + (html(a.description) || '<em>no description</em>') + '</p>' +
+      '<div class="agent-switch"><div><span class="label" id="agent-switch-label">Status</span><span class="state' + (on ? ' on' : '') + '">' + (on ? 'On' : html(a.status || 'Off').replace(/^OFF$/, 'Off')) + '</span></div>' +
+      '<button class="switch" id="agent-switch" type="button" role="switch" aria-checked="' + on + '" aria-labelledby="agent-switch-label"' + (saving ? ' disabled' : '') + '><span class="knob"></span></button></div>' +
+      '<div class="agent-note' + (noteBad ? ' bad' : '') + '" role="status">' + html(note || (on ? 'Claude Code lists this agent.' : 'Claude Code does not list this agent.')) + '</div>' +
+      '<div class="agent-meta">' +
+        (a.owns ? '<span><b>Owns</b> ' + html(a.owns) + '</span>' : '') +
+        (a.createdBy || a.creationDate ? '<span><b>Created</b> ' + html(a.creationDate) + (a.createdBy ? ' by ' + html(a.createdBy) : '') + '</span>' : '') +
+        '<span><b>File</b> docs/agents/' + html(a.name) + '.md</span>' +
+      '</div>';
+  }
+
+  async function open(name) {
+    current = name; note = ''; noteBad = false; saving = false;
+    backdrop.classList.add('open');
+    roster = await fetchRoster();
+    draw();
+    const sw = document.getElementById('agent-switch');
+    if (sw) sw.focus();
+  }
+
+  async function toggle() {
+    const a = (roster || []).find((x) => x.name === current);
+    if (!a || saving) return;
+    const next = a.status === 'ON' ? 'OFF' : 'ON';
+    saving = true; note = 'Saving'; noteBad = false; draw();
+    try {
+      const r = await fetch('api/agents/status', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-AI-Dash': '1' }, body: JSON.stringify({ name: current, status: next }) });
+      const out = await r.json().catch(() => ({}));
+      if (!r.ok) { note = out.error || 'Could not save (' + r.status + ')'; noteBad = true; }
+      else { a.status = next; note = next === 'ON' ? 'On. Written to docs/agents/' + current + '.md; Claude Code lists it now.' : 'Off. Written to docs/agents/' + current + '.md; Claude Code no longer lists it.'; }
+    } catch { note = 'Could not reach the server'; noteBad = true; }
+    saving = false; draw(); annotate();
+    const sw = document.getElementById('agent-switch');
+    if (sw) sw.focus();
+  }
+
+  body.addEventListener('click', (e) => { if (e.target && e.target.closest && e.target.closest('#agent-switch')) toggle(); });
+  card.addEventListener('click', (e) => {
+    const row = e.target && e.target.closest ? e.target.closest('tr.agent-row') : null;
+    if (row) open(row.dataset.agent);
+  });
+  card.addEventListener('keydown', (e) => {
+    const row = e.target && e.target.closest ? e.target.closest('tr.agent-row') : null;
+    if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(row.dataset.agent); }
+  });
+  // The card is filled once the data loads; tag the switched-off agents then.
+  new MutationObserver(() => { if (card.querySelector('tr.agent-row')) annotate(); }).observe(card, { childList: true });
+})();
     </script>
   </body>
 </html>

@@ -146,7 +146,7 @@ test('the template wires both subagent hooks and the dashboard has the Live pane
     assert.ok(commands.some((c) => c.includes('scripts/agent-live.mjs') && c.endsWith(` ${arg}`)), event);
   }
   const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
-  assert.ok(html.includes('id="live"') && html.includes("'api/live'"));
+  assert.ok(html.includes('id="live"') && /['"]api\/live['"]/.test(html));
   assert.ok(existsSync(join(ROOT, 'template', 'scripts', 'agent-live.mjs')));
 });
 

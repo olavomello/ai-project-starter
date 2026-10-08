@@ -21,6 +21,7 @@ import { readLive, readActivity } from './agent-live.mjs';
 import { field as fieldOf } from './agents-sync.mjs';
 import { readDecisions, approveDecision, MAX_INSTRUCTIONS } from './decisions.mjs';
 import { readPrices, parseModels, writePrices } from './prices.mjs';
+import { listAgents, setAgentStatus } from './agents-status.mjs';
 
 function repoRoot() {
   try {
@@ -193,6 +194,27 @@ async function handlePostApprove(req, res) {
   sendJson(res, result.ok ? 200 : 409, result);
 }
 
+/** The agent roster (docs/agents/) and the on/off switch of each agent. */
+async function handleGetAgents(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  sendJson(res, 200, { agents: listAgents(TARGET_DIR) });
+}
+
+async function handlePostAgentStatus(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  if (req.headers['content-type'] !== 'application/json') return sendJson(res, 400, { error: 'expected application/json' });
+  if (req.headers['x-ai-dash'] !== '1') return sendJson(res, 400, { error: 'missing X-AI-Dash header' });
+  let text;
+  try { text = await readBody(req, MAX_BODY); } catch { return sendJson(res, 400, { error: 'body too large' }); }
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { return sendJson(res, 400, { error: 'invalid JSON' }); }
+  if (!parsed || typeof parsed !== 'object' || Object.keys(parsed).length !== 2 || !('name' in parsed) || !('status' in parsed)) {
+    return sendJson(res, 400, { error: 'expected exactly { "name": "<agent>", "status": "ON" | "OFF" }' });
+  }
+  const result = setAgentStatus(TARGET_DIR, parsed.name, parsed.status);
+  sendJson(res, result.ok ? 200 : 400, result);
+}
+
 /** Model prices: GET reads docs/model-prices.json, POST replaces its models (same guard as the other writes). */
 async function handleGetPrices(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
@@ -259,6 +281,9 @@ const server = createServer(async (req, res) => {
     if (url.pathname === '/api/activity' && req.method === 'GET') return await handleGetActivity(req, res);
     if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
+    if (url.pathname === '/api/agents' && req.method === 'GET') return await handleGetAgents(req, res);
+    if (url.pathname === '/api/agents/status' && req.method === 'POST') return await handlePostAgentStatus(req, res);
+    if (url.pathname === '/api/agents' || url.pathname === '/api/agents/status') return send(res, 405, 'method not allowed', 'text/plain');
     if (url.pathname === '/api/prices' && req.method === 'GET') return await handleGetPrices(req, res);
     if (url.pathname === '/api/prices' && req.method === 'POST') return await handlePostPrices(req, res);
     if (url.pathname === '/api/prices') return send(res, 405, 'method not allowed', 'text/plain');
