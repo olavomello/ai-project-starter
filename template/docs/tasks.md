@@ -22,3 +22,7 @@ Generic on purpose: a free-form task name would leak client names, unreleased fe
 | `other` | Anything that genuinely fits nothing above |
 
 Adding a type: append a row, keep it generic enough that it would appear in several projects, and never encode a client, product or person in the name.
+
+## Showing a task in AI Dash
+
+The Tasks card lists the table above in this order. Gate runs show up on their own (runs, last run, "recent"). To mark a task as being worked on now, an agent runs `node scripts/tasks.mjs start <task_type> --agent <name>` when it begins and `node scripts/tasks.mjs done <task_type>` when it ends. While that agent has a run open, the card shows "agent working"; a marker that nobody clears expires after two hours.

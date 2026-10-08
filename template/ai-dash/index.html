@@ -1909,6 +1909,29 @@
       .theme-opt:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
       .theme-opt .sw { display: flex; width: 100%; height: 34px; border-radius: 7px; overflow: hidden; border: 1px solid rgba(128,128,128,.3); }
       .theme-opt .sw i { flex: 1; }
+
+      /* ===== tasks card ===== */
+      #tasks { grid-column: 1 / -1; order: 3; }
+      #tasks[hidden] { display: none; }
+      .tasks-sub { margin: -2px 0 12px; font-size: 12.5px; color: var(--text-3); }
+      .tasks-table td, .tasks-table th { padding: 8px 10px; vertical-align: middle; }
+      .tasks-table .n { text-align: right; font-variant-numeric: tabular-nums; }
+      .task-name { display: block; font-weight: 600; font-size: 13px; }
+      .task-covers { display: block; margin-top: 2px; font-size: 12px; color: var(--text-3); line-height: 1.4; }
+      .task-pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 99px; font-size: 11.5px; font-weight: 600; white-space: nowrap;
+        color: var(--text-3); background: color-mix(in srgb, var(--text-3) 14%, transparent); }
+      .task-pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+      .task-pill.working { color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
+      .task-pill.working i { animation: task-pulse 1.4s ease-in-out infinite; }
+      .task-pill.in-progress { color: #eab308; background: color-mix(in srgb, #eab308 16%, transparent); }
+      .task-pill.recent { color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 16%, transparent); }
+      .task-agent { padding: 2px 9px; border-radius: 8px; font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+      .task-agent.live { border-color: var(--good); color: var(--good); }
+      .task-none { color: var(--text-3); }
+      tr.task-working td:first-child { box-shadow: inset 3px 0 0 var(--good); }
+      tr.task-in-progress td:first-child { box-shadow: inset 3px 0 0 #eab308; }
+      @keyframes task-pulse { 50% { opacity: 0.25; } }
+      @media (prefers-reduced-motion: reduce) { .task-pill.working i { animation: none; } }
     </style>
   </head>
   <body>
@@ -1980,6 +2003,11 @@
             >
               <path d="M4 6h16M4 12h16M4 18h10" /></svg
             >Executions
+          </button>
+          <button type="button" data-nav="tasks" id="nav-tasks" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 11l3 3 8-8" /><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h9" /></svg
+            >Tasks
           </button>
           <button type="button" data-nav="agents">
             <svg
@@ -2195,6 +2223,7 @@
           <div class="board">
             <section id="live" hidden></section>
             <section id="activity" hidden></section>
+            <section id="tasks" hidden></section>
             <div id="root"></div>
           </div>
         </div>
@@ -3863,6 +3892,7 @@
           activity: "activity",
           recent: "recent",
           agents: "agents",
+          tasks: "tasks",
         };
         const buttons = [...document.querySelectorAll(".nav button")];
         // A short glow on what the menu entry points at, so it is clear which part of the page is meant.
@@ -4207,6 +4237,55 @@
   });
   // The card is filled once the data loads; tag the switched-off agents then.
   new MutationObserver(() => { if (card.querySelector('tr.agent-row')) annotate(); }).observe(card, { childList: true });
+})();
+
+// Tasks card: the task taxonomy in the order docs/tasks.md lists it, each with its status and the agent on it (GET api/tasks).
+(function setupTasks() {
+  const host = document.getElementById('tasks');
+  document.addEventListener('tasks-ready', () => { document.getElementById('nav-tasks').hidden = false; });
+  const rel = (t) => {
+    if (!t) return 'never';
+    const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+    if (s < 90) return 'just now';
+    if (s < 5400) return Math.round(s / 60) + ' min ago';
+    if (s < 129600) return Math.round(s / 3600) + ' h ago';
+    return Math.round(s / 86400) + ' d ago';
+  };
+  const h = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const LABEL = { working: 'Agent working', 'in-progress': 'In progress', recent: 'Recent', idle: 'Idle' };
+  let shown = false, misses = 0, timer = null;
+
+  function draw(tasks) {
+    const active = tasks.filter((t) => t.status === 'working' || t.status === 'in-progress').length;
+    host.innerHTML = '<div class="card tasks-card"><h2>Tasks</h2>' +
+      '<p class="tasks-sub">The task types of <code>docs/tasks.md</code>, in that order. ' + (active ? active + ' in progress now.' : 'None in progress right now.') + '</p>' +
+      '<div class="table-scroll"><table class="tasks-table"><thead><tr><th class="n">#</th><th>Task</th><th>Status</th><th>Agent</th><th class="n">Runs</th><th class="n">Last run</th></tr></thead><tbody>' +
+      tasks.map((t) => '<tr class="task-' + t.status + '"><td class="n">' + t.order + '</td>' +
+        '<td><span class="task-name">' + h(t.type) + '</span><span class="task-covers">' + h(t.covers) + '</span></td>' +
+        '<td><span class="task-pill ' + t.status + '"><i></i>' + LABEL[t.status] + '</span></td>' +
+        '<td>' + (t.agent ? '<span class="task-agent' + (t.status === 'working' ? ' live' : '') + '">' + h(t.agent) + '</span>' : '<span class="task-none">&mdash;</span>') + '</td>' +
+        '<td class="n">' + t.runs + '</td><td class="n">' + h(t.lastRun ? rel(t.lastRun) : '—') + '</td></tr>').join('') +
+      '</tbody></table></div></div>';
+  }
+
+  async function poll() {
+    if (document.hidden) return;
+    try {
+      const r = await fetch('api/tasks', { cache: 'no-store' });
+      if (!r.ok) throw new Error(String(r.status));
+      const d = await r.json();
+      if (!d.tasks || !d.tasks.length) { host.hidden = true; return; }
+      misses = 0;
+      draw(d.tasks);
+      host.hidden = false;
+      if (!shown) { shown = true; document.dispatchEvent(new CustomEvent('tasks-ready')); }
+    } catch {
+      // No local server (static hosting): stay hidden. A busy server gets a few more tries first.
+      if (!shown && ++misses >= 5) clearInterval(timer);
+    }
+  }
+  poll();
+  timer = setInterval(poll, 3000);
 })();
     </script>
   </body>

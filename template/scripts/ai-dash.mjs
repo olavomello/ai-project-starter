@@ -22,6 +22,7 @@ import { field as fieldOf } from './agents-sync.mjs';
 import { readDecisions, approveDecision, MAX_INSTRUCTIONS } from './decisions.mjs';
 import { readPrices, parseModels, writePrices } from './prices.mjs';
 import { listAgents, setAgentStatus } from './agents-status.mjs';
+import { readTasks } from './tasks.mjs';
 
 function repoRoot() {
   try {
@@ -194,6 +195,14 @@ async function handlePostApprove(req, res) {
   sendJson(res, result.ok ? 200 : 409, result);
 }
 
+/** The task taxonomy with each task's status; the agents with an open run come from the live log. */
+async function handleGetTasks(req, res) {
+  if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
+  const running = readLive(TARGET_DIR).running.map((r) => r.type);
+  res.setHeader('cache-control', 'no-store');
+  sendJson(res, 200, { tasks: readTasks(TARGET_DIR, { running }) });
+}
+
 /** The agent roster (docs/agents/) and the on/off switch of each agent. */
 async function handleGetAgents(req, res) {
   if (!originOk(req, PORT)) return sendJson(res, 400, { error: 'bad host or origin' });
@@ -281,6 +290,8 @@ const server = createServer(async (req, res) => {
     if (url.pathname === '/api/activity' && req.method === 'GET') return await handleGetActivity(req, res);
     if (url.pathname === '/api/skills' && req.method === 'GET') return await handleGetSkills(req, res);
     if (url.pathname === '/api/config' && req.method === 'GET') return await handleGetConfig(req, res);
+    if (url.pathname === '/api/tasks' && req.method === 'GET') return await handleGetTasks(req, res);
+    if (url.pathname === '/api/tasks') return send(res, 405, 'method not allowed', 'text/plain');
     if (url.pathname === '/api/agents' && req.method === 'GET') return await handleGetAgents(req, res);
     if (url.pathname === '/api/agents/status' && req.method === 'POST') return await handlePostAgentStatus(req, res);
     if (url.pathname === '/api/agents' || url.pathname === '/api/agents/status') return send(res, 405, 'method not allowed', 'text/plain');
