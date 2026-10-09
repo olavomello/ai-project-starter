@@ -72,11 +72,11 @@ test('formatBandSegments: one row, an icon before every piece of information', (
     agent: 'dev-api-tester', size: 'M', fresh: 49200, ceiling: 60000,
     cacheRatioVal: 0.78, gateText: 'gate passed, first try', agentsCount: 2, maxAgents: 4,
   }, { maxWidth: 200 });
-  expect(full.map((x) => x.key)).toEqual(['branch', 'tokens', 'cache', 'gate', 'size', 'agents']);
+  expect(full.map((x) => x.key)).toEqual(['branch', 'tokens', 'cache', 'gate', 'size', 'worktrees']);
   expect(full.every((x) => x.icon.length > 0)).toBe(true);
   expect(row(full)).toBe(
     `${ICONS.branch} dev-api-tester${SEPARATOR}${ICONS.tokens} tokens 49.2k / 60k${SEPARATOR}${ICONS.cache} cache 78%` +
-    `${SEPARATOR}${ICONS.gatePass} gate passed, first try${SEPARATOR}${ICONS.size} task M${SEPARATOR}${ICONS.agents} agents 2/4`,
+    `${SEPARATOR}${ICONS.gatePass} gate passed, first try${SEPARATOR}${ICONS.size} task M${SEPARATOR}${ICONS.agents} worktrees 2/4`,
   );
 
   // no size set, no ceiling, no cache yet, gate never ran, no live agents: just branch and tokens
@@ -97,6 +97,14 @@ test('formatBandSegments: tones follow the budget and the gate', () => {
   expect(tone({ fresh: 1, ceiling: null, gateText: 'gate passed' }, 'gate')).toBe('ok');
   const failed = formatBandSegments({ ...base, fresh: 1, ceiling: null, gateText: 'gate failed (attempt 2)' } as never).find((x) => x.key === 'gate');
   expect([failed?.tone, failed?.icon]).toEqual(['bad', ICONS.gateFail]);
+});
+
+test('formatBandSegments: worktrees over the ceiling turn amber (leftovers, not running agents)', () => {
+  const base = { agent: 'main', size: null, fresh: 1200, ceiling: null, cacheRatioVal: null, gateText: null, maxAgents: 4 };
+  const at = formatBandSegments({ ...base, agentsCount: 4 }, { maxWidth: 200 }).find((x) => x.key === 'worktrees');
+  const over = formatBandSegments({ ...base, agentsCount: 9 }, { maxWidth: 200 }).find((x) => x.key === 'worktrees');
+  expect([at.text, at.tone]).toEqual(['worktrees 4/4', 'plain']);
+  expect([over.text, over.tone]).toEqual(['worktrees 9/4', 'warn']);
 });
 
 test('formatBandSegments: a narrow budget drops the low-priority segments first, never branch or tokens', () => {

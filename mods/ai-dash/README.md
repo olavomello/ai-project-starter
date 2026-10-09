@@ -12,9 +12,9 @@ Claude Code caches an installed plugin by the `version` in `.claude-plugin/plugi
    (uncached input, cache read, cache write, output) and `tool.call` to count tool
    calls, instead of relying on an agent to export `AILOG_*` variables by hand.
 2. **Shows it in-session.** Draws one row above the prompt, an icon before each item:
-   `⎇ main · ◆ tokens 92.4k / 120k · ↻ cache 92% · ✓ gate passed, first try · ▣ task M · ◎ agents 2/4`
+   `⎇ main · ◆ tokens 92.4k / 120k · ↻ cache 92% · ✓ gate passed, first try · ▣ task M · ◎ worktrees 2/4`
    (branch or agent, fresh tokens against the budget if one is set, cache ratio, last gate
-   result, task size, live agent count), and appends a tool-call count to the spinner.
+   result, task size, agent worktree count), and appends a tool-call count to the spinner.
    Item order is also priority: on a narrow screen (over 100 characters) the last ones
    drop first, never the branch or tokens. Tokens turn yellow at 80% of the budget and
    red at the ceiling; the gate icon is green for a pass and red for a failure.
