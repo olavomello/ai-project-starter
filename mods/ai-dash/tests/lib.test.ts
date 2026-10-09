@@ -11,7 +11,12 @@ import { parseBudgetKnob, ceilingFor } from '../hooks/lib/knobs.js';
 import { formatBandSegments, gateStatusText, spinnerSuffix, kilo, ICONS, SEPARATOR } from '../hooks/lib/band.js';
 import { DASH_LABEL, dashUrl, dashProbeUrl, isAiDash, openCommands, startArgv } from '../hooks/lib/dash.js';
 import { UPDATE_LABEL, UPDATING_LABEL, CHECK_EVERY_MS, checkArgv, applyArgv, shutdownInit, parseCheck, updateView, updatedToast } from '../hooks/lib/update.js';
-import { join, dirname } from '../hooks/lib/path.js';
+import { join, dirname, isAbsolute } from '../hooks/lib/path.js';
+
+test('isAbsolute tells a rooted path from a project-relative one', () => {
+  expect(['/a/b', 'D:/Work/x', 'D:\\Work\\x', '\\\\srv\\share'].map(isAbsolute)).toEqual([true, true, true, true]);
+  expect(['docs/pending-decisions.md', './x', 'docs\\x'].map(isAbsolute)).toEqual([false, false, false]);
+});
 
 test('sanitizeBranch matches the gate.sh printf rule, no trailing underscore', () => {
   expect(sanitizeBranch('agent/dev-api-tester')).toBe('agent_dev-api-tester');
