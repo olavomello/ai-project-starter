@@ -99,6 +99,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Fixed
 
+- Status mod: Pending decisions read `docs/pending-decisions.md` from the session's own folder, so a session in an agent worktree (which has its own committed copy) showed a different count from AI Dash (11 against 14). It now reads and rewrites the file in the project's shared root, the same one AI Dash uses.
+
 - Status mod: the band said "agents 9/4" but that number is the count of folders in `.agents/worktrees/`, which an agent leaves behind after it finishes, not the agents running (AI Dash counted 2). It now reads "worktrees 9/4" and turns amber above the limit, which means leftovers to clean up with `agent-team.sh cleanup`.
 
 - AI Dash: the page no longer jumps back to the top while you scroll. Every poll rebuilt the Live panel and gave focus back to the monitor button with a scroll, so a page scrolled down was thrown up to it every two seconds.

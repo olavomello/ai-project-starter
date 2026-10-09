@@ -10,6 +10,11 @@ export function join(...parts) {
     .replace(/\/{2,}/g, '/');
 }
 
+/** A path that starts at a root: /x, C:/x or C:\x. */
+export function isAbsolute(path) {
+  return /^([/\\]|[A-Za-z]:[/\\])/.test(String(path));
+}
+
 export function dirname(path) {
   const s = String(path).replace(/\/+$/, '');
   const i = s.lastIndexOf('/');

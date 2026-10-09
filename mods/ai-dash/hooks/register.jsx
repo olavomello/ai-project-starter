@@ -18,7 +18,7 @@
 
 import { atom, read, update } from 'claude-code';
 
-import { join, dirname } from './lib/path.js';
+import { join, dirname, isAbsolute } from './lib/path.js';
 import { sanitizeBranch, agentNameFromBranch } from './lib/branch.js';
 import { zeroCounters, addUsage, freshTokens, cacheRatio } from './lib/usage.js';
 import { parseBudgetKnob, ceilingFor } from './lib/knobs.js';
@@ -329,8 +329,16 @@ async function decDrainInbox($) {
 
 const DEC_DEFAULT_FILE = 'docs/pending-decisions.md';
 
+/**
+ * The decisions file is read from the project's shared root (the main working tree), not from the session's own
+ * folder. Each agent worktree carries its own copy of the committed file, so reading the session's copy showed a
+ * different count from AI Dash, which reads the main tree. Approving rewrites that same file.
+ */
+const decAbs = (file) => (decRoot && !isAbsolute(file) ? join(decRoot, file) : file);
+
 /** Reads the file and replaces the list. Never throws: a failure becomes the decStatus line. */
-async function decLoad($, file) {
+async function decLoad($, shown) {
+  const file = decAbs(shown);
   await decDrainInbox($);
   const checkedAt = await $.clock.now();
   try {
@@ -360,18 +368,19 @@ async function decLoad($, file) {
 }
 
 /** The cheap decCheck the decTimer and the tool hook run: reload only when the file changed. */
-async function decCheck($, file) {
+async function decCheck($, shown) {
   if (decBusy) return;
+  const file = decAbs(shown);
   await decDrainInbox($);
   try {
     const present = await $.fs.exists(file);
     const known = await read($, decStatus);
     if (!present) {
-      if (known.exists) await decLoad($, file);
+      if (known.exists) await decLoad($, shown);
       return;
     }
     const stat = await $.fs.stat(file);
-    if (!known.exists || known.stamp !== `${stat.mtimeMs}:${stat.size}`) await decLoad($, file);
+    if (!known.exists || known.stamp !== `${stat.mtimeMs}:${stat.size}`) await decLoad($, shown);
   } catch {
     // the next period asks again
   }
@@ -385,7 +394,8 @@ async function decOpenPane($, file) {
 }
 
 /** Hands the item to the agent first (with the Administrator's instructions, when given), then takes its row out of the file. */
-async function decApprove($, file, id, instructions) {
+async function decApprove($, shown, id, instructions) {
+  const file = decAbs(shown);
   decBusy = true;
   try {
     const item = (await read($, decItems)).find((one) => one.id === id);
@@ -398,14 +408,14 @@ async function decApprove($, file, id, instructions) {
       $.ui.toast('That item changed on disk. The list was refreshed.');
       return;
     }
-    void $.prompt.submit({ text: buildPrompt(item, file, undefined, instructions) });
+    void $.prompt.submit({ text: buildPrompt(item, shown, undefined, instructions) });
     await $.fs.write(file, next);
     $.ui.toast(`Sent to the agent${instructions ? ' with your instructions' : ''}: ${item.title}`);
   } catch (error) {
     $.ui.toast(`Could not approve: ${error instanceof Error ? error.message : String(error)}`);
   } finally {
     decBusy = false;
-    await decLoad($, file);
+    await decLoad($, shown);
   }
 }
 
