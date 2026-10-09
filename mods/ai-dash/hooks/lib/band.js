@@ -10,7 +10,7 @@ export const ICONS = {
   gatePass: '✓',
   gateFail: '✗',
   size: '▣', // task size
-  agents: '◎', // live agents
+  agents: '◎', // agent worktrees
 };
 export const SEPARATOR = '  '; // the row draws its items with gap={2}; the width estimate below counts it
 
@@ -51,7 +51,7 @@ export function gateStatusText(prior, post) {
  * @param {number|null} p.ceiling     budget ceiling for `size`, or null
  * @param {number|null} p.cacheRatioVal  0..1, or null before the first request
  * @param {string|null} p.gateText    result of gateStatusText(...), or null if the gate hasn't run
- * @param {number} p.agentsCount      live agent worktrees
+ * @param {number} p.agentsCount      agent worktrees on disk (.agents/worktrees): running or not, so it can exceed the ceiling
  * @param {number} p.maxAgents
  * @param {object} [o]
  * @param {number} [o.maxWidth=100]   widest row, in characters, before low-priority segments go
@@ -78,7 +78,9 @@ export function formatBandSegments(p, { maxWidth = 100 } = {}) {
     segments.push({ key: 'gate', icon: failed ? ICONS.gateFail : ICONS.gatePass, text: p.gateText, tone: failed ? 'bad' : 'ok' });
   }
   if (p.size && p.size !== 'off') segments.push({ key: 'size', icon: ICONS.size, text: `task ${p.size}`, tone: 'plain' });
-  if (p.agentsCount > 0) segments.push({ key: 'agents', icon: ICONS.agents, text: `agents ${p.agentsCount}/${p.maxAgents}`, tone: 'plain' });
+  // This counts worktree folders, not running agents: a finished agent keeps its worktree until `agent-team.sh cleanup`.
+  // Over the ceiling it turns amber, because the extra ones are leftovers to clean up.
+  if (p.agentsCount > 0) segments.push({ key: 'worktrees', icon: ICONS.agents, text: `worktrees ${p.agentsCount}/${p.maxAgents}`, tone: p.agentsCount > p.maxAgents ? 'warn' : 'plain' });
 
   const width = (list) => list.reduce((n, s, i) => n + s.icon.length + 1 + s.text.length + (i ? SEPARATOR.length : 0), 0);
   while (segments.length > 2 && width(segments) > maxWidth) segments.pop();
