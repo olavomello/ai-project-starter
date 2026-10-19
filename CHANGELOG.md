@@ -101,6 +101,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Fixed
 
+- The directory-structure image at the top of the README did not show: `assets/gen-directory-structure.py` wrote the SVG in the Windows code page, so the dash and quotes in it were invalid UTF-8 and the file was not valid XML. It now writes UTF-8, and the image lists the scripts added since. The README's dashboard section describes what the dashboard does today (it still said Settings had a single switch and that Skills and agents shared a viewer).
+
 - `ai-dash-app.mjs` could not download the desktop shell while the starter's repository is private (Releases answered 404). After a 401, 403 or 404 it now uses `GH_TOKEN`, `GITHUB_TOKEN` or the `gh` CLI login, only for the releases API host, and falls back to app mode when there is none.
 
 - Status mod: Pending decisions read `docs/pending-decisions.md` from the session's own folder, so a session in an agent worktree (which has its own committed copy) showed a different count from AI Dash (11 against 14). It now reads and rewrites the file in the project's shared root, the same one AI Dash uses.

@@ -58,11 +58,15 @@ TREE = [
         ("agent-live.mjs", "Subagent start/stop hook: feeds the live panel", None),
         ("ais-update.mjs", "Checks for a newer starter and applies the update", None),
         ("decisions.mjs", "Pending decisions: read and approve from AI Dash", None),
+        ("agents-sync.mjs", "Keeps .claude/agents/ in step with the roster", None),
+        ("agents-status.mjs", "Switch an agent on or off (AI Dash Agents card)", None),
+        ("tasks.mjs", "Task taxonomy with status, for the Tasks card", None),
+        ("prices.mjs", "Read and edit docs/model-prices.json", None),
     ]),
     ("ai-dash", "Static monitoring dashboard — zero-config Vercel deploy", []),
     ("docs", None, [
         ("tasks.md", "Fixed task taxonomy used by the execution log", None),
-        ("model-prices.json", "You fill this in — cost stays blank until you do", None),
+        ("model-prices.json", "Starting prices, dated; edit in AI Dash > Settings", None),
         ("agents", "Roster; ships with sys-init-starter, the one-time bootstrap agent", []),
         ("guides", "Loaded on demand: security, efficiency, delegation, claude-code", []),
         ("repo-map.md, decisions.md", "Committed agent cache — map + durable decisions", None),
@@ -241,7 +245,7 @@ svg_parts.append("</svg>")
 
 import os
 out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "directory-structure.svg")
-with open(out_path, "w") as f:
+with open(out_path, "w", encoding="utf-8") as f:
     f.write("".join(svg_parts))
 
 print(f"wrote {out_path} ({WIDTH}x{HEIGHT}, {len(rows)} rows)")

@@ -194,6 +194,11 @@ scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings 
 scripts/ai-dash-app.mjs           opens AI Dash in its own window (small desktop shell, or Edge/Chrome app mode); installs and updates the shell itself
 scripts/agent-live.mjs            SubagentStart/Stop hook: records which agents run; feeds the Live panel
 scripts/decisions.mjs             reads docs/pending-decisions.md and approves items for AI Dash (the mod hands them to the session)
+scripts/agents-sync.mjs           keeps .claude/agents/ (Claude Code's subagent list) in step with docs/agents/
+scripts/agents-status.mjs         turns an agent on or off: rewrites its Status line and syncs .claude/agents/ (AI Dash's Agents card)
+scripts/tasks.mjs                 the task taxonomy with a status per task, and `start`/`done` markers (AI Dash's Tasks card)
+scripts/prices.mjs                reads and edits docs/model-prices.json (AI Dash > Settings > Model prices)
+scripts/ais-update.mjs            checks for a newer starter and applies the update (the mod's Update button)
 
 ai-dash/                          static monitoring page, deployable to Vercel with zero config
 docs/tasks.md                     fixed task taxonomy used by the log and listed in AI Dash's Tasks card
@@ -293,7 +298,16 @@ Both the log and `ai-dash/data.json` resolve to the repo's **shared git root**, 
 
 **The aggregate holds counts only** — no prompts, no file paths, no source content — and task names come from the fixed taxonomy in `docs/tasks.md` for exactly that reason, since a Vercel deployment is public by default. Turn on Deployment Protection before the first deploy if the project is client work; details in `ai-dash/README.md`. The cost uses the prices in `docs/model-prices.json` (rounded starting points, editable in AI Dash > Settings); check them against each provider's pricing page.
 
-**Viewed locally, `ai-dash/` can do more than display.** `node scripts/ai-dash.mjs` serves the dashboard on `127.0.0.1` and adds a Settings area (the gear icon) that reads and writes `.claude/settings.json` directly — today, a single switch for the optional session mod below — plus a **Skills and agents** viewer (book icon) listing each one's name, description, creation date and last usage, with a valid/invalid badge for skills' YAML headers and functions' format. *Last usage* comes from a local, git-ignored usage log (a `PostToolUse` hook records skill uses; `agent-team.sh claim` records agents), never from editing the files, so there are no merge conflicts between worktrees (served from your working tree by the local server only; never published, since skill text isn't part of the counts-only aggregate). It's a local-only server (it refuses any request whose `Host`/`Origin` isn't `127.0.0.1`), and opening `ai-dash/index.html` as a static file still works — the Settings area just falls back to showing the toggle command instead of a live switch.
+**Viewed locally, `ai-dash/` is a working dashboard, not just a page.** `node scripts/ai-dash.mjs` serves it on `127.0.0.1` (a local-only server: it refuses any request whose `Host`/`Origin` isn't `127.0.0.1`) and adds, on top of the counts above:
+
+- **Live agents and Agents**, side by side under the KPI cards. *Live agents* shows who is running right now, for how long, what each is doing (click the console icon for its latest tool calls) and what finished recently; *Agents* lists every agent that logged work, and clicking one opens its description and an **on/off switch** that rewrites the `Status` line of `docs/agents/<name>.md` and syncs `.claude/agents/`, so Claude Code lists or stops listing it. Fed by the `SubagentStart`/`SubagentStop` hooks ([ADR 0004](template/docs/adr/0004-show-live-subagent-activity-from-claude-code-hooks.md)); it counts agents that announced their start, so background commands are not included and Claude Desktop may show more tasks.
+- **Usage and activity** (tool calls per hour, day, week or month), **Tasks** (the types in `docs/tasks.md`, in order, marked *agent working*, *in progress*, *recent* or *idle*; a task is marked with `node scripts/tasks.mjs start <task_type> --agent <name>`), and **Recent executions**.
+- **Settings** (gear icon): five **themes** (kept in the browser), **Model prices** (edit `docs/model-prices.json` from the page), the optional session mod's switch (it reads and writes `.claude/settings.json`) and, inside the desktop window, notifications.
+- **Skills** (book icon): each skill's name, description, creation date and last usage, with a valid/invalid badge for its YAML header. *Last usage* comes from a local, git-ignored usage log (a `PostToolUse` hook records skill uses), never from editing the files, so there are no merge conflicts between worktrees. Served from your working tree by the local server only; never published, since skill text isn't part of the counts-only aggregate.
+- **Pending decisions**: the items of `docs/pending-decisions.md`, each with an Approve button.
+- **Its own window**: `node scripts/ai-dash-app.mjs` opens the dashboard as a window of its own, with a tray icon and native notifications on Windows ([ADR 0005](template/docs/adr/0005-offer-ai-dash-as-a-small-desktop-window-downloaded-on-first-use.md), [`desktop/`](desktop/README.md)).
+
+Opening `ai-dash/index.html` through `npx serve` or a static host still works: everything above that needs the local server stays hidden, and Settings falls back to showing the commands to run instead of live switches. Details of every endpoint and card: [`template/ai-dash/README.md`](template/ai-dash/README.md).
 
 **Real usage numbers instead of mostly zeros.** Getting the `AILOG_*` variables right by hand is easy to forget. The optional `ai-dash` session mod (next section) measures them for real, straight from Claude Code, and hands them to this same pipeline — nothing about the gate or the log format changes, the zeros just stop being zeros.
 
