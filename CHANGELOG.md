@@ -103,6 +103,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Fixed
 
+- Desktop shell: opened by hand it did nothing, with no window and no message (it exits with an error and has no console), and the launcher printed nothing while it worked, so "nothing happened" had no clue. The shell (0.1.1) now says what it is when opened by hand and reports a webview that cannot be created in a dialog (or, when started by the launcher, to the launcher), and has a dark background instead of a white flash. `ai-dash-app.mjs` prints what it is doing (server, which window it opens, why it fell back), keeps the shell's errors in `shell.log` in the cache folder (`--check` shows the last one) and still works with the 0.1.0 shell.
+
 - The directory-structure image at the top of the README did not show: `assets/gen-directory-structure.py` wrote the SVG in the Windows code page, so the dash and quotes in it were invalid UTF-8 and the file was not valid XML. It now writes UTF-8, and the image lists the scripts added since. The README's dashboard section describes what the dashboard does today (it still said Settings had a single switch and that Skills and agents shared a viewer).
 
 - `ai-dash-app.mjs` could not download the desktop shell while the starter's repository is private (Releases answered 404). After a 401, 403 or 404 it now uses `GH_TOKEN`, `GITHUB_TOKEN` or the `gh` CLI login, only for the releases API host, and falls back to app mode when there is none.

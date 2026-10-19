@@ -21,7 +21,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, readdirSync, chmodSync,
-  openSync, readSync, closeSync, realpathSync,
+  openSync, readSync, closeSync, realpathSync, statSync, appendFileSync,
 } from 'node:fs';
 import { homedir, platform as osPlatform, arch as osArch } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
@@ -358,6 +358,28 @@ async function stopServer(port) {
 
 // ---------------------------------------------------------------- running a window
 
+const SHELL_LOG = 'shell.log';
+
+/**
+ * The last error the shell wrote to its log (it has no console, so its errors go there), or ''. Only the shell's own
+ * lines count: the webview underneath also prints harmless noise when a window closes.
+ */
+export function lastShellError(home) {
+  try {
+    const text = readFileSync(join(home, SHELL_LOG), 'utf8').trim();
+    return text.split('\n').filter((l) => l.startsWith('ai-dash-desktop ')).slice(-1)[0] || '';
+  } catch { return ''; }
+}
+
+/** Opens the shell's log for appending, starting it over when it grows past 100 KB. Returns a file descriptor. */
+function openShellLog(home) {
+  const path = join(home, SHELL_LOG);
+  mkdirSync(home, { recursive: true });
+  try { if (statSync(path).size > 100 * 1024) rmSync(path, { force: true }); } catch { /* no log yet */ }
+  appendFileSync(path, `--- ${new Date().toISOString()}\n`);
+  return openSync(path, 'a');
+}
+
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
 
 function lockFile(identity) { return join(identity, '.agents', 'state', 'dash-app.json'); }
@@ -417,7 +439,7 @@ async function main(argv) {
   if (opts.check) {
     const cur = readCurrent(home);
     const check = readJson(join(home, 'check.json'));
-    const out = { platform: `${process.platform}-${process.arch}`, target, cache: home, installed: cur && cur.version ? cur.version : null, problem: cur && cur.error ? cur.error : null, latestSeen: check && check.latest ? check.latest : null, lastCheck: check && check.checkedAt ? new Date(check.checkedAt).toISOString() : null };
+    const out = { platform: `${process.platform}-${process.arch}`, target, cache: home, installed: cur && cur.version ? cur.version : null, problem: cur && cur.error ? cur.error : null, lastShellError: lastShellError(home) || null, latestSeen: check && check.latest ? check.latest : null, lastCheck: check && check.checkedAt ? new Date(check.checkedAt).toISOString() : null };
     if (opts.json) console.log(JSON.stringify(out));
     else for (const [k, v] of Object.entries(out)) console.log(`${k.padEnd(10)} ${v === null ? '-' : v}`);
     return 0;
@@ -434,6 +456,7 @@ async function main(argv) {
 
   const server = await ensureServer(root, port);
   if (opts.print) { console.log(url); return 0; }
+  say(server.started ? `started the dashboard of this project on ${url}` : `the dashboard of this project is already running on ${url}`);
   if (opts.detach) {
     const args = [fileURLToPath(import.meta.url), ...argv.filter((a) => a !== '--detach')];
     spawn(process.execPath, args, { cwd: root, detached: true, stdio: 'ignore', windowsHide: true }).unref();
@@ -458,20 +481,33 @@ async function main(argv) {
       spawn(process.execPath, [fileURLToPath(import.meta.url), '--update', '--quiet'], { detached: true, stdio: 'ignore', windowsHide: true }).unref(); // next start uses it
     }
     const bad = readJson(join(home, 'shell-failed.json'));
-    if (cur && cur.binary && !(bad && bad.version === cur.version)) {
+    if (cur && cur.binary && bad && bad.version === cur.version) {
+      say(`the desktop window failed to start before (exit ${bad.code}, ${bad.at}); using the browser. Update the shell (--update) or delete ${join(home, 'shell-failed.json')} to try it again.`);
+    } else if (cur && cur.binary) {
+      // --no-alert: a failure is reported here and by the fallback below, not in a dialog that would stop this script waiting
       const args = ['--url', url, '--title', title, '--project', identity, '--data-dir', join(home, 'webview')];
+      if (compareVersions(cur.version, '0.1.1') >= 0) args.unshift('--no-alert'); // 0.1.0 does not know the flag and would refuse to start
       if (opts.selftestOut) args.push('--selftest-out', opts.selftestOut);
-      const child = spawn(cur.binary, args, { stdio: 'ignore', windowsHide: false });
+      say(`opening the desktop window (shell ${cur.version}). Closing the window ends this command; Ctrl+C here does too.`);
+      const log = openShellLog(home);
+      const child = spawn(cur.binary, args, { stdio: ['ignore', 'ignore', log], windowsHide: false });
       const r = await waitFor(child);
-      if (r.code === 0 || r.ms > 5000) { clearLock(); if (server.started) await stopServer(port); return 0; } // it ran; closing it ends the dash we started
+      try { closeSync(log); } catch { /* already closed */ }
+      if (r.code === 0 || r.ms > 5000) { clearLock(); if (server.started) await stopServer(port); say('window closed.'); return 0; } // it ran; closing it ends the dash we started
       writeJsonAtomic(join(home, 'shell-failed.json'), { version: cur.version, code: r.code, at: new Date().toISOString() });
-      say(`the desktop shell would not start (exit ${r.code}${r.error ? `, ${r.error}` : ''}); using the browser instead.`);
+      const why = lastShellError(home);
+      say(`the desktop window would not start (exit ${r.code}${r.error ? `, ${r.error}` : ''}${why ? `: ${why}` : ''}); using the browser instead.`);
+    } else if (!noUpdate) {
+      say('no desktop window available yet; using the browser.');
     }
+  } else {
+    say(opts.noShell || process.env.AI_DASH_NO_SHELL === '1' ? 'desktop window skipped (--no-shell); using the browser.' : opts.browser ? 'using the browser.' : 'no desktop window for this platform; using the browser.');
   }
 
   // 2. Edge or Chrome app mode, 3. the default browser
   const browser = process.env.AI_DASH_NO_APPMODE === '1' ? null : findBrowser();
   if (browser) {
+    say(`opening ${basename(browser).replace(/\.exe$/i, '')} in app mode (a window without tabs or address bar). Closing it ends this command.`);
     const child = spawn(browser, browserArgs(url, join(home, 'browser-profile')), { stdio: 'ignore', windowsHide: false });
     const r = await waitFor(child);
     clearLock();
@@ -479,6 +515,7 @@ async function main(argv) {
     say(`the browser would not open an app window (exit ${r.code}); opening a tab.`);
   }
   clearLock();
+  say('opening your default browser.');
   if (!openInBrowser(url)) { say(`open ${url} in your browser.`); return 1; }
   return 0;
 }

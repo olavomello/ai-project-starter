@@ -15,6 +15,7 @@ downloads the shell once per machine (about 0.6 MB on Windows; while the reposit
 - One window per project, titled `AI Dash - <project>`, loading `http://127.0.0.1:<port>/` from the project's own server.
 - A tray icon: click to show the window; the menu has Show / hide, Open in browser and Quit. The tooltip shows how many agents are running.
 - Native notifications asked for by the page: an agent finished, pending decisions grew (a switch in AI Dash's Settings turns them off).
+- Opened by hand (double-click) it shows a short message with the command to run, and if the webview cannot be created (usually the WebView2 runtime is missing) it says so in a dialog; the launcher passes `--no-alert` and reports such failures itself, with the shell's last error taken from `shell.log` in the cache folder.
 - Navigation is locked to the dash's own origin; any other link opens in the default browser and no second window is created.
 
 The page talks to it through one object, `window.aiDashDesktop` (`apiVersion`, `version`, `notify(title, body)`, `setStatus({ running, decisions })`), which the shell injects. Only the dash's own origin can send it messages, and each message is size-limited and type-checked (`src/msg.rs`).
@@ -25,7 +26,7 @@ The launcher passes these; they are listed for completeness.
 
 ```text
 ai-dash-desktop --url http://127.0.0.1:4412/ --title "AI Dash - demo" --project D:\work\demo
-                [--data-dir <folder for the webview profile>] [--selftest-out <file>]
+                [--data-dir <folder for the webview profile>] [--selftest-out <file>] [--no-alert]
 ```
 
 The URL must be plain `http` on a loopback address. `--selftest-out` makes the shell write a JSON report (page title, whether the bridge is there, tile count, whether a notification was accepted) and exit; it is how the build is checked on a real machine.

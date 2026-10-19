@@ -6,6 +6,7 @@
     windows_subsystem = "windows"
 )]
 
+mod alert;
 mod args;
 mod msg;
 
@@ -95,9 +96,28 @@ fn write_selftest(path: &str, text: &str) {
 }
 
 fn main() {
-    let args = match args::parse(std::env::args().skip(1)) {
+    let argv: Vec<String> = std::env::args().skip(1).collect();
+    let args = match args::parse(argv.clone()) {
         Ok(a) => a,
         Err(e) => {
+            let quiet = argv
+                .iter()
+                .any(|a| a == "--no-alert" || a == "--selftest-out");
+            if argv.is_empty() {
+                // Opened by hand (double-click): say what this is and how to start it, instead of vanishing.
+                alert::alert("AI Dash", &alert::opened_by_hand(VERSION));
+                std::process::exit(0);
+            }
+            if !quiet {
+                alert::alert(
+                    "AI Dash desktop window",
+                    &format!(
+                        "Could not start: {e}
+
+It is opened by `node scripts/ai-dash-app.mjs` in your project."
+                    ),
+                );
+            }
             eprintln!("ai-dash-desktop {VERSION}: {e}");
             std::process::exit(2);
         }
@@ -127,6 +147,8 @@ fn main() {
     let mut web_context = WebContext::new(args.data_dir.as_ref().map(std::path::PathBuf::from));
     let webview = WebViewBuilder::new_with_web_context(&mut web_context)
         .with_url(&args.url)
+        // The dashboard's own dark background, so the window does not flash white before the page paints.
+        .with_background_color((10, 9, 32, 255))
         .with_initialization_script(init_script(selftest.is_some()))
         .with_devtools(cfg!(debug_assertions))
         // Only the dash's own origin may talk to the shell, and only the dash's own origin may be shown.
@@ -160,6 +182,14 @@ fn main() {
                 );
             }
             eprintln!("ai-dash-desktop {VERSION}: could not create the webview: {e}");
+            if !args.no_alert && selftest.is_none() {
+                alert::alert(
+                    "AI Dash desktop window",
+                    &format!("The window could not be created: {e}
+
+On Windows this usually means the Microsoft Edge WebView2 runtime is missing. Install it from https://developer.microsoft.com/microsoft-edge/webview2/ or run `node scripts/ai-dash-app.mjs --no-shell` for the browser window instead."),
+                );
+            }
             std::process::exit(3);
         }
     };

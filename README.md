@@ -160,7 +160,7 @@ That is the whole installation. The first run downloads a small native program (
 | **macOS, Apple Silicon** (M1 and later) | [`ai-dash-desktop-mac-arm64.tar.gz`](https://github.com/olavomello/ai-project-starter/releases/download/desktop-v0.1.0/ai-dash-desktop-mac-arm64.tar.gz) | 0.46 MB | Built, **not tested yet** |
 | **macOS, Intel** | [`ai-dash-desktop-mac-x64.tar.gz`](https://github.com/olavomello/ai-project-starter/releases/download/desktop-v0.1.0/ai-dash-desktop-mac-x64.tar.gz) | 0.49 MB | Built, **not tested yet** |
 
-All of them are on the [release page](https://github.com/olavomello/ai-project-starter/releases/tag/desktop-v0.1.0), next to [`SHA256SUMS`](https://github.com/olavomello/ai-project-starter/releases/download/desktop-v0.1.0/SHA256SUMS) and `latest.json` (the list the launcher reads). You do not need to download these by hand: the command above picks the right one for your machine. The links are for checking what is published or for an offline copy. The program takes its address and title from the launcher, so opening the `.exe` on its own shows nothing.
+All of them are on the [release page](https://github.com/olavomello/ai-project-starter/releases/tag/desktop-v0.1.0), next to [`SHA256SUMS`](https://github.com/olavomello/ai-project-starter/releases/download/desktop-v0.1.0/SHA256SUMS) and `latest.json` (the list the launcher reads). You do not need to download these by hand: the command above picks the right one for your machine. The links are for checking what is published or for an offline copy. The program takes its address and title from the launcher, so opened on its own (double-click) it only shows a short message saying so (version 0.1.1 and later; version 0.1.0 showed nothing at all).
 
 Things worth knowing:
 
