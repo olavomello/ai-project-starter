@@ -218,7 +218,7 @@ import vm from 'node:vm';
 test('the dashboard explains zero tokens instead of leaving the tiles blank', () => {
   const html = readFileSync(join(ROOT, 'template', 'ai-dash', 'index.html'), 'utf8');
   const start = html.indexOf('function noUsageNote(d) {');
-  const end = html.indexOf('\nfunction render(d) {', start);
+  const end = start + html.slice(start).search(/\n\s*function render\(d\) \{/); // the page is indented since it was reformatted
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const note = vm.runInNewContext(`${html.slice(start, end)}; noUsageNote`, { esc });
   const none = note({ log_records: 43, totals: { tokens_in: 0, cache_read: 0 } });

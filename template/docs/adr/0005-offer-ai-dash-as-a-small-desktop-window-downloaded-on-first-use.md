@@ -1,0 +1,42 @@
+# 5. Offer AI Dash as a small desktop window, downloaded on first use
+
+## Status
+
+Accepted. Approved by Olavo Mello (Administrator) on 2026-10-19; the approval was given in chat and recorded here by the agent at the Administrator's instruction.
+
+## Context
+
+AI Dash runs as a local web page: `node scripts/ai-dash.mjs`, then a browser tab. It is an accessory of each project, left open next to the real work, so a browser tab is a poor home for it: it gets lost among other tabs, it has no presence when nothing is in front of the user (no tray, no notification when an agent finishes or a decision is waiting), and every project needs a hand-picked port.
+
+The asks for a desktop version were: Windows first, macOS prepared; one window per project; as small as possible; nothing heavy added to each project's repository; installed or downloaded at run time; updated automatically; and no code-signing certificate (none is available).
+
+All the logic of AI Dash is already dependency-free Node (about 1,000 lines of scripts plus a 4,300-line page), and the projects already require Node for the hooks. Moving that logic into a desktop runtime would mean either porting it (two copies that drift) or bundling a runtime of our own (Electron adds about 100 MB for the same page).
+
+## Decision
+
+1. **The logic stays in Node.** The desktop window is a thin shell around the existing server and page. Nothing is ported, so the web and the desktop show the same thing from the same code.
+2. **A launcher per project, `scripts/ai-dash-app.mjs`** (dependency-free Node, in the template like the other scripts). It starts the project's `scripts/ai-dash.mjs` on a port derived from the project's identity (4300 to 4899, the same for every worktree of a project), or reuses the one already running, and then opens a window with the first of these that works:
+   1. the **desktop shell**, a native binary taken from the machine-wide cache (below);
+   2. **app mode of Edge or Chrome** (`--app=URL` with its own profile folder): a window without tabs or address bar, nothing to download, available on every Windows and most Macs;
+   3. the **default browser**.
+   Flags: `--no-shell`, `--browser`, `--port`, `--print` (print the URL, open nothing), `--check`, `--update`, `--no-update`. Linux is not offered a shell; it gets 2 or 3.
+3. **The shell is a small Rust program** (`desktop/`, built on the `wry` webview and `tao` window crates, `tray-icon` for the tray). It takes `--url`, `--title` and `--project`; it opens one window, keeps a tray icon (Show or hide, Open in browser, Quit) and does nothing else of its own. It has no file access, no Node and no server. It uses the system webview (WebView2 on Windows, WKWebView on macOS), so the binary is a few megabytes.
+4. **Navigation is locked** to the exact origin (scheme, host, port) the launcher gave it, which must be a loopback address. Anything else a link or a script tries to open goes to the default browser instead; no second window is created; developer tools are off in release builds. The server keeps its Host and Origin check, so it only answers pages that name it.
+5. **Shell and page talk through one small object**, `window.aiDashDesktop` (`apiVersion`, `version`, `notify(title, body)`, `setStatus({ running, decisions })`), injected by the shell before the page runs. The page feature-detects it: without the shell nothing changes. With it, the page raises a native notification when an agent finishes or the number of pending decisions grows (a Settings row turns that off), and keeps the tray tooltip at the number of running agents.
+6. **Distribution is GitHub Releases of this repository**, tag `desktop-vX.Y.Z`, built by a workflow on Windows (x64) and macOS (arm64 and x64). Each release carries the binaries (`ai-dash-desktop-win-x64.exe`, `ai-dash-desktop-mac-arm64.tar.gz`, `ai-dash-desktop-mac-x64.tar.gz`) and a `latest.json` with, per platform, the file name, URL, size and SHA-256. Binaries are built only by CI from the tagged source.
+7. **Install at run time, once per machine.** The launcher downloads the binary for the current platform into a machine-wide cache (`%LOCALAPPDATA%\ai-project-starter\desktop`, `~/Library/Application Support/ai-project-starter/desktop`, `~/.local/share/ai-project-starter/desktop`; override with `AI_DASH_HOME`), shared by every project, so the project's repository gains no binary and the download happens once. The launcher itself uses Node to download (not a browser), refuses a file whose size is over a cap or whose SHA-256 differs from `latest.json`, accepts only `https://github.com/<repo>/releases/download/` URLs from it, and re-checks the hash of the cached binary before every start. Nothing is compiled on the user's machine: compiling Rust there would need a toolchain of over a gigabyte, so the compile happens in CI.
+8. **Auto-update.** At most once every 24 hours, and never blocking the start, the launcher asks the Releases API for the newest `desktop-v*` release. When it is newer than the installed one it downloads, verifies and installs it next to the old one and switches `current.json`; the next start uses it. The previous version is kept for one more switch, older ones are pruned. Offline or a failed check changes nothing. `--check` reports, `--update` forces, `AI_DASH_NO_UPDATE=1` or `--no-update` disables.
+9. **No signing.** Without a certificate the binary is unsigned. A file downloaded by Node or curl does not carry the "downloaded from the internet" mark that makes Windows SmartScreen and macOS Gatekeeper stop a browser download, which is why the launcher, not a browser, fetches it. The macOS binary is ad-hoc signed by the build (Apple Silicon refuses unsigned code). This is a trade-off, not a guarantee: see the consequences.
+10. **Windows is the supported and tested platform.** The macOS targets are built and the code paths exist (tar extraction, executable bit, Edge or Chrome paths), but they are not tested yet.
+
+## Consequences
+
+- Nothing is added to a project's repository beyond one script; the first `ai-dash-app` run on a machine downloads a few megabytes, later ones download nothing, and an update is the same few megabytes again.
+- Until the first `desktop-v*` release exists, or when offline, the window falls back to app mode of Edge or Chrome, so the feature works from day one and the shell is an improvement, not a requirement. If the shell cannot start (for example WebView2 is missing) the launcher falls back the same way.
+- The unsigned binary can still be flagged: Windows Defender and other antivirus products sometimes treat a new unsigned executable as suspicious, and the first run may warn. Mitigations are in the design (built only by CI from the tag, SHA-256 published and checked, one small readable program) and a signing service remains an option later. Users can opt out with `--no-shell`.
+- The macOS claim that a Node download avoids Gatekeeper is expected from how quarantine works but is **not verified** here; until someone tests on a Mac, treat macOS as prepared, not supported.
+- The shell and the page version independently (the page comes from the project's `update`, the shell from Releases), so the page checks `apiVersion` and does nothing it does not find; the shell never depends on the page's content.
+- The shell is a second codebase (Rust, about 300 lines) with its own CI, tag series and release process, on top of the Node scripts. Keeping it thin is what keeps that cost small; any feature that needs project logic belongs in the Node server, not in the shell.
+- The launcher adds a second way to run the dash. The mod's AI Dash button still opens the browser; pointing it at the launcher is a later decision.
+- Per-project ports are derived from a hash, so two projects can collide on a port in rare cases; `--port` overrides, and the launcher refuses to reuse a server that does not answer as AI Dash.
+- Wanting an Electron or React interface later does not conflict with this decision: the launcher, the cache and the update mechanism are independent of what the window shows.
