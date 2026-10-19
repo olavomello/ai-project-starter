@@ -8,7 +8,7 @@ You do not install it by hand. In a project:
 node scripts/ai-dash-app.mjs
 ```
 
-downloads the shell once per machine (about 0.6 MB on Windows), checks its SHA-256, and opens the window. Later runs download nothing; a newer shell is fetched in the background at most once a day. Without a release, offline, or with `--no-shell`, the same command opens Edge or Chrome in app mode (a window without tabs or address bar) and, failing that, the default browser.
+downloads the shell once per machine (about 0.6 MB on Windows; while the repository is private it uses `GH_TOKEN` or your `gh` login to do so), checks its SHA-256, and opens the window. Later runs download nothing; a newer shell is fetched in the background at most once a day. Without a release, offline, or with `--no-shell`, the same command opens Edge or Chrome in app mode (a window without tabs or address bar) and, failing that, the default browser.
 
 ## What it does
 

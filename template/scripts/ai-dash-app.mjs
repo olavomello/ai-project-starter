@@ -79,7 +79,10 @@ export function compareVersions(a, b) {
 
 // ---------------------------------------------------------------- releases
 
-/** The newest published `desktop-vX.Y.Z` release that carries a latest.json: `{ version, tag, latestUrl }` or null. */
+/**
+ * The newest published `desktop-vX.Y.Z` release that carries a latest.json, or null:
+ * `{ version, tag, latestUrl, latestApiUrl, assets: [{ name, apiUrl }] }`. The API urls are what a private repository needs.
+ */
 export function pickRelease(releases) {
   let best = null;
   for (const r of Array.isArray(releases) ? releases : []) {
@@ -88,7 +91,12 @@ export function pickRelease(releases) {
     if (!SEMVER.test(version)) continue;
     const asset = (r.assets || []).find((a) => a && a.name === 'latest.json' && typeof a.browser_download_url === 'string');
     if (!asset) continue;
-    if (!best || compareVersions(version, best.version) > 0) best = { version, tag: r.tag_name, latestUrl: asset.browser_download_url };
+    if (!best || compareVersions(version, best.version) > 0) {
+      best = {
+        version, tag: r.tag_name, latestUrl: asset.browser_download_url, latestApiUrl: typeof asset.url === 'string' ? asset.url : null,
+        assets: (r.assets || []).filter((a) => a && typeof a.name === 'string' && typeof a.url === 'string').map((a) => ({ name: a.name, apiUrl: a.url })),
+      };
+    }
   }
   return best;
 }
@@ -107,15 +115,15 @@ export function validateLatest(latest, target, prefix = DOWNLOAD_PREFIX) {
   return { version: latest.version, name, url, sha256, size };
 }
 
-async function getJson(url, fetchImpl, timeoutMs = 8000) {
-  const res = await fetchImpl(url, { headers: { accept: 'application/json', 'user-agent': 'ai-project-starter' }, signal: AbortSignal.timeout(timeoutMs) });
+async function getJson(url, fetchImpl, { headers = {}, timeoutMs = 8000 } = {}) {
+  const res = await fetchImpl(url, { headers: { accept: 'application/json', 'user-agent': 'ai-project-starter', ...headers }, signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok) throw new Error(`${url} answered ${res.status}`);
   return res.json();
 }
 
 /** Downloads to `dest`, refusing more bytes than `size` and a hash other than `sha256`. */
-export async function download(url, dest, { size, sha256, fetchImpl = fetch, timeoutMs = 120000 }) {
-  const res = await fetchImpl(url, { headers: { 'user-agent': 'ai-project-starter' }, signal: AbortSignal.timeout(timeoutMs) });
+export async function download(url, dest, { size, sha256, fetchImpl = fetch, timeoutMs = 120000, headers = {} }) {
+  const res = await fetchImpl(url, { headers: { 'user-agent': 'ai-project-starter', ...headers }, signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok || !res.body) throw new Error(`${url} answered ${res.status}`);
   const hash = createHash('sha256');
   const chunks = [];
@@ -167,14 +175,14 @@ export function readCurrent(home) {
 }
 
 /** Installs one verified release into `<home>/<version>/` and makes it current. Returns `{ version, binary }`. */
-export async function installShell({ entry, home, platform = process.platform, fetchImpl = fetch }) {
+export async function installShell({ entry, home, platform = process.platform, fetchImpl = fetch, headers = {} }) {
   // Built in a scratch folder and swapped in at the end, so a failed download never removes a working install.
   const dir = join(home, `.tmp-${entry.version}`);
   const part = join(dir, `${entry.name}.part`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   try {
-    await download(entry.url, part, { size: entry.size, sha256: entry.sha256, fetchImpl });
+    await download(entry.url, part, { size: entry.size, sha256: entry.sha256, fetchImpl, headers });
     let binary = join(dir, binaryName(platform));
     if (entry.name.endsWith('.tar.gz')) {
       // relative paths and cwd: a GNU tar on Windows would read "C:\..." as host:path
@@ -226,19 +234,55 @@ export function shouldCheck(home, now = Date.now()) {
  * Looks for a newer shell and installs it. `force` skips the once-a-day throttle.
  * Returns `{ status }`: skipped, no-release, current, updated (with version) or failed (with error).
  */
-export async function updateShell({ home, target, platform = process.platform, force = false, now = Date.now(), fetchImpl = fetch, api = RELEASES_API, prefix = DOWNLOAD_PREFIX }) {
+/**
+ * A GitHub token for a private repository: GH_TOKEN or GITHUB_TOKEN, else the one the `gh` CLI is signed in with.
+ * Only asked for after public access answered 401, 403 or 404, and only ever sent to the releases API host.
+ */
+export function readToken(env = process.env, run = spawnSync) {
+  const given = String(env.GH_TOKEN || env.GITHUB_TOKEN || '').trim();
+  if (given) return given;
+  try {
+    const r = run('gh', ['auth', 'token'], { encoding: 'utf8', timeout: 4000, windowsHide: true });
+    const t = r && r.status === 0 ? String(r.stdout).trim() : '';
+    return /^[A-Za-z0-9_]{20,}$/.test(t) ? t : null;
+  } catch { return null; }
+}
+
+export async function updateShell({ home, target, platform = process.platform, force = false, now = Date.now(), fetchImpl = fetch, api = RELEASES_API, prefix = DOWNLOAD_PREFIX, token: tokenFor = readToken }) {
   if (!target) return { status: 'skipped', reason: 'no shell for this platform' };
   if (!force && !shouldCheck(home, now)) return { status: 'skipped', reason: 'checked recently' };
   try {
-    const release = pickRelease(await getJson(api, fetchImpl));
+    // Public first. A private repository answers 401/403/404 to that; then the signed-in user's token is used, and
+    // only for requests to the API's own host (a download is redirected elsewhere without it).
+    const origin = new URL(api).origin;
+    let token = null;
+    const authFor = (url) => (token && url.startsWith(`${origin}/`) ? { authorization: `Bearer ${token}` } : {});
+    const get = (url, accept) => getJson(url, fetchImpl, { headers: { accept, ...authFor(url) } });
+    let releases;
+    try {
+      releases = await get(api, 'application/vnd.github+json');
+    } catch (e) {
+      if (!/answered (401|403|404)$/.test(e.message)) throw e;
+      token = typeof tokenFor === 'function' ? tokenFor() : tokenFor;
+      if (!token) throw new Error(`${e.message} (if the repository is private, set GH_TOKEN or sign in with the gh CLI)`);
+      releases = await get(api, 'application/vnd.github+json');
+    }
+    const release = pickRelease(releases);
     writeJsonAtomic(join(home, 'check.json'), { checkedAt: now, nextCheck: now + CHECK_MS, latest: release ? release.version : null });
     if (!release) return { status: 'no-release' };
     const cur = readCurrent(home);
     if (cur && cur.version && compareVersions(cur.version, release.version) >= 0) return { status: 'current', version: cur.version };
-    if (!release.latestUrl.startsWith(prefix)) throw new Error(`latest.json is not under ${prefix}`);
-    const entry = validateLatest(await getJson(release.latestUrl, fetchImpl), target, prefix);
+    const latestUrl = token ? release.latestApiUrl : release.latestUrl;
+    if (!latestUrl || !(token ? latestUrl.startsWith(`${origin}/`) : latestUrl.startsWith(prefix))) throw new Error(`latest.json is not under ${token ? origin : prefix}`);
+    const entry = validateLatest(await get(latestUrl, token ? 'application/octet-stream' : 'application/json'), target, prefix);
     if (entry.version !== release.version) throw new Error('latest.json and the release tag disagree on the version');
-    const done = await installShell({ entry, home, platform, fetchImpl });
+    let from = entry.url;
+    if (token) {
+      const asset = release.assets.find((a) => a.name === entry.name);
+      if (!asset || !asset.apiUrl.startsWith(`${origin}/`)) throw new Error(`the release has no ${entry.name} on ${origin}`);
+      from = asset.apiUrl;
+    }
+    const done = await installShell({ entry: { ...entry, url: from }, home, platform, fetchImpl, headers: token ? { ...authFor(from), accept: 'application/octet-stream' } : {} });
     return { status: 'updated', version: done.version };
   } catch (e) {
     try { writeJsonAtomic(join(home, 'check.json'), { checkedAt: now, nextCheck: now + RETRY_MS, error: String(e.message || e).slice(0, 200) }); } catch { /* the cache may be unwritable */ }

@@ -14,7 +14,7 @@ import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   portFor, cacheHome, targetOf, compareVersions, pickRelease, validateLatest, download, installShell, updateShell,
-  readCurrent, shouldCheck, findBrowser, browserArgs, openCommands, parseArgs, probe, ensureServer, hashFile, openWindow,
+  readCurrent, shouldCheck, findBrowser, browserArgs, openCommands, parseArgs, probe, ensureServer, hashFile, openWindow, readToken,
   binaryName, CHECK_MS, RETRY_MS, MAX_BYTES,
 } from '../../template/scripts/ai-dash-app.mjs';
 
@@ -97,7 +97,9 @@ test('pickRelease takes the highest published desktop release that has a latest.
     rel('desktop-v0.9.0'), rel('desktop-v0.10.0'), rel('desktop-v0.11.0', { draft: true }), rel('desktop-v0.12.0', { prerelease: true }),
     rel('v3.0.0'), rel('desktop-vbeta'), rel('desktop-v0.13.0', { assets: [] }),
   ]);
-  assert.deepEqual(picked, { version: '0.10.0', tag: 'desktop-v0.10.0', latestUrl: 'https://x/desktop-v0.10.0/latest.json' });
+  assert.deepEqual(picked, { version: '0.10.0', tag: 'desktop-v0.10.0', latestUrl: 'https://x/desktop-v0.10.0/latest.json', latestApiUrl: null, assets: [] });
+  const withApi = pickRelease([{ tag_name: 'desktop-v1.0.0', assets: [{ name: 'latest.json', browser_download_url: 'https://x/l', url: 'https://api/1' }, { name: 'a.exe', browser_download_url: 'https://x/a', url: 'https://api/2' }] }]);
+  assert.deepEqual([withApi.latestApiUrl, withApi.assets], ['https://api/1', [{ name: 'latest.json', apiUrl: 'https://api/1' }, { name: 'a.exe', apiUrl: 'https://api/2' }]]);
   assert.equal(pickRelease([]), null);
   assert.equal(pickRelease(null), null);
 });
@@ -210,6 +212,55 @@ test('a tampered or lying release never replaces a working install, and a failur
     assert.equal(existsSync(join(home, '0.2.0')), false);
     assert.equal(JSON.parse(readFileSync(join(home, 'check.json'), 'utf8')).nextCheck, 1_000_000 + RETRY_MS);
   } finally { await rel.close(); rm(home); }
+});
+
+test('a private repository: public access is refused, then the signed-in token opens the API and the asset URLs', async () => {
+  const home = tmp();
+  const TOKEN = `ghp_${'x'.repeat(24)}`;
+  const name = 'ai-dash-desktop-win-x64.exe';
+  const bytes = Buffer.from('private-binary');
+  const seen = [];
+  const server = http.createServer((req, res) => {
+    seen.push({ url: req.url, auth: req.headers.authorization, accept: req.headers.accept });
+    if (req.headers.authorization !== `Bearer ${TOKEN}`) { res.statusCode = 404; return res.end('Not Found'); }
+    const o = `http://127.0.0.1:${server.address().port}`;
+    if (req.url === '/api/releases') {
+      return res.end(JSON.stringify([{ tag_name: 'desktop-v0.1.0', draft: false, prerelease: false, assets: [
+        { name: 'latest.json', browser_download_url: `${o}/dl/latest.json`, url: `${o}/api/assets/1` },
+        { name, browser_download_url: `${o}/dl/${name}`, url: `${o}/api/assets/2` }] }]));
+    }
+    if (req.url === '/api/assets/1') return res.end(JSON.stringify({ version: '0.1.0', assets: { 'win-x64': { name, url: `${o}/dl/${name}`, sha256: sha(bytes), size: bytes.length } } }));
+    if (req.url === '/api/assets/2') return res.end(bytes);
+    res.statusCode = 404; res.end('no');
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const o = `http://127.0.0.1:${server.address().port}`;
+  const opts = { home, target: 'win-x64', platform: 'win32', force: true, api: `${o}/api/releases`, prefix: `${o}/dl/` };
+  try {
+    const none = await updateShell({ ...opts, token: () => null });
+    assert.equal(none.status, 'failed');
+    assert.match(none.error, /private.*GH_TOKEN/);
+    assert.equal(seen.at(-1).auth, undefined, 'without a token nothing is sent');
+
+    seen.length = 0;
+    assert.deepEqual(await updateShell({ ...opts, token: () => TOKEN }), { status: 'updated', version: '0.1.0' });
+    assert.equal(readFileSync(readCurrent(home).binary, 'utf8'), 'private-binary');
+    assert.equal(seen[0].auth, undefined, 'the first try is public');
+    assert.ok(seen.slice(1).every((s) => s.auth === `Bearer ${TOKEN}`));
+    assert.equal(seen.find((s) => s.url === '/api/assets/2').accept, 'application/octet-stream');
+  } finally { server.close(); rm(home); }
+});
+
+test('readToken prefers GH_TOKEN, then GITHUB_TOKEN, then the gh CLI, and ignores nonsense', () => {
+  const never = () => { throw new Error('gh must not be asked'); };
+  assert.equal(readToken({ GH_TOKEN: ' abc ', GITHUB_TOKEN: 'zzz' }, never), 'abc');
+  assert.equal(readToken({ GITHUB_TOKEN: 'zzz' }, never), 'zzz');
+  const gh = (out, status = 0) => () => ({ status, stdout: out });
+  assert.equal(readToken({}, gh(`gho_${'a'.repeat(30)}
+`)), 'gho_' + 'a'.repeat(30));
+  assert.equal(readToken({}, gh('error: not logged in', 1)), null);
+  assert.equal(readToken({}, gh('has spaces and is not a token')), null);
+  assert.equal(readToken({}, () => { throw new Error('gh is not installed'); }), null);
 });
 
 test('a release outside the allowed download prefix is refused before anything is fetched from it', async () => {
