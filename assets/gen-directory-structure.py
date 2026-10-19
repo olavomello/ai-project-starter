@@ -54,6 +54,7 @@ TREE = [
         ("mod.mjs", "Toggle the optional ai-dash session mod", None),
         ("skills.mjs", "List, create and validate skills; records usage", None),
         ("ai-dash.mjs", "Local server for ai-dash/: Settings API and live agents", None),
+        ("ai-dash-app.mjs", "Opens AI Dash in its own window: desktop shell or app mode", None),
         ("agent-live.mjs", "Subagent start/stop hook: feeds the live panel", None),
         ("ais-update.mjs", "Checks for a newer starter and applies the update", None),
         ("decisions.mjs", "Pending decisions: read and approve from AI Dash", None),

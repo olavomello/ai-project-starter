@@ -1,0 +1,99 @@
+# Builds the AI Dash desktop shell (desktop/) for Windows and macOS and, on a desktop-vX.Y.Z tag, publishes it as a
+# GitHub Release together with latest.json and SHA256SUMS. scripts/ai-dash-app.mjs downloads from those releases.
+# See template/docs/adr/0005-offer-ai-dash-as-a-small-desktop-window-downloaded-on-first-use.md.
+#
+# Run it by hand (Actions > desktop > Run workflow) to build and test without publishing: the binaries are kept as
+# artifacts of the run. Publishing needs a tag:  git tag desktop-v0.1.0 && git push origin desktop-v0.1.0
+name: desktop
+
+on:
+  push:
+    tags: ['desktop-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, name: win-x64, ext: exe, native: true }
+          - { os: macos-14, target: aarch64-apple-darwin, name: mac-arm64, ext: tar.gz, native: true }
+          - { os: macos-14, target: x86_64-apple-darwin, name: mac-x64, ext: tar.gz, native: false }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The tag must match the version in Cargo.toml
+        if: startsWith(github.ref, 'refs/tags/desktop-v')
+        run: node desktop/scripts/check-version.mjs "${GITHUB_REF_NAME}"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop
+          key: ${{ matrix.target }}
+
+      - name: Test (the target this runner can run)
+        if: matrix.native
+        run: cargo test --manifest-path desktop/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --manifest-path desktop/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Package
+        run: |
+          mkdir dist
+          bin="desktop/target/${{ matrix.target }}/release/ai-dash-desktop"
+          if [ "${{ matrix.ext }}" = "exe" ]; then
+            cp "$bin.exe" "dist/ai-dash-desktop-${{ matrix.name }}.exe"
+          else
+            # Apple Silicon refuses unsigned code, so the binary gets an ad-hoc signature (no certificate involved)
+            codesign -s - --force "$bin"
+            tar -czf "dist/ai-dash-desktop-${{ matrix.name }}.tar.gz" -C "$(dirname "$bin")" ai-dash-desktop
+          fi
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shell-${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: publish the release
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shell-*
+          merge-multiple: true
+          path: dist
+
+      - name: latest.json and SHA256SUMS
+        run: node desktop/scripts/make-latest.mjs --dir dist --tag "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}"
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "AI Dash desktop ${GITHUB_REF_NAME#desktop-v}" \
+            --notes "Small desktop window for AI Dash. Install and updates are handled by \`node scripts/ai-dash-app.mjs\` in a project; the files are not meant to be downloaded by hand. Built by CI from this tag; the SHA-256 of every file is in \`latest.json\` and \`SHA256SUMS\`. The binaries are not code-signed."

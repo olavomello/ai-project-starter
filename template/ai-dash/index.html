@@ -1934,6 +1934,8 @@
 
       .live-foot { margin: 12px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--text-3); }
       li.bg-line { font-size: 12.5px; color: var(--text-3); }
+
+      .settings-row[hidden] { display: none; }
     </style>
   </head>
   <body>
@@ -2277,6 +2279,19 @@
               </div>
             </div>
             <div id="prices-body" class="prices-body"></div>
+          </div>
+          <div class="settings-row" id="desktop-row" hidden>
+            <div>
+              <div class="label">Desktop notifications</div>
+              <div class="desc">
+                A system notification when an agent finishes or a pending
+                decision arrives. Only in the desktop window; saved on this
+                machine.
+              </div>
+            </div>
+            <button class="switch" id="desktop-notify" type="button" role="switch" aria-checked="true" aria-label="Desktop notifications">
+              <span class="knob"></span>
+            </button>
           </div>
           <div class="settings-row">
             <div>
@@ -3488,7 +3503,7 @@
             state = await r.json();
             fetchedAt = Date.now();
             offline = false;
-            announce({ offline: false, running: state.running.length });
+            announce({ offline: false, running: state.running.length, state });
             if (!shown) {
               shown = true;
               el.hidden = false;
@@ -4305,6 +4320,66 @@
   }
   poll();
   timer = setInterval(poll, 3000);
+})();
+
+// Desktop shell: when AI Dash runs inside the desktop window (scripts/ai-dash-app.mjs), the shell injects
+// window.aiDashDesktop. The page then raises a native notification when an agent finishes or the pending
+// decisions grow, and keeps the tray tooltip at the number of running agents. Without the shell nothing here runs.
+(function setupDesktop() {
+  const desk = window.aiDashDesktop;
+  if (!desk || typeof desk.notify !== 'function') return;
+  const KEY = 'ai-dash-desktop-notify';
+  const row = document.getElementById('desktop-row');
+  const sw = document.getElementById('desktop-notify');
+  const countEl = document.getElementById('decisions-count');
+  const enabled = () => { try { return localStorage.getItem(KEY) !== '0'; } catch (e) { return true; } };
+  const showSwitch = () => { if (sw) sw.setAttribute('aria-checked', String(enabled())); };
+  if (row) row.hidden = false;
+  showSwitch();
+  if (sw) sw.addEventListener('click', () => {
+    try { localStorage.setItem(KEY, enabled() ? '0' : '1'); } catch (e) { /* storage blocked: it lasts for this visit only */ }
+    showSwitch();
+  });
+
+  const nameOf = (r) => (r.type === 'main' ? 'Main session' : r.type);
+  const took = (s) => (s >= 3600 ? Math.round(s / 3600) + ' h' : s >= 60 ? Math.round(s / 60) + ' min' : Math.round(s) + ' s');
+  const send = (title, body) => { try { desk.notify(title, body || ''); } catch (e) { /* the shell is gone */ } };
+  const decisions = () => (countEl && !countEl.hidden ? parseInt(countEl.textContent, 10) || 0 : 0);
+
+  // The runs that were running last time and are not now, with how long each took. Background runs are skipped:
+  // they never announced themselves, so there is nothing sensible to say about them.
+  function finished(prev, state) {
+    const now = new Map(state.running.map((r) => [r.id, r]));
+    const out = [];
+    for (const [id, r] of prev) {
+      if (now.has(id) || r.type === 'unknown') continue;
+      const done = (state.recent || []).find((x) => x.id === id);
+      out.push({ name: nameOf(r), seconds: done ? done.seconds : null });
+    }
+    return { out, now };
+  }
+
+  let prevRuns = null;
+  let prevDecisions = decisions();
+  document.addEventListener('live-state', (e) => {
+    const d = (e && e.detail) || {};
+    try { desk.setStatus({ running: d.running || 0, decisions: decisions() }); } catch (err) { /* the shell is gone */ }
+    const state = d.state;
+    if (!state || !Array.isArray(state.running)) return;
+    if (prevRuns && enabled()) {
+      const f = finished(prevRuns, state);
+      for (const x of f.out) send(x.name + ' finished', x.seconds === null ? '' : 'took ' + took(x.seconds));
+    }
+    prevRuns = new Map(state.running.map((r) => [r.id, r]));
+  });
+
+  if (countEl && typeof MutationObserver === 'function') {
+    new MutationObserver(() => {
+      const n = decisions();
+      if (n > prevDecisions && enabled()) send(n + ' pending decision' + (n === 1 ? '' : 's'), 'Open AI Dash to review them.');
+      prevDecisions = n;
+    }).observe(countEl, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+  }
 })();
     </script>
   </body>

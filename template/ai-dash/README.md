@@ -29,6 +29,16 @@ node scripts/ai-dash.mjs            # recommended — also powers the Settings a
 # or: python3 -m http.server -d ai-dash 8000
 ```
 
+### In its own window
+
+```bash
+node scripts/ai-dash-app.mjs        # starts the server if needed and opens a window
+```
+
+Opens AI Dash as a window of its own instead of a browser tab, on a port derived from the project (the same for every worktree), one window per project. On Windows (and, untested yet, macOS) the first run downloads a small native shell, about 0.6 MB, into a machine-wide cache shared by every project (`%LOCALAPPDATA%i-project-starter\desktop`; set `AI_DASH_HOME` to move it), verifies its SHA-256 and runs it. It adds a tray icon (click to show; menu: Show / hide, Open in browser, Quit; the tooltip counts running agents) and native notifications when an agent finishes or pending decisions grow; a row in **Settings** turns the notifications off. A newer shell is fetched in the background at most once a day. Without a release, offline, on Linux, or with `--no-shell`, it falls back to Edge or Chrome in app mode (a window without tabs or address bar), then to the default browser. Closing the shell window also stops a server the launcher started.
+
+Options: `--no-shell`, `--browser`, `--detach` (return at once), `--port N`, `--print` (start the server, print the URL), `--check [--json]` (what is installed, what was seen), `--update` (look for a newer shell now), `--no-update`. Set `AI_DASH_NO_SHELL=1` or `AI_DASH_NO_UPDATE=1` to make that permanent. The shell is unsigned, so an antivirus may question it on first run; the download is verified against the hash CI published, and `--no-shell` skips it. Design and trade-offs: ADR 0005; the shell's source is in the starter's `desktop/` folder, not in your project.
+
 `scripts/ai-dash.mjs [--port 4173]` is a small, dependency-free local server bound to
 `127.0.0.1` only. It serves these same files, plus `GET`/`POST /api/config`, which the
 page's **Settings** area (gear icon, top right) uses to read and flip the optional

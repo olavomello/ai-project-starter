@@ -191,6 +191,7 @@ scripts/adr.mjs                   create/list/link Architecture Decision Records
 scripts/mod.mjs                   toggle the optional ai-dash session mod (.claude/settings.json)
 scripts/skills.mjs                list, create and validate skills (YAML frontmatter); records usage for "last usage"
 scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings area's API and /api/live
+scripts/ai-dash-app.mjs           opens AI Dash in its own window (small desktop shell, or Edge/Chrome app mode); installs and updates the shell itself
 scripts/agent-live.mjs            SubagentStart/Stop hook: records which agents run; feeds the Live panel
 scripts/decisions.mjs             reads docs/pending-decisions.md and approves items for AI Dash (the mod hands them to the session)
 
@@ -353,6 +354,7 @@ A Claude Code **mod** (a plugin with JavaScript hooks — `ai-dash` above, or an
 | Check the session mod's on/off state | `node scripts/mod.mjs status` |
 | Turn the session mod on / off | `node scripts/mod.mjs enable` / `node scripts/mod.mjs disable` |
 | Serve the dashboard locally, with Live agents, Settings and Skills | `node scripts/ai-dash.mjs` |
+| Open the dashboard in its own window (tray, notifications on Windows) | `node scripts/ai-dash-app.mjs` |
 | List skills (name, description, created, last usage) | `node scripts/skills.mjs list` |
 | Create a skill with complete frontmatter | `node scripts/skills.mjs new <name> "<description>"` |
 | Validate every skill's YAML frontmatter | `node scripts/skills.mjs check` (also run by the gate and `doctor`) |
@@ -395,6 +397,7 @@ The optional session mod's on/off state is the one setting that lives outside th
 | `AILOG_TASK_TYPE`, `AILOG_AGENT`, `AILOG_MODEL`, `AILOG_SIZE` | `ai-log.mjs` (via `gate.sh`) | Identify the execution being logged |
 | `AILOG_TOKENS_IN`, `AILOG_TOKENS_OUT`, `AILOG_CACHE_READ`, `AILOG_CACHE_WRITE`, `AILOG_TOOL_CALLS`, `AILOG_DURATION` | `ai-log.mjs` | Usage numbers for the dashboard |
 | `AILOG_PR`, `AILOG_OUTCOME` | `ai-log.mjs` | PR classification / final outcome, once known |
+| `AI_DASH_HOME`, `AI_DASH_NO_SHELL`, `AI_DASH_NO_UPDATE`, `AI_DASH_NO_APPMODE` | `ai-dash-app.mjs` | Where the desktop shell is cached (default: a machine-wide folder), and switches to skip the shell, its update check, or Edge/Chrome app mode |
 | `OPENAI_API_KEY`, `OPENAI_IMAGE_MODEL` | `photo-generation` skill | Generate photorealistic images directly. Without them the skill prepares a request file for you to run manually in ChatGPT |
 
 A flag always overrides its `AILOG_*` env var when both are given to `ai-log.mjs` directly. `AILOG_GATE` and `AILOG_GATE_FIRST_TRY` are set by `gate.sh` itself and shouldn't be overridden by hand.
@@ -417,5 +420,6 @@ A flag always overrides its `AILOG_*` env var when both are given to `ai-log.mjs
 - `init-project.sh` — the bash bootstrap script.
 - `cli/` — the Node CLI (`init`/`update`/`adopt`/`doctor`/`mod`); wraps `template/`, doesn't replace it. See [The CLI](#the-cli) and [`cli/README.md`](cli/README.md).
 - `mods/ai-dash/` — the optional session mod's own code, loaded by projects as a plugin rather than copied. See [`mods/ai-dash/README.md`](mods/ai-dash/README.md) and [ADR 0003](template/docs/adr/0003-measure-real-session-usage-with-an-optional-claude-code-mod.md).
+- `desktop/` — the small native shell behind `node scripts/ai-dash-app.mjs` (Rust, about 0.6 MB). Built and released by `.github/workflows/desktop.yml` on a `desktop-vX.Y.Z` tag; never copied into projects, which download it at run time. See [`desktop/README.md`](desktop/README.md) and [ADR 0005](template/docs/adr/0005-offer-ai-dash-as-a-small-desktop-window-downloaded-on-first-use.md).
 - `.claude-plugin/marketplace.json` — publishes `ai-dash` as a plugin any project built on this starter can enable.
 - `VERSION` / `CHANGELOG.md` at the repo root — the **starter's own** version, independent of any project it creates (which always starts at `0.0.1`).
