@@ -8,6 +8,8 @@ pub struct Args {
     pub project: String,
     pub data_dir: Option<String>,
     pub selftest_out: Option<String>,
+    /// Errors go to the exit code only, not to a dialog (the launcher passes this and reports them itself).
+    pub no_alert: bool,
 }
 
 /// A web origin: host and port (the scheme is always http for what this window shows).
@@ -24,8 +26,13 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
     let mut project = None;
     let mut data_dir = None;
     let mut selftest_out = None;
+    let mut no_alert = false;
     let mut it = argv.into_iter();
     while let Some(flag) = it.next() {
+        if flag == "--no-alert" {
+            no_alert = true;
+            continue;
+        }
         let mut value = || it.next().ok_or_else(|| format!("{flag} needs a value"));
         match flag.as_str() {
             "--url" => url = Some(value()?),
@@ -52,6 +59,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
         project,
         data_dir,
         selftest_out,
+        no_alert,
     })
 }
 
@@ -119,6 +127,7 @@ mod tests {
         assert_eq!(a.project, "D:/demo");
         assert_eq!(a.selftest_out, None);
         assert_eq!(a.data_dir, None);
+        assert!(!a.no_alert);
         let b = parse(s(&[
             "--url",
             "http://localhost:4300/",
@@ -131,6 +140,13 @@ mod tests {
         assert_eq!(b.title, "AI Dash");
         assert_eq!(b.selftest_out.as_deref(), Some("out.json"));
         assert_eq!(b.data_dir.as_deref(), Some("D:/cache/webview"));
+    }
+
+    #[test]
+    fn no_alert_is_a_flag_without_a_value() {
+        let a = parse(s(&["--no-alert", "--url", "http://127.0.0.1:4412/"])).unwrap();
+        assert!(a.no_alert);
+        assert_eq!(a.url, "http://127.0.0.1:4412/");
     }
 
     #[test]

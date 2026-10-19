@@ -1,6 +1,6 @@
 [package]
 name = "ai-dash-desktop"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "A small desktop window for AI Dash: shows the project's local dashboard, keeps a tray icon and raises native notifications."
 license = "UNLICENSED"
@@ -12,6 +12,9 @@ serde_json = "1"
 tao = "0.37"
 tray-icon = "0.26"
 wry = "0.57"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_UI_WindowsAndMessaging"] }
 
 # Small and boring: this program only hosts a webview, so size matters more than speed.
 [profile.release]

@@ -14,7 +14,7 @@ import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   portFor, cacheHome, targetOf, compareVersions, pickRelease, validateLatest, download, installShell, updateShell,
-  readCurrent, shouldCheck, findBrowser, browserArgs, openCommands, parseArgs, probe, ensureServer, hashFile, openWindow, readToken,
+  readCurrent, shouldCheck, findBrowser, browserArgs, openCommands, parseArgs, probe, ensureServer, hashFile, openWindow, readToken, lastShellError,
   binaryName, CHECK_MS, RETRY_MS, MAX_BYTES,
 } from '../../template/scripts/ai-dash-app.mjs';
 
@@ -329,6 +329,17 @@ test('openWindow sees a live window of the project and ignores a stale or its ow
     writeFileSync(lock, '{ nope');
     assert.equal(openWindow(dir), null, 'a damaged lock');
   } finally { rm(dir); }
+});
+
+test('lastShellError reads the end of the shell log and copes with no log', () => {
+  const home = tmp();
+  try {
+    assert.equal(lastShellError(home), '');
+    writeFileSync(join(home, 'shell.log'), '--- 2026-10-19T10:00:00Z\nai-dash-desktop 0.1.1: could not create the webview: no runtime\n\n');
+    assert.match(lastShellError(home), /could not create the webview/);
+    writeFileSync(join(home, 'shell.log'), '[1019/190924.976:ERROR:window_impl.cc:172] Failed to unregister class Chrome_WidgetWin_0\n');
+    assert.equal(lastShellError(home), '', 'webview noise is not an error of the shell');
+  } finally { rm(home); }
 });
 
 test('probe tells AI Dash from any other program on a port', async () => {
