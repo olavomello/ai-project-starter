@@ -49,6 +49,8 @@ Primary target is **Claude Code**. Also usable by Codex and other agents, since 
 
 ## Quick start
 
+Want AI Dash as a desktop window (Windows, macOS) instead of a browser tab? Jump to [step 7](#7-open-ai-dash-in-its-own-window-optional).
+
 ### 1. Create the project
 
 Two ways to do this — same result, pick based on what you have installed.
@@ -141,6 +143,32 @@ npx github:olavomello/ai-project-starter#main update             # apply it
 ```
 
 It only ever touches a file the project hasn't customized since the last sync — anything else is flagged, never silently overwritten (see the CLI's own [README](cli/README.md) for exactly how). A project created with `init-project.sh` (no manifest yet) can opt in with `ai-project-starter adopt` first.
+
+### 7. Open AI Dash in its own window (optional)
+
+AI Dash normally opens in a browser tab. To get it as a window of its own, with a tray icon and system notifications when an agent finishes or a decision is waiting, run this inside a project:
+
+```bash
+node scripts/ai-dash-app.mjs
+```
+
+That is the whole installation. The first run downloads a small native program (the *desktop shell*) once per machine into a cache shared by all your projects, checks its SHA-256 and opens the window; every later run downloads nothing, and a newer version is fetched in the background at most once a day. It needs only the Node you already have for the project. The shell is a window around the project's own dashboard: all the data and logic stay in the project's scripts.
+
+| Platform | File it downloads | Size | State |
+|---|---|---|---|
+| **Windows 10 / 11** (x64) | [`ai-dash-desktop-win-x64.exe`](https://github.com/olavomello/ai-project-starter/releases/download/desktop-v0.1.0/ai-dash-desktop-win-x64.exe) | 0.65 MB | Tested end to end |
+| **macOS, Apple Silicon** (M1 and later) | [`ai-dash-desktop-mac-arm64.tar.gz`](https://github.com/olavomello/ai-project-starter/releases/download/desktop-v0.1.0/ai-dash-desktop-mac-arm64.tar.gz) | 0.46 MB | Built, **not tested yet** |
+| **macOS, Intel** | [`ai-dash-desktop-mac-x64.tar.gz`](https://github.com/olavomello/ai-project-starter/releases/download/desktop-v0.1.0/ai-dash-desktop-mac-x64.tar.gz) | 0.49 MB | Built, **not tested yet** |
+
+All of them are on the [release page](https://github.com/olavomello/ai-project-starter/releases/tag/desktop-v0.1.0), next to [`SHA256SUMS`](https://github.com/olavomello/ai-project-starter/releases/download/desktop-v0.1.0/SHA256SUMS) and `latest.json` (the list the launcher reads). You do not need to download these by hand: the command above picks the right one for your machine. The links are for checking what is published or for an offline copy. The program takes its address and title from the launcher, so opening the `.exe` on its own shows nothing.
+
+Things worth knowing:
+
+- **While this repository is private**, the download needs your GitHub login: set `GH_TOKEN`, or be signed in with the `gh` CLI. Without one, or offline, or with `--no-shell`, the same command opens the dashboard in Edge or Chrome app mode (a window without tabs or address bar) and, failing that, in your default browser, so it always works.
+- **The programs are not code-signed.** On Windows an antivirus or SmartScreen may question the first run; the launcher only runs a file whose hash matches the one CI published. Windows also needs the WebView2 runtime, which ships with Windows 10 and 11.
+- **macOS is built but nobody has run it yet.** If macOS refuses to open a copy you downloaded in a browser, that file carries the "downloaded from the internet" mark; the launcher downloads without it, so use the command above, or clear the mark by hand with `xattr -d com.apple.quarantine <file>`. Apple Silicon takes the `arm64` build, older Macs the `x64` one; the launcher chooses.
+- **Linux** gets the browser fallback; there is no shell for it.
+- **Several projects at once** are fine: each gets its own window and its own port. Options such as `--no-shell`, `--check` and `--update`, and the design: [`template/ai-dash/README.md`](template/ai-dash/README.md#in-its-own-window), [`desktop/README.md`](desktop/README.md) and [ADR 0005](template/docs/adr/0005-offer-ai-dash-as-a-small-desktop-window-downloaded-on-first-use.md).
 
 ---
 
