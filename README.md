@@ -1,8 +1,8 @@
 <div align="center">
 
-# ai-project-starter
+# AI Dash
 
-**The base every new project is bootstrapped from — agent rules, SemVer, a worktree-isolated agent team, one verification gate, and a self-hosted monitoring dashboard.**
+**The base for every new project is bootstrapped from — agent rules, SemVer, a worktree-isolated agent team, one verification gate, and a self-hosted monitoring dashboard.**
 
 ![version](https://img.shields.io/badge/version-0.1.0-blue)
 ![semver](https://img.shields.io/badge/semver-2.0.0-informational)
