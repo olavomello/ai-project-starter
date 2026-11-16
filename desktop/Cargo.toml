@@ -3,7 +3,7 @@ name = "ai-dash-desktop"
 version = "0.1.1"
 edition = "2024"
 description = "A small desktop window for AI Dash: shows the project's local dashboard, keeps a tray icon and raises native notifications."
-license = "UNLICENSED"
+license = "MIT"
 publish = false
 
 [dependencies]

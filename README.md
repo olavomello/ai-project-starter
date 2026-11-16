@@ -249,7 +249,7 @@ Things worth knowing:
 
 Not published to npm yet — run it via `npx github:olavomello/ai-project-starter#main <command>` or clone and run `node ai-project-starter/cli/bin.js <command>` directly. Full command flags and the exact three-way sync rules `update` follows: [`cli/README.md`](cli/README.md).
 
-The `template/` repo stays the source of truth either way — the CLI only wraps it. Publishing to npm needs a real `LICENSE` file first (there isn't one yet, so `cli/package.json` currently marks it `UNLICENSED` as a placeholder).
+The `template/` repo stays the source of truth either way — the CLI only wraps it. The repository is MIT-licensed ([`LICENSE.md`](LICENSE.md)), and the manifests (`package.json`, `cli/package.json`, `desktop/Cargo.toml`) say `MIT` to match; `npm publish` of the CLI no longer waits on a license.
 
 ---
 
