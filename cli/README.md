@@ -19,7 +19,7 @@ npx github:olavomello/ai-project-starter#main init my-project
 node ai-project-starter/cli/bin.js init my-project
 ```
 
-Once published (`npm publish` from this `cli/` directory — needs an npm account and, first, a real `LICENSE` file at the repo root; `package.json` currently says `UNLICENSED` as a placeholder):
+Once published (`npm publish` from this `cli/` directory — needs an npm account; the repo's [`LICENSE.md`](../LICENSE.md) is MIT and `package.json` says `MIT`):
 
 ```bash
 npx ai-project-starter init my-project

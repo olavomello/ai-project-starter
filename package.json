@@ -9,7 +9,7 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/olavomello/ai-project-starter.git"
