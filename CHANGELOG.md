@@ -67,6 +67,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- README Quick start: the first way to create a project is now a prompt to paste into an AI coding agent (the same one as the bootstrap entry of `PROMPTS.md`; a test keeps the two identical), ahead of the CLI and the bash script.
+
 - README Quick start has a step 7 for opening AI Dash in its own window: the one command, the Windows and macOS files with links, their state (Windows tested, macOS not yet) and what to expect without a certificate.
 
 - AI Dash layout: Live agents and Agents sit side by side (50% each) right under the KPI cards; Recent executions is full width and second to last, with Tasks last. The other cards keep their order.
