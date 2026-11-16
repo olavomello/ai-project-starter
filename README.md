@@ -53,7 +53,70 @@ Want AI Dash as a desktop window (Windows, macOS) instead of a browser tab? Jump
 
 ### 1. Create the project
 
-Two ways to do this — same result, pick based on what you have installed.
+Three ways to do this — same result, pick based on how you work. The first is the easiest if you already work in an AI coding agent.
+
+**With an AI agent (Claude Code, Codex or any coding agent) — recommended.** Open the folder where the project should live in your agent, paste this prompt and answer what it asks, one question at a time. It creates the project from the starter, fills in `AGENTS.md`, makes the first commit and checks the result, leaving the project in the same state as the CLI below. It needs `git` and `node` on the machine, like the CLI.
+
+```text
+I want to start a new project from the ai-project-starter template
+(https://github.com/olavomello/ai-project-starter). Do the following:
+
+1. Clone https://github.com/olavomello/ai-project-starter.git (main branch,
+   unless I tell you to pin a specific tag or ref) into a temporary location,
+   and copy its `template/` directory into a new directory named
+   <project-directory> (ask me for this name if I haven't given it to you).
+2. Ask me these questions, one at a time, and wait for each answer before asking
+   the next. Offer the default in parentheses and accept it if I answer blank:
+   - Name (default: the project directory's name)
+   - Purpose (one line) (default: blank)
+   - Stack (default: blank)
+   - Administrator (default: blank)
+   - Test coverage floor (default: 80%)
+   - Max file lines / function lines (default: 800 / 50)
+   - Mutation allowed in hot paths — yes/no (default: no)
+   - Branch model (default: trunk (`main`))
+   - Release cadence (default: on demand)
+   - Task token budget S / M / L (default: off)
+   - Enable the in-session status mod for Claude Code (measures real tokens and models)? — Y/n (default: yes)
+3. Write my answers into section 0 of the new project's `AGENTS.md` (the `- Name:`
+   / `- Purpose (one line):` / `- Stack:` / `- Administrator:` lines, and the
+   `Knobs` table below them, now including the task-token-budget row) — do not
+   touch anything else in the file.
+4. If I answered yes to the mod question (or blank), run `node scripts/mod.mjs enable`
+   inside the new project before the first commit, so it's included in it, and then
+   install the plugin once on this machine, because enabling it in settings does not
+   download it: `claude plugin marketplace add olavomello/ai-project-starter#main` and
+   `claude plugin install ai-dash@ai-project-starter --scope project` run inside the
+   project (if `claude` is not on PATH, tell me those two commands instead).
+5. Run `node <path-to-the-clone-from-step-1>/cli/bin.js adopt <project-directory>
+   --ref <the branch or tag you cloned>` so the project gets
+   `.ai-project-starter.json` — the manifest `ai-project-starter update` needs to
+   track it later — before the first commit, so the manifest baseline matches
+   what's actually committed. This is the same file the CLI's own `init` writes;
+   without it I can't later pull starter improvements with `update`.
+6. Run `git init`, stage everything, and make the first commit with a message
+   like "chore: initialize project from ai-project-starter (agent-guided)".
+   Do not mention any AI assistant or tool name anywhere in that commit message
+   or in any file you write — this is a hard rule of the starter itself
+   (see AGENTS.md section 2 once it exists in the new project).
+7. Run `node <path-to-the-clone-from-step-1>/cli/bin.js doctor <project-directory>`
+   and report the result (the same structural check `ai-project-starter init` runs
+   automatically at the end). It also checks the Claude Code setup (hooks, the mod's pin
+   and install, uncommitted setup files); add `--fix` to repair what it can.
+8. Run `bash scripts/gate.sh` inside the new project and report the result. On
+   Windows, run it with Git Bash (`"C:\Program Files\Git\bin\bash.exe"`), not
+   with the `bash` on PATH: in PowerShell that is the WSL stub and fails with
+   `execvpe(/bin/bash) failed`. If the script is not executable yet, make it so
+   first (not needed on Windows).
+9. Tell me the next steps: running the starter agent (`docs/agents/sys-init-starter.md`,
+   the project's first prompt, see "Start the project" below), adding a git remote
+   and pushing, and reading through the rest of AGENTS.md.
+
+If git isn't available, skip step 6 and tell me so — copy the files and let me
+init the repo myself.
+```
+
+This is the same prompt as the first entry of [`PROMPTS.md`](PROMPTS.md) (a test keeps the two identical); that file also has the prompt for step 2 and the ones added as the framework grows.
 
 **CLI (Node + git only — works the same on Windows, macOS, Linux):**
 
@@ -75,7 +138,7 @@ Either way: it clones the starter, copies `template/` into `my-project`, runs `g
 
 The CLI additionally asks a few questions right there in the terminal — name, purpose, stack, administrator, the knobs — and writes the answers into `AGENTS.md` before the first commit, so step 2 below is already done. Pass `--no-prompt` to skip that and fill it in yourself later (it's also skipped automatically when there's no terminal to prompt in, e.g. piped input or CI).
 
-If the starter repo is private, neither form above can authenticate — clone it first and run locally instead:
+If the starter repo is private, neither the CLI nor the bash script above can authenticate — clone it first and run locally instead (the agent prompt works as long as the agent's machine can clone the repo with your git credentials):
 
 ```bash
 git clone https://github.com/olavomello/ai-project-starter.git
