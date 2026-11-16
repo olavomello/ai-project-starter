@@ -3136,6 +3136,9 @@
       // Part-to-whole by task type or model: single stacked bar, not a donut (skill: donut deprioritized
       // for part-to-whole; stacked bar carries it). Fixed categorical slot order, direct % + value labels.
       // Shares are of tokens; while no record carries tokens they are of executions, so the card is never a row of 0%.
+      // A record logged with no model carries the placeholder "unknown"; show it as what it is.
+      const segLabel = (v) => (v === "unknown" || !v ? "not measured" : v);
+
       function shareBar(rows, key, title) {
         if (!rows.length) return "";
         const byTokens = rows.some((r) => r.tokens_in > 0);
@@ -3178,7 +3181,7 @@
                 ? "var(--text-3)"
                 : SERIES[i % SERIES.length];
             return `<circle class="seg" cx="21" cy="21" r="15.9155" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${Math.max(w - gap, 0).toFixed(2)} ${(100 - Math.max(w - gap, 0)).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}"
-            data-tip="<b>${esc(r[key])}</b><br>${pct(r[m] / total)} ${unit}<br>${fmt(r.tokens_in)} tokens · ${r.executions} exec(s)"/>`;
+            data-tip="<b>${esc(segLabel(r[key]))}</b><br>${pct(r[m] / total)} ${unit}<br>${fmt(r.tokens_in)} tokens · ${r.executions} exec(s)"/>`;
           })
           .join("")}
       </svg>
@@ -3193,7 +3196,7 @@
               : SERIES[i % SERIES.length];
           const w = Math.max((r[m] / total) * 100, 1.5);
           return `<div class="bar-row">
-          <span class="nm"><i class="sw" style="background:${c};display:inline-block;margin-right:6px"></i>${esc(r[key])}</span>
+          <span class="nm"><i class="sw" style="background:${c};display:inline-block;margin-right:6px"></i>${esc(segLabel(r[key]))}</span>
           <span class="bar-track"><span class="bar-fill" style="width:${w.toFixed(1)}%;background:${c}"></span></span>
           <span class="val">${pct(r[m] / total)}</span>
         </div>`;
@@ -3234,6 +3237,18 @@
       const hasTaskTypes = (rows) =>
         (rows || []).some((r) => (r.task_type || "other") !== "other");
 
+      // A record without a model or tokens means nothing measured that run (the usage mod was off, or a
+      // gate ran with no AILOG_* values), not a model called "unknown": say so in a muted tone.
+      const NOT_MEASURED = '<span style="color:var(--text-3)" title="No usage data was recorded for this run (the ai-dash session mod was off, or the gate ran without AILOG_MODEL / AILOG_TOKENS_*).">not measured</span>';
+      const hasModel = (r) => !!r.model && r.model !== "unknown";
+      function modelCell(r) {
+        return hasModel(r) ? esc(r.model) : NOT_MEASURED;
+      }
+      function tokensCell(r) {
+        const total = (r.tokens_in || 0) + (r.tokens_out || 0);
+        return total === 0 && !hasModel(r) ? NOT_MEASURED : fmt(total);
+      }
+
       function recentTable(recs) {
         if (!recs || !recs.length) return "";
         const showTask = hasTaskTypes(recs);
@@ -3255,9 +3270,9 @@
         return `<tr>
         ${showTask ? `<td class="name">${esc(r.task_type)}</td>` : ""}
         <td${showTask ? "" : ' class="name"'}>${esc(r.agent)}</td>
-        <td>${esc(r.model)}</td>
+        <td>${modelCell(r)}</td>
         <td><span class="badge ${cls}"><i class="pt"></i>${esc(r.gate)}</span></td>
-        <td class="n">${fmt((r.tokens_in || 0) + (r.tokens_out || 0))}</td>
+        <td class="n">${tokensCell(r)}</td>
         <td class="n">${esc(when)}</td>
       </tr>`;
       })
