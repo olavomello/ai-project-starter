@@ -67,6 +67,8 @@ The format follows Keep a Changelog, and this project adheres to Semantic Versio
 
 ### Changed
 
+- AI Dash: a run logged without a model or tokens (the usage mod was off, or the gate ran with no `AILOG_*` values) shows **not measured** in Recent executions and in the Tokens-by-model chart, instead of a model called `unknown` and `0` tokens.
+
 - The manifests (`package.json`, `cli/package.json`, `desktop/Cargo.toml`) declare `MIT` instead of the `UNLICENSED` placeholder, matching `LICENSE.md`. Releases of the desktop shell published before this (`desktop-v0.1.0`, `desktop-v0.1.1`) were built with the old value in their metadata; the license that applies is the repository's.
 
 - README Quick start: the first way to create a project is now a prompt to paste into an AI coding agent (the same one as the bootstrap entry of `PROMPTS.md`; a test keeps the two identical), ahead of the CLI and the bash script.
