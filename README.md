@@ -78,6 +78,7 @@ I want to start a new project from the ai-project-starter template
    - Release cadence (default: on demand)
    - Task token budget S / M / L (default: off)
    - Enable the in-session status mod for Claude Code (measures real tokens and models)? — Y/n (default: yes)
+   - Add the optional `untangle-codebase` skill (keeps generated code lean and decoupled)? — y/N (default: no)
 3. Write my answers into section 0 of the new project's `AGENTS.md` (the `- Name:`
    / `- Purpose (one line):` / `- Stack:` / `- Administrator:` lines, and the
    `Knobs` table below them, now including the task-token-budget row) — do not
@@ -88,6 +89,10 @@ I want to start a new project from the ai-project-starter template
    download it: `claude plugin marketplace add olavomello/ai-project-starter#main` and
    `claude plugin install ai-dash@ai-project-starter --scope project` run inside the
    project (if `claude` is not on PATH, tell me those two commands instead).
+   If I answered yes to the untangle-codebase question, run
+   `node scripts/optional-skills.mjs enable untangle-codebase` inside the new project too, before
+   the first commit. If I answered no (or blank), do nothing: the skill stays inert in
+   `docs/optional-skills/` and can be enabled later with the same command.
 5. Run `node <path-to-the-clone-from-step-1>/cli/bin.js adopt <project-directory>
    --ref <the branch or tag you cloned>` so the project gets
    `.ai-project-starter.json` — the manifest `ai-project-starter update` needs to
@@ -241,7 +246,7 @@ Things worth knowing:
 
 | Command | Does |
 |---|---|
-| `init <dir>` | Same as `init-project.sh`, without the bash requirement. Interactively fills `AGENTS.md` section 0 when run in a terminal (`--no-prompt` to skip), including whether to turn on the optional session mod (`--mod`/`--no-mod` to decide non-interactively) |
+| `init <dir>` | Same as `init-project.sh`, without the bash requirement. Interactively fills `AGENTS.md` section 0 when run in a terminal (`--no-prompt` to skip), including whether to turn on the optional session mod (`--mod`/`--no-mod` to decide non-interactively) and the optional `untangle-codebase` skill (`--untangle`/`--no-untangle`) |
 | `update [dir]` | Pulls starter improvements into an already-created project — conservatively, see above |
 | `adopt [dir]` | Registers a project made with `init-project.sh` (or by hand) so `update` can track it |
 | `doctor [dir] [--fix]` | Structural health check — required files, valid `VERSION`, changelog shape, each `docs/agents/*.md` well-formed — plus the Claude Code setup the dashboard needs: live-agent hooks, `.env` deny rules, the session mod's pin and whether its plugin is installed, uncommitted setup files. `--fix` repairs what is safe and never commits |
@@ -280,6 +285,7 @@ scripts/ai-log.mjs                record one execution (Node, cross-platform)
 scripts/ai-report.mjs             aggregate the log into ai-dash/data.json
 scripts/adr.mjs                   create/list/link Architecture Decision Records (Node, cross-platform)
 scripts/mod.mjs                   toggle the optional ai-dash session mod (.claude/settings.json)
+scripts/optional-skills.mjs       enable/disable the optional skills shipped in docs/optional-skills/ (untangle-codebase)
 scripts/skills.mjs                list, create and validate skills (YAML frontmatter); records usage for "last usage"
 scripts/ai-dash.mjs               local server for ai-dash/, incl. the Settings area's API and /api/live
 scripts/ai-dash-app.mjs           opens AI Dash in its own window (small desktop shell, or Edge/Chrome app mode); installs and updates the shell itself
@@ -414,6 +420,8 @@ Two skills are vendored in the template and travel with every project (`.claude/
 |---|---|
 | `semver-release` | Decides the bump, updates `VERSION` and manifests, promotes `[Unreleased]`, validates, prepares the tag |
 | `photo-generation` | Routes photorealistic images to OpenAI; non-photographic assets (icons, diagrams, UI, charts) stay with Claude |
+
+**Optional: `untangle-codebase`.** A third skill that keeps generated code lean and decoupled: it surveys import cycles, over-coupled modules, files and functions past the size knobs, duplicated logic and dead code, then fixes one finding at a time in behavior-preserving steps, each proven by the gate. It ships inert in `docs/optional-skills/untangle-codebase/` and is applied only if you say yes to its question at setup (`init` asks it, right after the session-mod question, default no; `--untangle` / `--no-untangle` answer it outright; the bootstrap prompt asks it too). Later, `node scripts/optional-skills.mjs enable untangle-codebase` (or `disable`, which leaves a skill you edited alone) switches it on or off; `status` lists what is available.
 
 Account-level and plugin skills are **referenced, not copied** — vendoring them would duplicate files that already load automatically. `AGENTS.md` section 6 tells agents when to reach for `dataviz` (charts), `frontend-design` (UI), `skill-creator` (capturing a repeated procedure) and `deep-research`; if one isn't installed, the agent just works without it. Project-specific skills you write later belong in the project's own `.claude/skills/`; promote one to the starter only when it applies to every project.
 

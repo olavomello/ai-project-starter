@@ -13,7 +13,7 @@ import { readText } from './lib/fsutil.js';
 import { runDoctor } from './doctor.js';
 import { guideAgentsSetup } from './setup.js';
 
-export async function init({ target, ref = 'main', source, noPrompt = false, mod }) {
+export async function init({ target, ref = 'main', source, noPrompt = false, mod, untangle }) {
   if (!target) die('usage: ai-project-starter init <target-dir> [--ref <branch-or-tag>] [--source <path-or-url>] [--no-prompt]');
   if (existsSync(target) && readdirSync(target).length > 0) {
     die(`target "${target}" exists and is not empty`);
@@ -33,9 +33,13 @@ export async function init({ target, ref = 'main', source, noPrompt = false, mod
     }
 
     const projectNameHint = basename(resolve(target));
-    const { configured, mod: enableModFlag } = await guideAgentsSetup(target, {
-      skip: noPrompt, projectNameHint, modFlag: mod,
+    const { configured, mod: enableModFlag, untangle: enableUntangle } = await guideAgentsSetup(target, {
+      skip: noPrompt, projectNameHint, modFlag: mod, untangleFlag: untangle,
     });
+
+    // The optional untangle-codebase skill: copied into .claude/skills/ before the first commit, so it is
+    // part of it and of the manifest baseline.
+    if (enableUntangle) enableOptionalSkill(target, 'untangle-codebase');
 
     // Run before the manifest hashes are computed (below), so the first
     // commit and the manifest baseline both already include the toggle —
@@ -80,6 +84,20 @@ export async function init({ target, ref = 'main', source, noPrompt = false, mod
     info('  4. git remote add origin <your-repo> && git push -u origin main');
   } finally {
     cleanup();
+  }
+}
+
+function enableOptionalSkill(target, name) {
+  const script = join(target, 'scripts', 'optional-skills.mjs');
+  if (!existsSync(script)) {
+    warn(`Could not enable the ${name} skill: scripts/optional-skills.mjs is missing from the template.`);
+    return;
+  }
+  try {
+    execFileSync(process.execPath, [script, 'enable', name, '--dir', target], { stdio: ['ignore', 'ignore', 'inherit'] });
+    ok(`${name} skill enabled in .claude/skills/${name}`);
+  } catch {
+    warn(`Could not enable the ${name} skill automatically — run \`node scripts/optional-skills.mjs enable ${name}\` yourself.`);
   }
 }
 
