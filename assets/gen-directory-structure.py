@@ -52,6 +52,7 @@ TREE = [
         ("ai-report.mjs", "Aggregate the log into ai-dash/data.json", None),
         ("adr.mjs", "Create / list / link Architecture Decision Records", None),
         ("mod.mjs", "Toggle the optional ai-dash session mod", None),
+        ("optional-skills.mjs", "Enable or disable optional skills (untangle-codebase)", None),
         ("skills.mjs", "List, create and validate skills; records usage", None),
         ("ai-dash.mjs", "Local server for ai-dash/: Settings API and live agents", None),
         ("ai-dash-app.mjs", "Opens AI Dash in its own window: desktop shell or app mode", None),
@@ -67,6 +68,7 @@ TREE = [
     ("docs", None, [
         ("tasks.md", "Fixed task taxonomy used by the execution log", None),
         ("model-prices.json", "Starting prices, dated; edit in AI Dash > Settings", None),
+        ("optional-skills", "Optional skills, inert until enabled at setup", []),
         ("agents", "Roster; ships with sys-init-starter, the one-time bootstrap agent", []),
         ("guides", "Loaded on demand: security, efficiency, delegation, claude-code", []),
         ("repo-map.md, decisions.md", "Committed agent cache — map + durable decisions", None),

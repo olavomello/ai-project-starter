@@ -21,6 +21,8 @@ function parseFlags(argv) {
     if (a === '--no-prompt') { flags.noPrompt = true; continue; }
     if (a === '--mod') { flags.mod = true; continue; }
     if (a === '--no-mod') { flags.mod = false; continue; }
+    if (a === '--untangle') { flags.untangle = true; continue; }
+    if (a === '--no-untangle') { flags.untangle = false; continue; }
     if (a === '--local') { flags.local = true; continue; }
     if (a === '--json') { flags.json = true; continue; }
     if (a.startsWith('--')) {
@@ -37,13 +39,15 @@ function parseFlags(argv) {
 const HELP = `ai-project-starter — bootstrap and maintain projects built on the starter.
 
 Usage:
-  ai-project-starter init <target-dir> [--ref <branch-or-tag>] [--source <path-or-url>] [--no-prompt] [--mod|--no-mod]
+  ai-project-starter init <target-dir> [--ref <branch-or-tag>] [--source <path-or-url>] [--no-prompt] [--mod|--no-mod] [--untangle|--no-untangle]
       Create a new project from the starter template. Interactively asks for
       AGENTS.md section 0 (name, purpose, stack, administrator, knobs,
       including the optional session mod) when run in a terminal, so the
       first commit is already filled in; skip with --no-prompt (also
       skipped automatically outside a TTY, e.g. in CI). --mod/--no-mod
       answers the session-mod question outright, interactive or not.
+      The same for --untangle/--no-untangle and the optional untangle-codebase
+      skill (off unless asked for).
 
   ai-project-starter update [<target-dir>] [--ref <branch-or-tag>] [--source <path>] [--dry-run]
       Pull starter improvements into an existing project. Only ever changes a
@@ -78,7 +82,7 @@ switch (cmd) {
     const { positional, flags } = parseFlags(rest);
     await init({
       target: positional[0], ref: flags.ref, source: flags.source,
-      noPrompt: !!flags.noPrompt, mod: flags.mod,
+      noPrompt: !!flags.noPrompt, mod: flags.mod, untangle: flags.untangle,
     });
     break;
   }

@@ -44,6 +44,7 @@ I want to start a new project from the ai-project-starter template
    - Release cadence (default: on demand)
    - Task token budget S / M / L (default: off)
    - Enable the in-session status mod for Claude Code (measures real tokens and models)? — Y/n (default: yes)
+   - Add the optional `untangle-codebase` skill (keeps generated code lean and decoupled)? — y/N (default: no)
 3. Write my answers into section 0 of the new project's `AGENTS.md` (the `- Name:`
    / `- Purpose (one line):` / `- Stack:` / `- Administrator:` lines, and the
    `Knobs` table below them, now including the task-token-budget row) — do not
@@ -54,6 +55,10 @@ I want to start a new project from the ai-project-starter template
    download it: `claude plugin marketplace add olavomello/ai-project-starter#main` and
    `claude plugin install ai-dash@ai-project-starter --scope project` run inside the
    project (if `claude` is not on PATH, tell me those two commands instead).
+   If I answered yes to the untangle-codebase question, run
+   `node scripts/optional-skills.mjs enable untangle-codebase` inside the new project too, before
+   the first commit. If I answered no (or blank), do nothing: the skill stays inert in
+   `docs/optional-skills/` and can be enabled later with the same command.
 5. Run `node <path-to-the-clone-from-step-1>/cli/bin.js adopt <project-directory>
    --ref <the branch or tag you cloned>` so the project gets
    `.ai-project-starter.json` — the manifest `ai-project-starter update` needs to

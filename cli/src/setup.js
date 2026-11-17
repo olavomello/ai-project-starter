@@ -42,18 +42,21 @@ export function fillReadme(text, { name, purpose, stack }) {
  * `modFlag` is `true`/`false` when `--mod`/`--no-mod` was passed (wins
  * outright, interactive or not) or `undefined` when neither was.
  *
- * Returns `{ configured, mod }`: `configured` is true if AGENTS.md section 0
+ * The optional untangle-codebase skill is asked right after the mod question and defaults to no; the
+ * same `--untangle`/`--no-untangle` override applies (`untangleFlag`).
+ *
+ * Returns `{ configured, mod, untangle }`: `configured` is true if AGENTS.md section 0
  * was filled in (false if skipped — non-TTY or explicit --no-prompt — or if
  * the target has no AGENTS.md at all); `mod` is the final enable/disable
- * decision (always a boolean — defaults to false when nothing says otherwise).
+ * decision (always a boolean — defaults to false when nothing says otherwise); `untangle` likewise.
  */
-export async function guideAgentsSetup(target, { skip = false, projectNameHint, modFlag } = {}) {
+export async function guideAgentsSetup(target, { skip = false, projectNameHint, modFlag, untangleFlag } = {}) {
   const agentsPath = join(target, 'AGENTS.md');
   const hasAgents = existsSync(agentsPath);
 
   if (skip || !isInteractive()) {
     if (hasAgents) info('\nNon-interactive — AGENTS.md section 0 left blank. Fill it in yourself, or re-run with a TTY.');
-    return { configured: false, mod: modFlag === true };
+    return { configured: false, mod: modFlag === true, untangle: untangleFlag === true };
   }
 
   section('\nProject setup (fills AGENTS.md section 0 — press Enter to accept a default):');
@@ -89,7 +92,13 @@ export async function guideAgentsSetup(target, { skip = false, projectNameHint, 
       mod = /^y(es)?$/i.test(answer.trim());
     }
 
-    return { configured: hasAgents, mod };
+    let untangle = untangleFlag;
+    if (untangle === undefined) {
+      const answer = await ask(rl, 'Add the optional untangle-codebase skill (keeps generated code lean and decoupled)? (y/N)', 'N');
+      untangle = /^y(es)?$/i.test(answer.trim());
+    }
+
+    return { configured: hasAgents, mod, untangle };
   } finally {
     rl.close();
   }
