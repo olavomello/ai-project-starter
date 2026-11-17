@@ -22,4 +22,4 @@ bash .claude/skills/semver-release/scripts/check-version.sh
 echo "Project created at $TARGET (starter v$STARTER_VERSION). Next: open Claude Code there and run the starter agent"
 echo "  (read docs/agents/sys-init-starter.md and follow it end to end) — it fills in AGENTS.md section 0 and README.md, sets the agent policy and creates the agent team."
 echo "Optional: node scripts/mod.mjs enable   (turns on the in-session status mod for Claude Code)"
-echo "Optional: node scripts/optional-skills.mjs enable untangle-codebase   (a skill that keeps generated code lean and decoupled)"
+echo "Optional: node scripts/optional-skills.mjs enable untangle-codebase   (a skill that a full refactor so agents read less and break less)"
