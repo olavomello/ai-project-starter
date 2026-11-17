@@ -78,7 +78,7 @@ I want to start a new project from the ai-project-starter template
    - Release cadence (default: on demand)
    - Task token budget S / M / L (default: off)
    - Enable the in-session status mod for Claude Code (measures real tokens and models)? — Y/n (default: yes)
-   - Add the optional `untangle-codebase` skill (keeps generated code lean and decoupled)? — y/N (default: no)
+   - Add the optional `untangle-codebase` skill (a full refactor so agents read less and break less)? — y/N (default: no)
 3. Write my answers into section 0 of the new project's `AGENTS.md` (the `- Name:`
    / `- Purpose (one line):` / `- Stack:` / `- Administrator:` lines, and the
    `Knobs` table below them, now including the task-token-budget row) — do not
@@ -421,7 +421,7 @@ Two skills are vendored in the template and travel with every project (`.claude/
 | `semver-release` | Decides the bump, updates `VERSION` and manifests, promotes `[Unreleased]`, validates, prepares the tag |
 | `photo-generation` | Routes photorealistic images to OpenAI; non-photographic assets (icons, diagrams, UI, charts) stay with Claude |
 
-**Optional: `untangle-codebase`.** A third skill that keeps generated code lean and decoupled: it surveys import cycles, over-coupled modules, files and functions past the size knobs, duplicated logic and dead code, then fixes one finding at a time in behavior-preserving steps, each proven by the gate. It ships inert in `docs/optional-skills/untangle-codebase/` and is applied only if you say yes to its question at setup (`init` asks it, right after the session-mod question, default no; `--untangle` / `--no-untangle` answer it outright; the bootstrap prompt asks it too). Later, `node scripts/optional-skills.mjs enable untangle-codebase` (or `disable`, which leaves a skill you edited alone) switches it on or off; `status` lists what is available.
+**Optional: `untangle-codebase`.** A third skill, the published [untangle-codebase](https://buildwithclaude.com/skill/untangle-codebase) from [caldoai/skills](https://github.com/caldoai/skills) (MIT, shipped unmodified with its license and a `SOURCE.md`). Run on purpose with `/untangle-codebase [area]` (it never starts by itself), it refactors the codebase to the end: it lists every hidden link, needless link and surplus piece without changing anything, redesigns from first principles, fixes the list and has subagents re-check, offering to also drop comments that only restate code and tests that could not catch a bug. It ships inert in `docs/optional-skills/untangle-codebase/` and is applied only if you say yes to its question at setup (`init` asks it, right after the session-mod question, default no; `--untangle` / `--no-untangle` answer it outright; the bootstrap prompt asks it too). Later, `node scripts/optional-skills.mjs enable untangle-codebase` (or `disable`, which leaves a skill you edited alone) switches it on or off; `status` lists what is available.
 
 Account-level and plugin skills are **referenced, not copied** — vendoring them would duplicate files that already load automatically. `AGENTS.md` section 6 tells agents when to reach for `dataviz` (charts), `frontend-design` (UI), `skill-creator` (capturing a repeated procedure) and `deep-research`; if one isn't installed, the agent just works without it. Project-specific skills you write later belong in the project's own `.claude/skills/`; promote one to the starter only when it applies to every project.
 

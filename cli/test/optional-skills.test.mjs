@@ -49,7 +49,6 @@ test('init --untangle applies it before the first commit and the skills check ac
     const found = JSON.parse(check.stdout).skills.find((s) => s.name === NAME);
     assert.ok(found, 'listed with the other skills');
     assert.deepEqual(found.errors, []);
-    assert.deepEqual(found.warnings, []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

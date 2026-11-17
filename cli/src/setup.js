@@ -94,7 +94,7 @@ export async function guideAgentsSetup(target, { skip = false, projectNameHint, 
 
     let untangle = untangleFlag;
     if (untangle === undefined) {
-      const answer = await ask(rl, 'Add the optional untangle-codebase skill (keeps generated code lean and decoupled)? (y/N)', 'N');
+      const answer = await ask(rl, 'Add the optional untangle-codebase skill (a full refactor so agents read less and break less)? (y/N)', 'N');
       untangle = /^y(es)?$/i.test(answer.trim());
     }
 

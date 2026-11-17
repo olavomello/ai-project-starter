@@ -44,7 +44,7 @@ I want to start a new project from the ai-project-starter template
    - Release cadence (default: on demand)
    - Task token budget S / M / L (default: off)
    - Enable the in-session status mod for Claude Code (measures real tokens and models)? — Y/n (default: yes)
-   - Add the optional `untangle-codebase` skill (keeps generated code lean and decoupled)? — y/N (default: no)
+   - Add the optional `untangle-codebase` skill (a full refactor so agents read less and break less)? — y/N (default: no)
 3. Write my answers into section 0 of the new project's `AGENTS.md` (the `- Name:`
    / `- Purpose (one line):` / `- Stack:` / `- Administrator:` lines, and the
    `Knobs` table below them, now including the task-token-budget row) — do not
